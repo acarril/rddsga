@@ -1,7 +1,6 @@
 *! 0.1 Alvaro Carril 14jul2017
 program define rddsga, rclass byable(recall)
 version 11.1 /* todo: check if this is the real minimum */
-
 syntax varlist(min=2 numeric) [if] [in] [ , ///
 	psweight(name) pscore(name) comsup logit latex dir(string) ///
 	namgroup(string) bdec(int 3) addnamtex(string) ///
@@ -31,11 +30,9 @@ local treatvar :	word 1 of `varlist'
 tempvar T0
 qui gen `T0' = (`treatvar' == 0) if !mi(`treatvar')
 
-*** save covariates
-macro shift 
-local cov "`*'"
-local numcov `: word count `cov''
-
+// Extract covariates
+local covariates : list varlist - treatvar
+local numcov `: word count `covariates''
 
 **** Name group
 if `"`namgroup'"' != `""'  {
@@ -122,7 +119,7 @@ local N1=_N
 restore
 
 local j=0
-foreach var of varlist `cov' {
+foreach var of varlist `covariates' {
 	local j=`j'+1
 
 	*get mean group 1 and mean group 2
@@ -189,11 +186,11 @@ qui sum high_direct if `touse' & `treatvar'==0
 local ld=r(N)
 
 *** gen the psweight for each observation using non-conditional probability and conditional probability.
-qui gen `psweight'=`hd'/(`hd'+`ld')/`pscore'*(`treatvar'==1) + `ld'/(`hd'+`ld')/(1-`pscore')*(`treatvar'==0) if `touse'
+qui gen `psweight' = `hd'/(`hd'+`ld')/`pscore'*(`treatvar'==1) + `ld'/(`hd'+`ld')/(1-`pscore')*(`treatvar'==0) if `touse'
 
 
 local j=0
-foreach var of varlist `cov' {
+foreach var of varlist `covariates' {
 	local j=`j'+1
 
 	qui reg `var' `T0' `treatvar' [iw=`psweight'] if `touse' , noconstant
@@ -245,7 +242,7 @@ tempname orbal
 matrix `orbal' = J(`numcov'+4,4,.)
 
 local j=0                              
-foreach var of varlist `cov' {
+foreach var of varlist `covariates' {
 	local j=`j'+1  
 	matrix `orbal'[`j',1] = round(`m`j'1',10^(-`bdec'))	
 	matrix `orbal'[`j',2] = round(`m`j'2',10^(-`bdec'))
@@ -290,7 +287,7 @@ matrix `balimp' = J(`numcov'+4,4,.)
 
 *** Complete the matrix with the values respective:
 local j=0                              
-foreach var of varlist `cov' {
+foreach var of varlist `covariates' {
 	local j=`j'+1  
 	matrix `balimp'[`j',1] = round(`Weight`j'_1', 10^(-`bdec'))	
 	matrix `balimp'[`j',2] = round(`Weight`j'_2', 10^(-`bdec'))	
@@ -324,12 +321,13 @@ if "`matrix'" != "" {
 }
 
 return matrix balimp = `balimp'
-	
+
+/*
 *** TEX
 if `"`latex'"' != `""' {
 	*** Row titles
 	local j=0                              
-	foreach var of varlist `cov' {
+	foreach var of varlist `covariates' {
 		local j=`j'+1
 		local label`j': variable label `var'
 		local lbl_`j' "`label`j''"	
@@ -377,7 +375,8 @@ if `"`latex'"' != `""' {
 	tex [1ex] \hline\hline \\ [-1.5ex]
 	texdoc close
 }
-	
+*/
+
 *** RETURN
 
 eret clear 
