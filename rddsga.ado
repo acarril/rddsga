@@ -1,13 +1,19 @@
 *! 0.1 Alvaro Carril 14jul2017
 program define rddsga, rclass byable(recall)
-version 11.1 /* todo: check if real minimum */
+version 11.1 /* todo: check if this is the real minimum */
 
-syntax varlist [if] [in] [ , ///
-	pscore(string) pweight(string) comsup logit latex dir(string) ///
+syntax varlist(min=2 numeric) [if] [in] [ , ///
+	psweight(name) pscore(name) comsup logit latex dir(string) ///
 	namgroup(string) bdec(int 3) addnamtex(string) ///
 ]
 
+*-------------------------------------------------------------------------------
+* Check inputs
+*-------------------------------------------------------------------------------
 
+// psweight(): define new Propensity Score Weighting variable or use tempvar
+if `"`psweight'"' != `""' confirm new variable `psweight'
+else tempvar psweight
 
 *-------------------------------------------------------------------------------
 * Process inputs
@@ -52,13 +58,6 @@ if `"`pscore'"' != `""'  { /* BEGINDETAIL */
 } 
 else {
 	tempvar pscore
-}
-
-if `"`pweight'"' != `""'  { /* BEGINDETAIL */
-	confirm new variable `pweight'
-} /* ENDDETAIL */
-else {
-	tempvar pweight
 }
 
 
@@ -175,36 +174,36 @@ local m`l'4: di 1-F(e(df_m),e(df_r),e(F))
 **Observations:
 preserve
 qui keep if  `touse' & `treatvar'==0
-local Npweight0=_N
+local Npsweight0=_N
 restore
 preserve
 qui keep if  `touse' & `treatvar'==1
-local Npweight1=_N
+local Npsweight1=_N
 restore
 
-* compute pweights
+* compute psweights
 
 qui sum `treatvar' if `touse' & `treatvar'==1
 local hd=r(N)
 qui sum high_direct if `touse' & `treatvar'==0
 local ld=r(N)
 
-*** gen the pweight for each observation using non-conditional probability and conditional probability.
-qui gen `pweight'=`hd'/(`hd'+`ld')/`pscore'*(`treatvar'==1) + `ld'/(`hd'+`ld')/(1-`pscore')*(`treatvar'==0) if `touse'
+*** gen the psweight for each observation using non-conditional probability and conditional probability.
+qui gen `psweight'=`hd'/(`hd'+`ld')/`pscore'*(`treatvar'==1) + `ld'/(`hd'+`ld')/(1-`pscore')*(`treatvar'==0) if `touse'
 
 
 local j=0
 foreach var of varlist `cov' {
 	local j=`j'+1
 
-	qui reg `var' `T0' `treatvar' [iw=`pweight'] if `touse' , noconstant
+	qui reg `var' `T0' `treatvar' [iw=`psweight'] if `touse' , noconstant
 	mat m=r(table)
 
 	/* Low direct  */ 	local Weight`j'_1:  di  m[1,1]
 	/* High direct  */ 	local Weight`j'_2:  di  m[1,2]
 
 
-	qui reg `var'  `T0' [iw=`pweight'] if `touse'
+	qui reg `var'  `T0' [iw=`psweight'] if `touse'
 	mat m=r(table)
 	scalar dif_`var'=m[1,1]
 	/* p-value */ 	local Weight`j'_4:  di m[4,1]
@@ -229,7 +228,7 @@ local l=`numcov'+1
 local Weight`l'_3:di `k'/`numcov'
 
 *** global F-STATISTIC and P-VALUE 
-qui reg `varlist'  [iw=`pweight'] if `touse'
+qui reg `varlist'  [iw=`psweight'] if `touse'
 
 local l=`l'+1
 local Weight`l'_4: di  e(F)
@@ -282,7 +281,7 @@ if "`matrix'" != "" {
 return matrix orbal = `orbal'
 
 di in ye       "**************************************************** "
-di in ye	     "Propensity score-pweighting "
+di in ye	     "Propensity score-psweighting "
 di in ye	     "**************************************************** "
 
 
@@ -301,8 +300,8 @@ foreach var of varlist `cov' {
 	local rown4 "`rown4' `var'"
 }
 
-matrix `balimp'[`numcov'+1,1] = `Npweight0'
-matrix `balimp'[`numcov'+1,2] = `Npweight1'			
+matrix `balimp'[`numcov'+1,1] = `Npsweight0'
+matrix `balimp'[`numcov'+1,2] = `Npsweight1'			
 local l=`numcov'+1
 matrix `balimp'[`numcov'+2,3] = round(`Weight`l'_3',10^(-`bdec'))
 local l=`l'+1		
@@ -365,7 +364,7 @@ if `"`latex'"' != `""' {
 	tex [1ex] \\ [-1.5ex]
 	tex &\multicolumn{4}{c}{Original balance} &\multicolumn{4}{c}{Balance after propensity score stratification} \\\\
 	tex  & `G0' & `G1' & & & `G0' & `G1' & & \\
-	tex & (n=`N0') & (n=`N1') & & & (n=`Npweight0') & (n=`Npweight1') & &  \\ 
+	tex & (n=`N0') & (n=`N1') & & & (n=`Npsweight0') & (n=`Npsweight1') & &  \\ 
 	tex [1ex] \\ [-1.5ex]
 	tex & Mean & Mean & St.Mean Diff. & P-value & Mean & Mean & St.Mean Diff. & P-value  \\\\
 	forvalue j=1/`numcov' {
