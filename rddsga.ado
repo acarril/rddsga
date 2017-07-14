@@ -34,7 +34,7 @@ qui gen `T0' = (`treatvar' == 0) if !mi(`treatvar')
 local covariates : list varlist - treatvar
 local numcov `: word count `covariates''
 
-**** Name group
+// Treatment groups names
 if `"`namgroup'"' != `""'  {
 	local pos=strpos("`namgroup'","/")
 	local G0=substr("`namgroup'",1,`pos'-1)
@@ -44,6 +44,11 @@ else {
 	local G0="G0"
 	local G1="G1"
 }
+
+// Model to fit 
+if `"`logit'"' != `""' local binarymodel logit
+else local binarymodel probit
+di "`binarymodel'"
 
 /*******/
 /* NEW */
@@ -57,24 +62,14 @@ else {
 	tempvar pscore
 }
 
+// Fit binary response model
+capture drop comsup /* todo: don't drop automatically, user-generated name */
+qui `binarymodel' `treatvar' `covariates' if `touse'
 
-
-
-if `"`logit'"' != `""'  { 
-	capture drop comsup
-	qui logit `varlist'  if `touse'      
-}
-else {
-	capture drop comsup
-	qui  probit `varlist' if `touse'
-
-}
-
+*** Create epscore
 tempvar epscore
-
 qui predict double `epscore' if `touse'
-
-ereturn clear
+ereturn clear // Clear e() stored results
 
 /* NEW */
 /*******/
