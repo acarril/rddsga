@@ -2,8 +2,8 @@
 program define rddsga, rclass byable(recall)
 version 11.1 /* todo: check if this is the real minimum */
 syntax varlist(min=2 numeric) [if] [in] [ , ///
-	psweight(name) pscore(name) comsup logit latex dir(string) ///
-	namgroup(string) bdec(int 3) addnamtex(string) ///
+	psweight(name) pscore(name) comsup logit ///
+	namgroup(string) bdec(int 3) ///
 ]
 
 *-------------------------------------------------------------------------------
@@ -322,60 +322,6 @@ if "`matrix'" != "" {
 
 return matrix balimp = `balimp'
 
-/*
-*** TEX
-if `"`latex'"' != `""' {
-	*** Row titles
-	local j=0                              
-	foreach var of varlist `covariates' {
-		local j=`j'+1
-		local label`j': variable label `var'
-		local lbl_`j' "`label`j''"	
-	}
-
-	local k=`numcov'+1
-	local lbl_`k'"Abs(St. mean diff.)"
-	local m=`k'+1
-	local lbl_`m' "F-statistic"
-	local m=`m'+1
-	local lbl_`m' "P-value"
-
-	** Rounding values
-
-	forval j=1/`m' {
-		forval l=1/4 {
-			local m`j'`l': di %12.`bdec'f  `m`j'`l''
-			local Weight`j'_`l': di %12.`bdec'f `Weight`j'_`l''
-		}
-	}
-
-	if `"`dir'"' != `""'  {
-		texdoc init `dir'\BalanceImprove_`treatvar'`addnamtex'.tex, replace
-	}
-	else {
-		texdoc init BalanceImprove_`treatvar'`addnamtex'.tex, replace
-	}
-
-	tex \\ \\ [-1.5ex]
-	tex \hline\hline \\ [-1.5ex]
-	tex {} & (1) & (2) & (3) & (4) & (5) & (6) & (7) & (8)  \\
-	tex [1ex] \\ [-1.5ex]
-	tex &\multicolumn{4}{c}{Original balance} &\multicolumn{4}{c}{Balance after propensity score stratification} \\\\
-	tex  & `G0' & `G1' & & & `G0' & `G1' & & \\
-	tex & (n=`N0') & (n=`N1') & & & (n=`Npsweight0') & (n=`Npsweight1') & &  \\ 
-	tex [1ex] \\ [-1.5ex]
-	tex & Mean & Mean & St.Mean Diff. & P-value & Mean & Mean & St.Mean Diff. & P-value  \\\\
-	forvalue j=1/`numcov' {
-		tex `lbl_`j'' & `m`j'1' & `m`j'2' & `m`j'3' & `m`j'4' & `Weight`j'_1' & `Weight`j'_2' & `Weight`j'_3' & `Weight`j'_4' \\
-	}
-	tex \hline \\
-	forvalue t=`k'/`m' {
-		tex `lbl_`t'' &  &  & `m`t'3'  & `m`t'4' &  &  & `Weight`t'_3'  & `Weight`t'_4'  \\
-	}
-	tex [1ex] \hline\hline \\ [-1.5ex]
-	texdoc close
-}
-*/
 
 *** RETURN
 
