@@ -18,6 +18,10 @@ else tempvar psweight
 if `"`comsup'"' != `""' confirm new variable `comsup'
 else tempvar comsup
 
+// pscore(): define new propensity score variable or use a tempvar
+if `"`pscore'"' != `""' confirm new variable `pscore'
+else tempvar pscore
+
 *-------------------------------------------------------------------------------
 * Process inputs
 *-------------------------------------------------------------------------------
@@ -25,9 +29,9 @@ else tempvar comsup
 // Mark observations to be used
 marksample touse
 
-// Tokenize varlist /* todo: neccessary? */
-tokenize `varlist'
-local numvar `: word count `varlist'' // todo: not used
+// Define model to fit (probit is default)
+if `"`logit'"' != `""' local binarymodel logit
+else local binarymodel probit
 
 // Extract treatment variable and create complementary T0 tempvar
 local treatvar :	word 1 of `varlist'
@@ -49,21 +53,11 @@ else {
 	local G1="G1"
 }
 
-// Define model to fit (probit is default)
-if `"`logit'"' != `""' local binarymodel logit
-else local binarymodel probit
+
 
 /*******/
 /* NEW */
 /*******/
-
-***Define PSCORE
-if `"`pscore'"' != `""'  { /* BEGINDETAIL */
-	confirm new variable `pscore'
-} 
-else {
-	tempvar pscore
-}
 
 // Fit binary response model
 capture drop comsup /* todo: don't drop automatically, user-generated name */
@@ -83,7 +77,7 @@ label var `pscore' "Estimated propensity score"
 
 // Region of common support
 if `"`comsup'"' != `""'  {
-	sum `pscore' if `treatvar'==1
+	qui sum `pscore' if `treatvar'==1
 	tempname mintreat maxtreat
 	scalar `mintreat'  = r(min)
 	scalar `maxtreat'  = r(max)
