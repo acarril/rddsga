@@ -14,7 +14,7 @@ if "`c(os)'" == "Windows" cd "C:/Users/alvar/Dropbox (JPAL LAC)/Dina/procurement
 discard
 
 // Load dataset
-use data/procurement_test, clear
+use data/procurement_test2, clear
 *use data/midRiskRDDdataset.dta, clear
 // Run command
 rddsga ///
