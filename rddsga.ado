@@ -1,5 +1,5 @@
 *! 0.1 Alvaro Carril 14jul2017
-program define rddsga, rclass byable(recall)
+program define rddsga, rclass
 version 11.1 /* todo: check if this is the real minimum */
 syntax varlist(min=2 numeric) [if] [in] [ , ///
 	psweight(name) pscore(name) comsup(name) logit ///
@@ -77,6 +77,7 @@ ereturn clear // Clear e() stored results
 /* NEW */
 /*******/
 
+* propensity score
 qui gen double `pscore' = `epscore'
 label var `pscore' "Estimated propensity score"
 
@@ -105,9 +106,8 @@ local N0 = `r(N)'
 qui count if `touse2' & `treatvar'==1
 local N1 = `r(N)'
 
+
 *** Original balance
-
-
 
 local j=0
 foreach var of varlist `covariates' {
@@ -325,3 +325,16 @@ eret clear
 } */
 
 end
+
+********************************************************************************
+
+/* 
+CHANGE LOG
+0.1
+	- First working version, independent of project
+	- Remove any LaTeX output
+	- Modify some option names and internal locals
+
+TODOS (AND IDEAS TO MAKE RDDSGA EVEN COOLER)
+- Create sub-program with loop that defines balance matrices
+*/
