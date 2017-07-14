@@ -49,7 +49,7 @@ else {
 	local G1="G1"
 }
 
-// Model to fit (probit is default)
+// Define model to fit (probit is default)
 if `"`logit'"' != `""' local binarymodel logit
 else local binarymodel probit
 
@@ -80,7 +80,7 @@ ereturn clear // Clear e() stored results
 qui gen double `pscore' = `epscore'
 label var `pscore' "Estimated propensity score"
 
-/* REGION OF COMMON SUPPORT */
+// Region of common support
 if `"`comsup'"' != `""'  {
 	sum `pscore' if `treatvar'==1
 	tempname mintreat maxtreat
@@ -99,17 +99,15 @@ else {
 	qui gen `touse2'=`touse'
 }
 
+// Count observations in each sample
+qui count if `touse2' & `treatvar'==0
+local N0 = `r(N)'
+qui count if `touse2' & `treatvar'==1
+local N1 = `r(N)'
+
 *** Original balance
 
-**Observations:
-preserve
-qui keep if  `touse2' & `treatvar'==0
-local N0=_N
-restore
-preserve
-qui keep if `touse2' & `treatvar'==1
-local N1=_N
-restore
+
 
 local j=0
 foreach var of varlist `covariates' {
