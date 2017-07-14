@@ -2,7 +2,7 @@
 program define rddsga, rclass byable(recall)
 version 11.1 /* todo: check if this is the real minimum */
 syntax varlist(min=2 numeric) [if] [in] [ , ///
-	psweight(name) pscore(name) comsup logit ///
+	psweight(name) pscore(name) comsup(name) logit ///
 	namgroup(string) bdec(int 3) ///
 ]
 
@@ -10,9 +10,13 @@ syntax varlist(min=2 numeric) [if] [in] [ , ///
 * Check inputs
 *-------------------------------------------------------------------------------
 
-// psweight(): define new Propensity Score Weighting variable or use tempvar
+// psweight(): define new propensity score weighting variable or use a tempvar
 if `"`psweight'"' != `""' confirm new variable `psweight'
 else tempvar psweight
+
+// comsup(): define new common support variable or use a tempvar
+if `"`comsup'"' != `""' confirm new variable `comsup'
+else tempvar comsup
 
 *-------------------------------------------------------------------------------
 * Process inputs
@@ -45,10 +49,9 @@ else {
 	local G1="G1"
 }
 
-// Model to fit 
+// Model to fit (probit is default)
 if `"`logit'"' != `""' local binarymodel logit
 else local binarymodel probit
-di "`binarymodel'"
 
 /*******/
 /* NEW */
@@ -79,27 +82,22 @@ label var `pscore' "Estimated propensity score"
 
 /* REGION OF COMMON SUPPORT */
 if `"`comsup'"' != `""'  {
-	qui sum `pscore' if `treatvar'==1
+	sum `pscore' if `treatvar'==1
 	tempname mintreat maxtreat
-	tempvar COMSUP
 	scalar `mintreat'  = r(min)
 	scalar `maxtreat'  = r(max)
+	qui gen `comsup' = (`pscore' >= `mintreat' & ///
+											`pscore' <= `maxtreat') if `touse'
+	label var `comsup' "Dummy for obs. in common support"
 
-	qui g `COMSUP'=(`pscore'>=`mintreat' & `pscore'<=`maxtreat')
-	qui replace `COMSUP'=. if `touse'
 	tempvar touse2
 	qui gen `touse2'=`touse'
-	qui replace `touse'=0 if `COMSUP'==0
+	qui replace `touse'=0 if `comsup'==0
 }
 else {
 	tempvar touse2
 	qui gen `touse2'=`touse'
 }
-
-*XXX RD: what does "di in ye" do exactly? XXX
-di in ye _newline(3) "**************************************************** "
-di in ye	     "BALANCE IMPROVEMENT "
-di in ye	     "**************************************************** "
 
 *** Original balance
 
@@ -323,9 +321,9 @@ return matrix balimp = `balimp'
 eret clear 
 
 *** Produce the comsup variable to be generated after running the command
-if `"`comsup'"' != "" {
+/* if `"`comsup'"' != "" {
 	qui g comsup = `COMSUP'
 	label var comsup "Dummy for obs. in common support"
-}
+} */
 
 end
