@@ -6,13 +6,19 @@ syntax varlist [if] [in] [ , ///
 	pscore(string) pweight(string) comsup logit latex dir(string) ///
 	namgroup(string) bdec(int 3) addnamtex(string) ///
 ]
-marksample touse
+
+
+
 *-------------------------------------------------------------------------------
 * Process inputs
 *-------------------------------------------------------------------------------
 
+// Mark observations to be used
+marksample touse
+
+// Tokenize varlist /* todo: neccessary? */
 tokenize `varlist'
-local numvar `: word count `varlist''
+local numvar `: word count `varlist'' // todo: not used
 
 // Extract treatment variable and create complementary T0 tempvar
 local treatvar :	word 1 of `varlist'
@@ -23,13 +29,6 @@ qui gen `T0' = (`treatvar' == 0) if !mi(`treatvar')
 macro shift 
 local cov "`*'"
 local numcov `: word count `cov''
-
-
-
-*** generating local taking all restrictions specified by the user 
-*tempvar touse
-*g `touse'=0
-*qui replace `touse'=1 `if' `in'
 
 
 **** Name group
