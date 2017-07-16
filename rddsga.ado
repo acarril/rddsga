@@ -72,12 +72,10 @@ ereturn clear // Clear e() stored results
 
 // Region of common support
 if `"`comsup'"' != `""'  {
-	qui sum `pscore' if `treatvar'==1 & `touse'
-	tempname mintreat maxtreat
-	scalar `mintreat'  = r(min)
-	scalar `maxtreat'  = r(max)
-	qui gen `comsup' = (`pscore' >= `mintreat' & ///
-											`pscore' <= `maxtreat') if `touse'
+	// Genterate common support varible
+	qui sum `pscore' if `treatvar' == 1 & `touse'
+	qui gen `comsup' = (`pscore' >= `r(min)' & ///
+											`pscore' <= `r(max)') if `touse'
 	label var `comsup' "Dummy for obs. in common support"
 
 	tempvar touse2
