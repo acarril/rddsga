@@ -73,24 +73,17 @@ ereturn clear // Clear e() stored results
 // Region of common support
 if `"`comsup'"' != `""'  {
 	// Genterate common support varible
-	qui sum `pscore' if `treatvar' == 1 & `touse'
+	qui sum `pscore' if `treatvar' == 1
 	qui gen `comsup' = (`pscore' >= `r(min)' & ///
 											`pscore' <= `r(max)') if `touse'
 	label var `comsup' "Dummy for obs. in common support"
-
-	tempvar touse2
-	qui gen `touse2'=`touse'
-	qui replace `touse'=0 if `comsup'==0
 }
-else {
-	tempvar touse2
-	qui gen `touse2'=`touse'
-}
+else qui gen `comsup' == 1 if `touse'
 
 // Count observations in each sample
-qui count if `touse2' & `treatvar'==0
+qui count if `touse' & `treatvar'==0
 local N0 = `r(N)'
-qui count if `touse2' & `treatvar'==1
+qui count if `touse' & `treatvar'==1
 local N1 = `r(N)'
 
 
@@ -101,19 +94,19 @@ foreach var of varlist `covariates' {
 	local j=`j'+1
 
 	*get mean group 1 and mean group 2
-	qui reg `var'  `T0' `treatvar'  if `touse2', noconstant
+	qui reg `var'  `T0' `treatvar'  if `touse', noconstant
 	mat m=r(table)
 	/* mean G0  */ 	local m`j'1:  di m[1,1]
 	/* mean G1 */ 	local m`j'2:  di m[1,2]
 
 
-	qui reg `var'  `T0'  if `touse2'
+	qui reg `var'  `T0'  if `touse'
 	mat m=r(table)
 	scalar dif_`var'=m[1,1]
 	/* p-value */ 	local m`j'4:  di  m[4,1]
 
 
-	qui tabstat `var'  if `touse2', stat(sd) save
+	qui tabstat `var'  if `touse', stat(sd) save
 	matrix overall= r(StatTotal)'
 
 	local stdiff_`j'=(dif_`var')/overall[1,1]
@@ -134,7 +127,7 @@ local m`l'3:di `k'/`numcov'
 
 *** F statistics
 
-qui reg `varlist' if `touse2'
+qui reg `varlist' if `touse'
 local l=`l'+1
 local m`l'4: di e(F)
 
@@ -143,47 +136,48 @@ local l=`l'+1
 local m`l'4: di 1-F(e(df_m),e(df_r),e(F))
 
 **************************
-*** Propensity-score Weighting
+*** Propensity-score Weighting // empieza con touse y com
 **************************
+
 
 **Observations:
 preserve
-qui keep if  `touse' & `treatvar'==0
+qui keep if  `touse'  & `comsup' & `treatvar'==0
 local Npsweight0=_N
 restore
 preserve
-qui keep if  `touse' & `treatvar'==1
+qui keep if `touse' & `comsup' & `treatvar'==1
 local Npsweight1=_N
 restore
 
 * compute psweights
 
-qui sum `treatvar' if `touse' & `treatvar'==1
+qui sum `treatvar' if `touse' & `comsup' & `treatvar'==1
 local hd=r(N)
-qui sum high_direct if `touse' & `treatvar'==0
+qui sum high_direct if `touse' & `comsup' & `treatvar'==0
 local ld=r(N)
 
 *** gen the psweight for each observation using non-conditional probability and conditional probability.
-qui gen `psweight' = `hd'/(`hd'+`ld')/`pscore'*(`treatvar'==1) + `ld'/(`hd'+`ld')/(1-`pscore')*(`treatvar'==0) if `touse'
+qui gen `psweight' = `hd'/(`hd'+`ld')/`pscore'*(`treatvar'==1) + `ld'/(`hd'+`ld')/(1-`pscore')*(`treatvar'==0) if `touse' & `comsup' 
 
 
 local j=0
 foreach var of varlist `covariates' {
 	local j=`j'+1
 
-	qui reg `var' `T0' `treatvar' [iw=`psweight'] if `touse' , noconstant
+	qui reg `var' `T0' `treatvar' [iw=`psweight'] if `touse' & `comsup'  , noconstant
 	mat m=r(table)
 
 	/* Low direct  */ 	local Weight`j'_1:  di  m[1,1]
 	/* High direct  */ 	local Weight`j'_2:  di  m[1,2]
 
 
-	qui reg `var'  `T0' [iw=`psweight'] if `touse'
+	qui reg `var'  `T0' [iw=`psweight'] if `touse' & `comsup' 
 	mat m=r(table)
 	scalar dif_`var'=m[1,1]
 	/* p-value */ 	local Weight`j'_4:  di m[4,1]
 
-	qui tabstat `var' if `touse' , stat(sd) save
+	qui tabstat `var' if `touse' & `comsup'  , stat(sd) save
 	matrix overall= r(StatTotal)'
 	local stdiff_`j'=(dif_`var')/overall[1,1]
 	local Weight`j'_3:  di  (dif_`var')/overall[1,1]
@@ -203,7 +197,7 @@ local l=`numcov'+1
 local Weight`l'_3:di `k'/`numcov'
 
 *** global F-STATISTIC and P-VALUE 
-qui reg `varlist'  [iw=`psweight'] if `touse'
+qui reg `varlist'  [iw=`psweight'] if `touse' & `comsup' 
 
 local l=`l'+1
 local Weight`l'_4: di  e(F)
