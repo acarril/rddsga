@@ -72,7 +72,7 @@ ereturn clear // Clear e() stored results
 
 // Region of common support
 if `"`comsup'"' != `""'  {
-	qui sum `pscore' if `treatvar'==1
+	qui sum `pscore' if `treatvar'==1 & `touse'
 	tempname mintreat maxtreat
 	scalar `mintreat'  = r(min)
 	scalar `maxtreat'  = r(max)
