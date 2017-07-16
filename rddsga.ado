@@ -53,8 +53,6 @@ else {
 	local G1="G1"
 }
 
-
-
 /*******/
 /* NEW */
 /*******/
@@ -63,17 +61,14 @@ else {
 capture drop comsup /* todo: don't drop automatically, user-generated name */
 qui `binarymodel' `treatvar' `covariates' if `touse'
 
-*** Create epscore
-tempvar epscore
-qui predict double `epscore' if `touse'
+// Generate pscore variable and clear results
+tempvar pscore
+qui predict double `pscore' if `touse'
+label var `pscore' "Estimated propensity score"
 ereturn clear // Clear e() stored results
 
 /* NEW */
 /*******/
-
-* propensity score
-qui gen double `pscore' = `epscore'
-label var `pscore' "Estimated propensity score"
 
 // Region of common support
 if `"`comsup'"' != `""'  {
