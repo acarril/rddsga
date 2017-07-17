@@ -167,7 +167,6 @@ foreach var of varlist `covariates' {
 	// Compute and store p-values
 	qui reg `var' `T0' [iw=`psweight'] if `touse' & `comsup'
 	matrix m = r(table)
-	matrix list m 
 	scalar dif_`var'=m[1,1]
 	local Weight`j'_4 = m[4,1] // p-value 
 *	scalar list dif_`var'
@@ -298,6 +297,36 @@ eret clear
 
 end
 
+*-------------------------------------------------------------------------------
+* Define auxiliary programs
+*-------------------------------------------------------------------------------
+
+program define balancematrix, rclass
+tempname `1'
+matrix `1' = J(`numcov'+4,4,.)
+matrix colnames `1' = "Mean `G0'" "Mean `G1'" "StMeanDiff" p-value 
+matrix rownames `1' = `rown3' Observations Abs(StMeanDiff) F-statistic p-value
+                         
+forvalues j = 1/`numcov' {
+  local j=`j'+1  
+  matrix `1'[`j',1] = round(`m`j'1',10^(-`bdec')) 
+  matrix `1'[`j',2] = round(`m`j'2',10^(-`bdec'))
+  matrix `1'[`j',3] = round(`m`j'3',10^(-`bdec'))
+  matrix `1'[`j',4] = round(`m`j'4',10^(-`bdec'))
+  local rown3 "`rown3' `var'"
+}
+
+matrix `1'[`numcov'+1,1] = `N0'
+matrix `1'[`numcov'+1,2] = `N1'     
+local l=`numcov'+1
+matrix `1'[`numcov'+2,3] = round(`m`l'3',10^(-`bdec'))
+local l=`l'+1   
+matrix `1'[`numcov'+3,4] = round(`m`l'4',10^(-`bdec'))
+local l=`l'+1     
+matrix `1'[`numcov'+4,4] = round(`m`l'4',10^(-`bdec'))
+
+end
+
 ********************************************************************************
 
 /* 
@@ -309,4 +338,5 @@ CHANGE LOG
 
 TODOS (AND IDEAS TO MAKE RDDSGA EVEN COOLER)
 - Create sub-program with loop that defines balance matrices
+- Implement matrix manipulation in Mata
 */
