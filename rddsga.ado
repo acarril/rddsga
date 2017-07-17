@@ -125,8 +125,8 @@ forvalue j=1/`numcov' {
 
 ** Then, we show the mean of the standard mean difference (the sum divided by the number of covariates):
 local l = `numcov'+1
-local totaldiff`j' = `k'/`numcov'
-di "totaldiff`j': `totaldiff`j''"
+local totaldiff = `k'/`numcov'
+di "totaldiff: `totaldiff'"
 
 *** F statistics
 
@@ -159,7 +159,7 @@ foreach var of varlist `covariates' {
 matrix `orbal'[`numcov'+1,1] = `Ncontrols'
 matrix `orbal'[`numcov'+1,2] = `Ntreated'
 local l=`numcov'+1
-matrix `orbal'[`numcov'+2,3] = round(`totaldiff`j'',10^(-`bdec'))
+matrix `orbal'[`numcov'+2,3] = round(`totaldiff', 10^(-`bdec')) // totaldiff
 local l=`l'+1		
 matrix `orbal'[`numcov'+3,4] = round(`m`l'4',10^(-`bdec'))
 local l=`l'+1			
@@ -221,21 +221,16 @@ foreach var of varlist `covariates' {
 	local Weight`j'_3:  di  (diff`j')/overall[1,1]
 }
 
-// Mean of absolute differences in standardized means
+// Mean of absolute standardized mean differences (ie. stddiff + ... + stddiff`k')
 /* todo: this begs to be vectorized */
-local k=0
+local totaldiff = 0
 forvalues j = 1/`numcov' {
-	foreach x of numlist `stddiff`j'' {
-		local k = abs(`x')+`k'
-	}
+	local totaldiff = abs(`stddiff`j'') + `totaldiff' // sum over `j' (covariates)
 }
-
-** Compute
-local l = `numcov'+1
-local totaldiff`j' = `k'/`numcov'
-di "totaldiff`j': `totaldiff`j''"
+local totaldiff = `totaldiff'/`numcov' // compute mean 
 
 *** global F-STATISTIC and P-VALUE 
+local l = `numcov' + 1
 qui reg `varlist'  [iw=`psweight'] if `touse' & `comsup' 
 
 local l=`l'+1
@@ -266,7 +261,7 @@ foreach var of varlist `covariates' {
 matrix `balimp'[`numcov'+1,1] = `Ncontrols'
 matrix `balimp'[`numcov'+1,2] = `Ntreated'			
 local l=`numcov'+1
-matrix `balimp'[`numcov'+2,3] = round(`totaldiff`j'',10^(-`bdec'))
+matrix `balimp'[`numcov'+2,3] = round(`totaldiff',10^(-`bdec'))
 local l=`l'+1		
 matrix `balimp'[`numcov'+3,4] = round(`Weight`l'_4',10^(-`bdec'))			
 local l=`l'+1			
