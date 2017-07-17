@@ -115,21 +115,15 @@ foreach var of varlist `covariates' {
 	local m`j'3:  di (diff`j')/overall[1,1]
 }
 
-*** abs sd mean difference (stddiff1+stddiff2+...+stddiffk), i.e, k shows the sum of the standard mean difference
-local k=0
-forvalue j=1/`numcov' {
-	foreach x  of numlist `stddiff`j'' {
-		local k=abs(`x')+`k'
-	}
+// Mean of absolute standardized mean differences (ie. stddiff + ... + stddiff`k')
+/* todo: this begs to be vectorized */
+local totaldiff = 0
+forvalues j = 1/`numcov' {
+	local totaldiff = abs(`stddiff`j'') + `totaldiff' // sum over `j' (covariates)
 }
-
-** Then, we show the mean of the standard mean difference (the sum divided by the number of covariates):
-local l = `numcov'+1
-local totaldiff = `k'/`numcov'
-di "totaldiff: `totaldiff'"
+local totaldiff = `totaldiff'/`numcov' // compute mean 
 
 *** F statistics
-
 qui reg `varlist' if `touse'
 local l=`l'+1
 local m`l'4: di e(F)
