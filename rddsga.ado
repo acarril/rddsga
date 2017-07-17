@@ -123,14 +123,10 @@ forvalues j = 1/`numcov' {
 }
 local totaldiff = `totaldiff'/`numcov' // compute mean 
 
-*** F statistics
+// F-statistic and global p-value
 qui reg `varlist' if `touse'
-local l=`l'+1
-local m`l'4: di e(F)
-
-** p-value
-local l=`l'+1
-local m`l'4: di 1-F(e(df_m),e(df_r),e(F))
+local Fstat = e(F)
+local pval_global = 1-F(e(df_m),e(df_r),e(F))
 
 di in ye       "**************************************************** "
 di in ye	     "ORIGINAL BALANCE "
@@ -155,9 +151,9 @@ matrix `orbal'[`numcov'+1,2] = `Ntreated'
 local l=`numcov'+1
 matrix `orbal'[`numcov'+2,3] = round(`totaldiff', 10^(-`bdec')) // totaldiff
 local l=`l'+1		
-matrix `orbal'[`numcov'+3,4] = round(`m`l'4',10^(-`bdec'))
+matrix `orbal'[`numcov'+3,4] = round(`Fstat',10^(-`bdec'))
 local l=`l'+1			
-matrix `orbal'[`numcov'+4,4] = round(`m`l'4',10^(-`bdec'))
+matrix `orbal'[`numcov'+4,4] = round(`pval_global',10^(-`bdec'))
 
 matrix colnames `orbal' = "Mean `G0'" "Mean `G1'" "StMeanDiff" p-value 
 matrix rownames `orbal' = `rown3' Observations Abs(StMeanDiff) F-statistic p-value
@@ -223,14 +219,10 @@ forvalues j = 1/`numcov' {
 }
 local totaldiff = `totaldiff'/`numcov' // compute mean 
 
-*** global F-STATISTIC and P-VALUE 
-local l = `numcov' + 1
-qui reg `varlist'  [iw=`psweight'] if `touse' & `comsup' 
-
-local l=`l'+1
-local Weight`l'_4: di  e(F)
-local l=`l'+1
-local Weight`l'_4: di  1-F(e(df_m),e(df_r),e(F))
+// F-statistic and global p-value
+qui reg `varlist' [iw=`psweight'] if `touse' & `comsup' 
+local Fstat = e(F)
+local pval_global = 1-F(e(df_m),e(df_r),e(F))
 
 di in ye       "**************************************************** "
 di in ye	     "Propensity score-psweighting "
@@ -257,9 +249,9 @@ matrix `balimp'[`numcov'+1,2] = `Ntreated'
 local l=`numcov'+1
 matrix `balimp'[`numcov'+2,3] = round(`totaldiff',10^(-`bdec'))
 local l=`l'+1		
-matrix `balimp'[`numcov'+3,4] = round(`Weight`l'_4',10^(-`bdec'))			
+matrix `balimp'[`numcov'+3,4] = round(`Fstat',10^(-`bdec'))			
 local l=`l'+1			
-matrix `balimp'[`numcov'+4,4] = round(`Weight`l'_4',10^(-`bdec'))			
+matrix `balimp'[`numcov'+4,4] = round(`pval_global',10^(-`bdec'))			
 
 
 matrix colnames `balimp' = "Mean `G0'" "Mean `G1'" "StMeanDiff" p-value
