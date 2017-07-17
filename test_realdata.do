@@ -21,4 +21,4 @@ rddsga ///
 high_direct p1 p2 p3 size_PRE1 size_PRE2 audited dTR1-dTR3 Year2 Year1 Zone1-Zone3 /// 
 if (dis_cutoff2>-4 & dis_cutoff2<4), ///
   psweight(weight4) pscore(ps_flexmodel41) comsup(soporte) logit ///
-  namgroup(Low share/High share)
+  namgroup(Low share/High share) bdec(5)
