@@ -1,4 +1,4 @@
-*! 0.1 Alvaro Carril 17jul2017
+*! 0.2 Alvaro Carril 17jul2017
 program define rddsga, rclass
 version 11.1 /* todo: check if this is the real minimum */
 syntax varlist(min=2 numeric) [if] [in] [ , ///
@@ -100,7 +100,7 @@ foreach var of varlist `covariates' {
 
 	// Compute and store conditional expectations
 	qui reg `var' `t0' `treatvar' if `touse', noconstant
-	local coef`j'_t0 = _b[`t0']
+	local coef`j'_T0 = _b[`t0']
 	local coef`j'_T1 = _b[`treatvar']
 
 	// Compute and store mean differences and their p-values
@@ -140,7 +140,7 @@ matrix colnames `orbal' = "Mean `G0'" "Mean `G1'" "StMeanDiff" p-value
 matrix rownames `orbal' = `covariates' Observations Abs(StMeanDiff) F-statistic p-value
 
 forvalues j = 1/`numcov' {
-	matrix `orbal'[`j',1] = round(`coef`j'_t0', 10^(-`bdec'))	
+	matrix `orbal'[`j',1] = round(`coef`j'_T0', 10^(-`bdec'))	
 	matrix `orbal'[`j',2] = round(`coef`j'_T1', 10^(-`bdec'))
 	matrix `orbal'[`j',3] = round(`stddiff`j'', 10^(-`bdec'))
 	matrix `orbal'[`j',4] = round(`pval`j'', 10^(-`bdec'))
@@ -159,98 +159,29 @@ return matrix baltab0 = `orbal'
 * Propensity Score Weighting
 *-------------------------------------------------------------------------------
 
-// Count observations in each treatment group
-qui count if `touse' & `comsup' & `treatvar'==0
-local Ncontrols = `r(N)'
-qui count if `touse' & `comsup' & `treatvar'==1
-local Ntreated = `r(N)'
-
-// Compute propensity score weighting vector 
-qui gen `psweight' = ///
-	`Ntreated'/(`Ntreated'+`Ncontrols')/`pscore'*(`treatvar'==1) + ///
-	`Ncontrols'/(`Ntreated'+`Ncontrols')/(1-`pscore')*(`treatvar'==0) ///
-	if `touse' & `comsup' 
-
-* Compute stats for each covariate 
-*-------------------------------------------------------------------------------
-
-local j = 0
-foreach var of varlist `covariates' {
-	local j=`j'+1
-
-	// Compute and store conditional expectations
-	qui reg `var' `t0' `treatvar' [iw=`psweight'] if `touse' & `comsup', noconstant
-	local coef`j'_t0 = _b[`t0']
-	local coef`j'_T1 = _b[`treatvar']
-
-	// Compute and store mean differences and their p-values
-	qui reg `var' `t0' [iw=`psweight'] if `touse' & `comsup'
-	matrix m = r(table)
-	scalar diff`j'=m[1,1] // mean difference
-	local pval`j' = m[4,1] // p-value 
-
-	// Standardized mean difference
-	qui summ `var' if `touse' & `comsup'
-	local stddiff`j' = (diff`j')/r(sd)
-}
-
-* Global stats
-*-------------------------------------------------------------------------------
-
-// Mean of absolute standardized mean differences (ie. stddiff + ... + stddiff`k')
-/* todo: this begs to be vectorized */
-local totaldiff = 0
-forvalues j = 1/`numcov' {
-	local totaldiff = abs(`stddiff`j'') + `totaldiff' // sum over `j' (covariates)
-}
-local totaldiff = `totaldiff'/`numcov' // compute mean 
-
-// F-statistic and global p-value
-qui reg `varlist' [iw=`psweight'] if `touse' & `comsup' 
-local Fstat = e(F)
-local pval_global = 1-F(e(df_m),e(df_r),e(F))
-
-di in ye       "**************************************************** "
-di in ye	     "Propensity score-psweighting "
-di in ye	     "**************************************************** "
-
-tempname balimp
-matrix `balimp' = J(`numcov'+4, 4, .)
-matrix colnames `balimp' = "Mean `G0'" "Mean `G1'" "StMeanDiff" p-value
-matrix rownames `balimp' = `covariates' Observations Abs(StMeanDiff) F-statistic p-value
-
-forvalues j = 1/`numcov' {
-	matrix `balimp'[`j',1] = round(`coef`j'_t0', 10^(-`bdec'))	
-	matrix `balimp'[`j',2] = round(`coef`j'_T1', 10^(-`bdec'))	
-	matrix `balimp'[`j',3] = round(`stddiff`j'', 10^(-`bdec'))
-	matrix `balimp'[`j',4] = round(`pval`j'', 10^(-`bdec'))	
-}
-
-matrix `balimp'[`numcov'+1,1] = `Ncontrols'
-matrix `balimp'[`numcov'+1,2] = `Ntreated'
-matrix `balimp'[`numcov'+2,3] = round(`totaldiff', 10^(-`bdec'))
-matrix `balimp'[`numcov'+3,4] = round(`Fstat', 10^(-`bdec'))				
-matrix `balimp'[`numcov'+4,4] = round(`pval_global', 10^(-`bdec'))			
-
-matrix list `balimp', noheader
-return matrix baltab1 = `balimp'
-
-balancematrix, touse(`touse') comsup(`comsup') treatvar(`treatvar') pscore(`pscore') ///
+balancematrix, matname(otra) touse(`touse') comsup(`comsup') treatvar(`treatvar') pscore(`pscore') ///
 	psweight(weight5) covariates(`covariates') treatvar(`treatvar')	numcov(`numcov') ///
-	t0(`t0') matname(otra) bdec(`bdec')
+	t0(`t0') bdec(`bdec')
+matrix m = r(otra)
+return matrix baltab_nueva = m
 
-
+// Clear ereturn results and end main program
 ereturn clear
-
 end
 
+*===============================================================================
+* Define auxiliary subroutines
+*===============================================================================
+
 *-------------------------------------------------------------------------------
-* Define auxiliary programs
+* balancematrix: compute balance table matrices and other statistics
 *-------------------------------------------------------------------------------
 
 program define balancematrix, rclass
-syntax , matname(string) comsup(name) touse(name) treatvar(name) psweight(name) pscore(name) ///
-	covariates(varlist) treatvar(name) t0(name) numcov(int) bdec(int)
+syntax, matname(string) psweight(name) comsup(name) /// important inputs, differ by call
+	touse(name) treatvar(name) pscore(name) covariates(varlist) bdec(int) /// unchanging inputs
+	treatvar(name) t0(name) numcov(int) // todo: eliminate these; can be computed by subroutine at low cost
+
 // Count observations in each treatment group
 qui count if `touse' & `comsup' & `treatvar'==0
 local Ncontrols = `r(N)'
@@ -272,7 +203,7 @@ foreach var of varlist `covariates' {
 
   // Compute and store conditional expectations
   qui reg `var' `t0' `treatvar' [iw=`psweight'] if `touse' & `comsup', noconstant
-  local coef`j'_t0 = _b[`t0']
+  local coef`j'_T0 = _b[`t0']
   local coef`j'_T1 = _b[`treatvar']
 
   // Compute and store mean differences and their p-values
@@ -312,7 +243,7 @@ matrix colnames `matname' = "Mean `G0'" "Mean `G1'" "StMeanDiff" p-value
 matrix rownames `matname' = `covariates' Observations Abs(StMeanDiff) F-statistic p-value
 
 forvalues j = 1/`numcov' {
-  matrix `matname'[`j',1] = round(`coef`j'_t0', 10^(-`bdec'))  
+  matrix `matname'[`j',1] = round(`coef`j'_T0', 10^(-`bdec'))  
   matrix `matname'[`j',2] = round(`coef`j'_T1', 10^(-`bdec'))  
   matrix `matname'[`j',3] = round(`stddiff`j'', 10^(-`bdec'))
   matrix `matname'[`j',4] = round(`pval`j'', 10^(-`bdec')) 
@@ -325,7 +256,7 @@ matrix `matname'[`numcov'+3,4] = round(`Fstat', 10^(-`bdec'))
 matrix `matname'[`numcov'+4,4] = round(`pval_global', 10^(-`bdec'))      
 
 matrix list `matname', noheader
-return matrix baltab1 = `matname'
+return matrix `matname' = `matname'
 
 end
 
@@ -333,6 +264,8 @@ end
 
 /* 
 CHANGE LOG
+0.2
+	- Implement balancematrix as separate subroutine
 0.1
 	- First working version, independent of project
 	- Remove any LaTeX output
