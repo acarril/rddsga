@@ -7,7 +7,7 @@ clear all
 
 // Set root directory
 if "`c(os)'" == "MacOSX" cd "/Users/alvaro/Library/Application Support/Stata/ado/personal/rddsga/"
-if "`c(os)'" == "Windows" cd "C:/Users/alvar/Dropbox (JPAL LAC)/Dina/procurement/ado/balancepscore"
+if "`c(os)'" == "Windows" cd "C:\ado\personal\rddsga"
 
 // Set adopath and discard loaded programs
 *adopath + old_ados/balancepscore
