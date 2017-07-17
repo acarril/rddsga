@@ -141,16 +141,11 @@ local m`l'4: di 1-F(e(df_m),e(df_r),e(F))
 *** Propensity-score Weighting
 **************************
 
-
-**Observations:
-preserve
-qui keep if  `touse'  & `comsup' & `treatvar'==0
-local Npsweight0=_N
-restore
-preserve
-qui keep if `touse' & `comsup' & `treatvar'==1
-local Npsweight1=_N
-restore
+// Count observations in each treatment group
+qui count if `touse' & `comsup' & `treatvar'==0
+local Npsweight0 = `r(N)'
+qui count if `touse' & `comsup' & `treatvar'==1
+local Npsweight1 = `r(N)'
 
 * compute psweights
 
