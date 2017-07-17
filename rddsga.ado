@@ -168,7 +168,7 @@ if "`matrix'" != "" {
 	matrix `matrix' = `orbal'
 }
 
-return matrix orbal = `orbal'
+return matrix baltab0 = `orbal'
 
 *-------------------------------------------------------------------------------
 * Propensity Score Weighting
@@ -231,7 +231,9 @@ di in ye	     "**************************************************** "
 
 
 tempname balimp
-matrix `balimp' = J(`numcov'+4,4,.)
+matrix `balimp' = J(`numcov'+4, 4, .)
+matrix colnames `balimp' = "Mean `G0'" "Mean `G1'" "StMeanDiff" p-value
+matrix rownames `balimp' = `covariates' Observations Abs(StMeanDiff) F-statistic p-value
 
 local j=0                              
 foreach var of varlist `covariates' {
@@ -240,7 +242,6 @@ foreach var of varlist `covariates' {
 	matrix `balimp'[`j',2] = round(`coef`j'_T1', 10^(-`bdec'))	
 	matrix `balimp'[`j',3] = round(`stddiff`j'', 10^(-`bdec'))
 	matrix `balimp'[`j',4] = round(`pval`j'', 10^(-`bdec'))	
-	local rown4 "`rown4' `var'"
 }
 
 matrix `balimp'[`numcov'+1,1] = `Ncontrols'
@@ -249,20 +250,8 @@ matrix `balimp'[`numcov'+2,3] = round(`totaldiff', 10^(-`bdec'))
 matrix `balimp'[`numcov'+3,4] = round(`Fstat', 10^(-`bdec'))				
 matrix `balimp'[`numcov'+4,4] = round(`pval_global', 10^(-`bdec'))			
 
-matrix colnames `balimp' = "Mean `G0'" "Mean `G1'" "StMeanDiff" p-value
-matrix rownames `balimp' = `rown4' Observations Abs(StMeanDiff) F-statistic p-value
-
-local form ", noheader"
-if "`format'" != "" {
-	local form "`form' `format'"
-}
-matrix list `balimp' `form'
-	
-if "`matrix'" != "" {
-	matrix `matrix' = `balimp'
-}
-
-return matrix balimp = `balimp'
+matrix list `balimp'
+return matrix baltab1 = `balimp'
 
 ereturn clear
 
