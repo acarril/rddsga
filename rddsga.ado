@@ -91,42 +91,42 @@ local Ncontrols = `r(N)'
 qui count if `touse' & `treatvar'==1
 local Ntreated = `r(N)'
 
-// Compute stats
+* Compute and store coefficients, mean difference and p-values
+*-------------------------------------------------------------------------------
+
 local j=0
 foreach var of varlist `covariates' {
 	local j=`j'+1
 
-	*get mean group 1 and mean group 2
+	// Compute and store conditional expectations
 	qui reg `var' `T0' `treatvar' if `touse', noconstant
 	local coef`j'_T0 = _b[`T0']
 	local coef`j'_T1 = _b[`treatvar']
 
-
-
-	qui reg `var'  `T0'  if `touse'
-	mat m=r(table)
-	scalar dif_`var'=m[1,1]
-	/* p-value */ 	local m`j'4:  di  m[4,1]
-
+	// Compute and store mean differences and their p-values
+	qui reg `var' `T0' if `touse'
+	matrix m=r(table)
+	scalar diff`j' = m[1,1] // mean difference
+	local pval`j' = m[4,1] // p-value 
 
 	qui tabstat `var'  if `touse', stat(sd) save
-	matrix overall= r(StatTotal)'
-
-	local stdiff_`j'=(dif_`var')/overall[1,1]
-	local m`j'3:  di (dif_`var')/overall[1,1]
+	matrix overall= r(StatTotal)
+	local stddiff`j'=(diff`j')/overall[1,1]
+	local m`j'3:  di (diff`j')/overall[1,1]
 }
 
-*** abs sd mean difference (stdiff1+stdiff2+...+stdiffk), i.e, k shows the sum of the standard mean difference
+*** abs sd mean difference (stddiff1+stddiff2+...+stddiffk), i.e, k shows the sum of the standard mean difference
 local k=0
 forvalue j=1/`numcov' {
-	foreach x  of numlist `stdiff_`j'' {
+	foreach x  of numlist `stddiff`j'' {
 		local k=abs(`x')+`k'
 	}
 }
 
 ** Then, we show the mean of the standard mean difference (the sum divided by the number of covariates):
-local l=`numcov'+1
-local m`l'3:di `k'/`numcov'
+local l = `numcov'+1
+local totaldiff`j' = `k'/`numcov'
+di "totaldiff`j': `totaldiff`j''"
 
 *** F statistics
 
@@ -152,14 +152,14 @@ foreach var of varlist `covariates' {
 	matrix `orbal'[`j',1] = round(`coef`j'_T0',10^(-`bdec'))	
 	matrix `orbal'[`j',2] = round(`coef`j'_T1',10^(-`bdec'))
 	matrix `orbal'[`j',3] = round(`m`j'3',10^(-`bdec'))
-	matrix `orbal'[`j',4] = round(`m`j'4',10^(-`bdec'))
+	matrix `orbal'[`j',4] = round(`pval`j'',10^(-`bdec'))
 	local rown3 "`rown3' `var'"
 }
 
 matrix `orbal'[`numcov'+1,1] = `Ncontrols'
 matrix `orbal'[`numcov'+1,2] = `Ntreated'
 local l=`numcov'+1
-matrix `orbal'[`numcov'+2,3] = round(`m`l'3',10^(-`bdec'))
+matrix `orbal'[`numcov'+2,3] = round(`totaldiff`j'',10^(-`bdec'))
 local l=`l'+1		
 matrix `orbal'[`numcov'+3,4] = round(`m`l'4',10^(-`bdec'))
 local l=`l'+1			
@@ -188,10 +188,8 @@ ereturn matrix orbal = `orbal'
 // Count observations in each treatment group
 qui count if `touse' & `comsup' & `treatvar'==0
 local Ncontrols = `r(N)'
-di "Ncontrols:`Ncontrols'"
 qui count if `touse' & `comsup' & `treatvar'==1
 local Ntreated = `r(N)'
-di "Ntreated:`Ntreated'"
 
 // Compute propensity score weighting vector 
 qui gen `psweight' = ///
@@ -199,44 +197,43 @@ qui gen `psweight' = ///
 	`Ncontrols'/(`Ntreated'+`Ncontrols')/(1-`pscore')*(`treatvar'==0) ///
 	if `touse' & `comsup' 
 
-// Compute and store coefficients, mean difference and p-value
+* Compute and store coefficients, mean difference and p-values
+*-------------------------------------------------------------------------------
+
 local j = 0
 foreach var of varlist `covariates' {
 	local j=`j'+1
 
-	// Compute and store coefficients
-	qui reg `var' `T0' `treatvar' [iw=`psweight'] if `touse' & `comsup', ///
-		noconstant
-	local coef`j'_T0 =   _b[`T0']
+	// Compute and store conditional expectations
+	qui reg `var' `T0' `treatvar' [iw=`psweight'] if `touse' & `comsup', noconstant
+	local coef`j'_T0 = _b[`T0']
 	local coef`j'_T1 = _b[`treatvar']
 
-	// Compute and store p-values
+	// Compute and store mean differences and their p-values
 	qui reg `var' `T0' [iw=`psweight'] if `touse' & `comsup'
 	matrix m = r(table)
-	scalar dif_`var'=m[1,1]
-	local Weight`j'_4 = m[4,1] // p-value 
-*	scalar list dif_`var'
-*	di "Weight`j'_4: `Weight`j'_4'"
+	scalar diff`j'=m[1,1] // mean difference
+	local pval`j' = m[4,1] // p-value 
 
 	qui tabstat `var' if `touse' & `comsup', stat(sd) save
-	matrix overall= r(StatTotal)'
-	local stdiff_`j'=(dif_`var')/overall[1,1]
-	local Weight`j'_3:  di  (dif_`var')/overall[1,1]
-	*di "lala: `lala'"
+	matrix overall= r(StatTotal)
+	local stddiff`j'=(diff`j')/overall[1,1]
+	local Weight`j'_3:  di  (diff`j')/overall[1,1]
 }
 
-
-*** abs sd mean difference 
+// Mean of absolute differences in standardized means
+/* todo: this begs to be vectorized */
 local k=0
-forvalue j=1/`numcov' {
-	foreach x  of numlist `stdiff_`j'' {
-		local k=abs(`x')+`k'
+forvalues j = 1/`numcov' {
+	foreach x of numlist `stddiff`j'' {
+		local k = abs(`x')+`k'
 	}
 }
 
 ** Compute
-local l=`numcov'+1
-local Weight`l'_3:di `k'/`numcov'
+local l = `numcov'+1
+local totaldiff`j' = `k'/`numcov'
+di "totaldiff`j': `totaldiff`j''"
 
 *** global F-STATISTIC and P-VALUE 
 qui reg `varlist'  [iw=`psweight'] if `touse' & `comsup' 
@@ -261,7 +258,7 @@ foreach var of varlist `covariates' {
 	matrix `balimp'[`j',1] = round(`coef`j'_T0', 10^(-`bdec'))	
 	matrix `balimp'[`j',2] = round(`coef`j'_T1', 10^(-`bdec'))	
 	matrix `balimp'[`j',3] = round(`Weight`j'_3', 10^(-`bdec'))
-	matrix `balimp'[`j',4] = round(`Weight`j'_4', 10^(-`bdec'))	
+	matrix `balimp'[`j',4] = round(`pval`j'', 10^(-`bdec'))	
 	
 	local rown4 "`rown4' `var'"
 }
@@ -269,7 +266,7 @@ foreach var of varlist `covariates' {
 matrix `balimp'[`numcov'+1,1] = `Ncontrols'
 matrix `balimp'[`numcov'+1,2] = `Ntreated'			
 local l=`numcov'+1
-matrix `balimp'[`numcov'+2,3] = round(`Weight`l'_3',10^(-`bdec'))
+matrix `balimp'[`numcov'+2,3] = round(`totaldiff`j'',10^(-`bdec'))
 local l=`l'+1		
 matrix `balimp'[`numcov'+3,4] = round(`Weight`l'_4',10^(-`bdec'))			
 local l=`l'+1			
