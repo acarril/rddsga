@@ -109,10 +109,9 @@ foreach var of varlist `covariates' {
 	scalar diff`j' = m[1,1] // mean difference
 	local pval`j' = m[4,1] // p-value 
 
-	qui tabstat `var'  if `touse', stat(sd) save
-	matrix overall= r(StatTotal)
-	local stddiff`j'=(diff`j')/overall[1,1]
-	local m`j'3:  di (diff`j')/overall[1,1]
+	// standardized mean difference
+	qui summ `var' if `touse'
+	local stddiff`j' = (diff`j')/r(sd)
 }
 
 // Mean of absolute standardized mean differences (ie. stddiff + ... + stddiff`k')
@@ -141,7 +140,7 @@ foreach var of varlist `covariates' {
 	local j=`j'+1  
 	matrix `orbal'[`j',1] = round(`coef`j'_T0',10^(-`bdec'))	
 	matrix `orbal'[`j',2] = round(`coef`j'_T1',10^(-`bdec'))
-	matrix `orbal'[`j',3] = round(`m`j'3',10^(-`bdec'))
+	matrix `orbal'[`j',3] = round(`stddiff`j'',10^(-`bdec'))
 	matrix `orbal'[`j',4] = round(`pval`j'',10^(-`bdec'))
 	local rown3 "`rown3' `var'"
 }
@@ -205,10 +204,9 @@ foreach var of varlist `covariates' {
 	scalar diff`j'=m[1,1] // mean difference
 	local pval`j' = m[4,1] // p-value 
 
-	qui tabstat `var' if `touse' & `comsup', stat(sd) save
-	matrix overall= r(StatTotal)
-	local stddiff`j'=(diff`j')/overall[1,1]
-	local Weight`j'_3:  di  (diff`j')/overall[1,1]
+	// standardized mean difference
+	qui summ `var' if `touse' & `comsup'
+	local stddiff`j' = (diff`j')/r(sd)
 }
 
 // Mean of absolute standardized mean differences (ie. stddiff + ... + stddiff`k')
@@ -238,7 +236,7 @@ foreach var of varlist `covariates' {
 	local j=`j'+1  
 	matrix `balimp'[`j',1] = round(`coef`j'_T0', 10^(-`bdec'))	
 	matrix `balimp'[`j',2] = round(`coef`j'_T1', 10^(-`bdec'))	
-	matrix `balimp'[`j',3] = round(`Weight`j'_3', 10^(-`bdec'))
+	matrix `balimp'[`j',3] = round(`stddiff`j'', 10^(-`bdec'))
 	matrix `balimp'[`j',4] = round(`pval`j'', 10^(-`bdec'))	
 	
 	local rown4 "`rown4' `var'"
