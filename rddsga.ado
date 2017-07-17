@@ -87,9 +87,11 @@ else qui gen `comsup' == 1 if `touse'
 
 // Count observations in each treatment group
 qui count if `touse' & `treatvar'==0
-local N0 = `r(N)'
+local Ncontrols = `r(N)'
+di "Ncontrols:`Ncontrols'"
 qui count if `touse' & `treatvar'==1
-local N1 = `r(N)'
+local Ntreated = `r(N)'
+di "Ntreated:`Ntreated'"
 
 // Compute stats
 local j=0
@@ -138,6 +140,49 @@ local m`l'4: di e(F)
 local l=`l'+1
 local m`l'4: di 1-F(e(df_m),e(df_r),e(F))
 
+di in ye       "**************************************************** "
+di in ye	     "ORIGINAL BALANCE "
+di in ye	     "**************************************************** "
+
+
+tempname orbal
+matrix `orbal' = J(`numcov'+4,4,.)
+
+local j=0                              
+foreach var of varlist `covariates' {
+	local j=`j'+1  
+	matrix `orbal'[`j',1] = round(`m`j'1',10^(-`bdec'))	
+	matrix `orbal'[`j',2] = round(`m`j'2',10^(-`bdec'))
+	matrix `orbal'[`j',3] = round(`m`j'3',10^(-`bdec'))
+	matrix `orbal'[`j',4] = round(`m`j'4',10^(-`bdec'))
+	local rown3 "`rown3' `var'"
+}
+
+matrix `orbal'[`numcov'+1,1] = `Ncontrols'
+matrix `orbal'[`numcov'+1,2] = `Ntreated'
+local l=`numcov'+1
+matrix `orbal'[`numcov'+2,3] = round(`m`l'3',10^(-`bdec'))
+local l=`l'+1		
+matrix `orbal'[`numcov'+3,4] = round(`m`l'4',10^(-`bdec'))
+local l=`l'+1			
+matrix `orbal'[`numcov'+4,4] = round(`m`l'4',10^(-`bdec'))
+
+matrix colnames `orbal' = "Mean `G0'" "Mean `G1'" "StMeanDiff" p-value 
+matrix rownames `orbal' = `rown3' Observations Abs(StMeanDiff) F-statistic p-value
+
+local form ", noheader"
+*XXX RD: where is format coming from? how does one specify it as non-missing? XXX
+if "`format'" != "" {
+	local form "`form' `format'"
+}
+matrix list `orbal' `form'
+
+if "`matrix'" != "" {
+	matrix `matrix' = `orbal'
+}
+
+ereturn matrix orbal = `orbal'
+
 *-------------------------------------------------------------------------------
 * Propensity Score Weighting
 *-------------------------------------------------------------------------------
@@ -145,8 +190,10 @@ local m`l'4: di 1-F(e(df_m),e(df_r),e(F))
 // Count observations in each treatment group
 qui count if `touse' & `comsup' & `treatvar'==0
 local Ncontrols = `r(N)'
+di "Ncontrols:`Ncontrols'"
 qui count if `touse' & `comsup' & `treatvar'==1
 local Ntreated = `r(N)'
+di "Ntreated:`Ntreated'"
 
 // Compute propensity score weighting vector 
 qui gen `psweight' = ///
@@ -155,6 +202,7 @@ qui gen `psweight' = ///
 	if `touse' & `comsup' 
 
 // Compute and store coefficients, mean difference and p-value
+local j = 0
 foreach var of varlist `covariates' {
 	local j=`j'+1
 
@@ -199,50 +247,6 @@ local l=`l'+1
 local Weight`l'_4: di  e(F)
 local l=`l'+1
 local Weight`l'_4: di  1-F(e(df_m),e(df_r),e(F))
-
-
-di in ye       "**************************************************** "
-di in ye	     "ORIGINAL BALANCE "
-di in ye	     "**************************************************** "
-
-
-tempname orbal
-matrix `orbal' = J(`numcov'+4,4,.)
-
-local j=0                              
-foreach var of varlist `covariates' {
-	local j=`j'+1  
-	matrix `orbal'[`j',1] = round(`m`j'1',10^(-`bdec'))	
-	matrix `orbal'[`j',2] = round(`m`j'2',10^(-`bdec'))
-	matrix `orbal'[`j',3] = round(`m`j'3',10^(-`bdec'))
-	matrix `orbal'[`j',4] = round(`m`j'4',10^(-`bdec'))
-	local rown3 "`rown3' `var'"
-}
-
-matrix `orbal'[`numcov'+1,1] = `N0'
-matrix `orbal'[`numcov'+1,2] = `N1'			
-local l=`numcov'+1
-matrix `orbal'[`numcov'+2,3] = round(`m`l'3',10^(-`bdec'))
-local l=`l'+1		
-matrix `orbal'[`numcov'+3,4] = round(`m`l'4',10^(-`bdec'))
-local l=`l'+1			
-matrix `orbal'[`numcov'+4,4] = round(`m`l'4',10^(-`bdec'))
-
-matrix colnames `orbal' = "Mean `G0'" "Mean `G1'" "StMeanDiff" p-value 
-matrix rownames `orbal' = `rown3' Observations Abs(StMeanDiff) F-statistic p-value
-
-local form ", noheader"
-*XXX RD: where is format coming from? how does one specify it as non-missing? XXX
-if "`format'" != "" {
-	local form "`form' `format'"
-}
-matrix list `orbal' `form'
-
-if "`matrix'" != "" {
-	matrix `matrix' = `orbal'
-}
-
-ereturn matrix orbal = `orbal'
 
 di in ye       "**************************************************** "
 di in ye	     "Propensity score-psweighting "
@@ -300,32 +304,7 @@ end
 * Define auxiliary programs
 *-------------------------------------------------------------------------------
 
-program define balancematrix, rclass
-/* 1:matrix_out 2:numcov 3:matrix_in */
-tempname `1'
-matrix `1' = J(`numcov'+4,4,.)
-matrix colnames `1' = "Mean `G0'" "Mean `G1'" "StMeanDiff" p-value 
-matrix rownames `1' = `rown3' Observations Abs(StMeanDiff) F-statistic p-value
-                         
-forvalues j = 1/`numcov' {
-  local j=`j'+1  
-  matrix `1'[`j',1] = round(`m`j'1',10^(-`bdec')) 
-  matrix `1'[`j',2] = round(`m`j'2',10^(-`bdec'))
-  matrix `1'[`j',3] = round(`m`j'3',10^(-`bdec'))
-  matrix `1'[`j',4] = round(`m`j'4',10^(-`bdec'))
-  local rown3 "`rown3' `var'"
-}
 
-matrix `1'[`numcov'+1,1] = `N0'
-matrix `1'[`numcov'+1,2] = `N1'     
-local l=`numcov'+1
-matrix `1'[`numcov'+2,3] = round(`m`l'3',10^(-`bdec'))
-local l=`l'+1   
-matrix `1'[`numcov'+3,4] = round(`m`l'4',10^(-`bdec'))
-local l=`l'+1     
-matrix `1'[`numcov'+4,4] = round(`m`l'4',10^(-`bdec'))
-
-end
 
 ********************************************************************************
 
