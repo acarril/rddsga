@@ -1,5 +1,5 @@
 *! 0.1 Alvaro Carril 17jul2017
-program define rddsga, eclass
+program define rddsga, rclass
 version 11.1 /* todo: check if this is the real minimum */
 syntax varlist(min=2 numeric) [if] [in] [ , ///
 	psweight(name) pscore(name) comsup(name) logit ///
@@ -141,18 +141,18 @@ matrix `orbal' = J(`numcov'+4,4,.)
 local j=0                              
 foreach var of varlist `covariates' {
 	local j=`j'+1  
-	matrix `orbal'[`j',1] = round(`coef`j'_T0',10^(-`bdec'))	
-	matrix `orbal'[`j',2] = round(`coef`j'_T1',10^(-`bdec'))
-	matrix `orbal'[`j',3] = round(`stddiff`j'',10^(-`bdec'))
-	matrix `orbal'[`j',4] = round(`pval`j'',10^(-`bdec'))
+	matrix `orbal'[`j',1] = round(`coef`j'_T0', 10^(-`bdec'))	
+	matrix `orbal'[`j',2] = round(`coef`j'_T1', 10^(-`bdec'))
+	matrix `orbal'[`j',3] = round(`stddiff`j'', 10^(-`bdec'))
+	matrix `orbal'[`j',4] = round(`pval`j'', 10^(-`bdec'))
 	local rown3 "`rown3' `var'"
 }
 
 matrix `orbal'[`numcov'+1,1] = `Ncontrols'
 matrix `orbal'[`numcov'+1,2] = `Ntreated'
 matrix `orbal'[`numcov'+2,3] = round(`totaldiff', 10^(-`bdec'))
-matrix `orbal'[`numcov'+3,4] = round(`Fstat',10^(-`bdec'))
-matrix `orbal'[`numcov'+4,4] = round(`pval_global',10^(-`bdec'))
+matrix `orbal'[`numcov'+3,4] = round(`Fstat', 10^(-`bdec'))
+matrix `orbal'[`numcov'+4,4] = round(`pval_global', 10^(-`bdec'))
 
 matrix colnames `orbal' = "Mean `G0'" "Mean `G1'" "StMeanDiff" p-value 
 matrix rownames `orbal' = `rown3' Observations Abs(StMeanDiff) F-statistic p-value
@@ -168,7 +168,7 @@ if "`matrix'" != "" {
 	matrix `matrix' = `orbal'
 }
 
-ereturn matrix orbal = `orbal'
+return matrix orbal = `orbal'
 
 *-------------------------------------------------------------------------------
 * Propensity Score Weighting
@@ -233,7 +233,6 @@ di in ye	     "**************************************************** "
 tempname balimp
 matrix `balimp' = J(`numcov'+4,4,.)
 
-*** Complete the matrix with the values respective:
 local j=0                              
 foreach var of varlist `covariates' {
 	local j=`j'+1  
@@ -241,16 +240,14 @@ foreach var of varlist `covariates' {
 	matrix `balimp'[`j',2] = round(`coef`j'_T1', 10^(-`bdec'))	
 	matrix `balimp'[`j',3] = round(`stddiff`j'', 10^(-`bdec'))
 	matrix `balimp'[`j',4] = round(`pval`j'', 10^(-`bdec'))	
-	
 	local rown4 "`rown4' `var'"
 }
 
 matrix `balimp'[`numcov'+1,1] = `Ncontrols'
 matrix `balimp'[`numcov'+1,2] = `Ntreated'
-matrix `balimp'[`numcov'+2,3] = round(`totaldiff',10^(-`bdec'))
-matrix `balimp'[`numcov'+3,4] = round(`Fstat',10^(-`bdec'))				
-matrix `balimp'[`numcov'+4,4] = round(`pval_global',10^(-`bdec'))			
-
+matrix `balimp'[`numcov'+2,3] = round(`totaldiff', 10^(-`bdec'))
+matrix `balimp'[`numcov'+3,4] = round(`Fstat', 10^(-`bdec'))				
+matrix `balimp'[`numcov'+4,4] = round(`pval_global', 10^(-`bdec'))			
 
 matrix colnames `balimp' = "Mean `G0'" "Mean `G1'" "StMeanDiff" p-value
 matrix rownames `balimp' = `rown4' Observations Abs(StMeanDiff) F-statistic p-value
@@ -265,12 +262,9 @@ if "`matrix'" != "" {
 	matrix `matrix' = `balimp'
 }
 
-ereturn matrix balimp = `balimp'
+return matrix balimp = `balimp'
 
-
-*** RETURN
-
-eret clear 
+ereturn clear
 
 end
 
