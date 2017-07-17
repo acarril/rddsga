@@ -147,8 +147,6 @@ local Ncontrols = `r(N)'
 qui count if `touse' & `comsup' & `treatvar'==1
 local Ntreated = `r(N)'
 
-* compute psweights
-
 // Compute propensity score weighting vector 
 qui gen `psweight' = ///
 	`Ntreated'/(`Ntreated'+`Ncontrols')/`pscore'*(`treatvar'==1) + ///
@@ -160,17 +158,15 @@ local j=0
 foreach var of varlist `covariates' {
 	local j=`j'+1
 
-	qui reg `var' `T0' `treatvar' [iw=`psweight'] if `touse' & `comsup'  , noconstant
-	mat m=r(table)
+	// Store coefficients
+	qui reg `var' `T0' `treatvar' [iw=`psweight'] if `touse' & `comsup', noconstant
+	local coef_control_`j' =   _b[`T0']
+	local coef_treatment_`j' = _b[`treatvar']
 
-	/* Low direct  */ 	local Weight`j'_1:  di  m[1,1]
-	/* High direct  */ 	local Weight`j'_2:  di  m[1,2]
-
-
-	qui reg `var'  `T0' [iw=`psweight'] if `touse' & `comsup' 
+	qui reg `var' `T0' [iw=`psweight'] if `touse' & `comsup' 
 	mat m=r(table)
 	scalar dif_`var'=m[1,1]
-	/* p-value */ 	local Weight`j'_4:  di m[4,1]
+	local Weight`j'_4:  di m[4,1] // p-value 
 
 	qui tabstat `var' if `touse' & `comsup'  , stat(sd) save
 	matrix overall= r(StatTotal)'
@@ -256,8 +252,8 @@ matrix `balimp' = J(`numcov'+4,4,.)
 local j=0                              
 foreach var of varlist `covariates' {
 	local j=`j'+1  
-	matrix `balimp'[`j',1] = round(`Weight`j'_1', 10^(-`bdec'))	
-	matrix `balimp'[`j',2] = round(`Weight`j'_2', 10^(-`bdec'))	
+	matrix `balimp'[`j',1] = round(`coef_control_`j'', 10^(-`bdec'))	
+	matrix `balimp'[`j',2] = round(`coef_treatment_`j'', 10^(-`bdec'))	
 	matrix `balimp'[`j',3] = round(`Weight`j'_3', 10^(-`bdec'))
 	matrix `balimp'[`j',4] = round(`Weight`j'_4', 10^(-`bdec'))	
 	
