@@ -1,5 +1,5 @@
 *! 0.1 Alvaro Carril 17jul2017
-program define rddsga, rclass
+program define rddsga, eclass
 version 11.1 /* todo: check if this is the real minimum */
 syntax varlist(min=2 numeric) [if] [in] [ , ///
 	psweight(name) pscore(name) comsup(name) logit ///
@@ -228,7 +228,6 @@ matrix `orbal'[`numcov'+3,4] = round(`m`l'4',10^(-`bdec'))
 local l=`l'+1			
 matrix `orbal'[`numcov'+4,4] = round(`m`l'4',10^(-`bdec'))
 
-
 matrix colnames `orbal' = "Mean `G0'" "Mean `G1'" "StMeanDiff" p-value 
 matrix rownames `orbal' = `rown3' Observations Abs(StMeanDiff) F-statistic p-value
 
@@ -243,7 +242,7 @@ if "`matrix'" != "" {
 	matrix `matrix' = `orbal'
 }
 
-return matrix orbal = `orbal'
+ereturn matrix orbal = `orbal'
 
 di in ye       "**************************************************** "
 di in ye	     "Propensity score-psweighting "
@@ -288,7 +287,7 @@ if "`matrix'" != "" {
 	matrix `matrix' = `balimp'
 }
 
-return matrix balimp = `balimp'
+ereturn matrix balimp = `balimp'
 
 
 *** RETURN
