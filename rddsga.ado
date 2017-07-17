@@ -301,6 +301,7 @@ end
 *-------------------------------------------------------------------------------
 
 program define balancematrix, rclass
+/* 1:matrix_out 2:numcov 3:matrix_in */
 tempname `1'
 matrix `1' = J(`numcov'+4,4,.)
 matrix colnames `1' = "Mean `G0'" "Mean `G1'" "StMeanDiff" p-value 
