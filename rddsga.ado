@@ -91,7 +91,7 @@ local Ncontrols = `r(N)'
 qui count if `touse' & `treatvar'==1
 local Ntreated = `r(N)'
 
-* Compute and store coefficients, mean difference and p-values
+* Compute stats for each covariate 
 *-------------------------------------------------------------------------------
 
 local j=0
@@ -109,10 +109,13 @@ foreach var of varlist `covariates' {
 	scalar diff`j' = m[1,1] // mean difference
 	local pval`j' = m[4,1] // p-value 
 
-	// standardized mean difference
+	// Standardized mean difference
 	qui summ `var' if `touse'
 	local stddiff`j' = (diff`j')/r(sd)
 }
+
+* Global stats
+*-------------------------------------------------------------------------------
 
 // Mean of absolute standardized mean differences (ie. stddiff + ... + stddiff`k')
 /* todo: this begs to be vectorized */
@@ -147,11 +150,8 @@ foreach var of varlist `covariates' {
 
 matrix `orbal'[`numcov'+1,1] = `Ncontrols'
 matrix `orbal'[`numcov'+1,2] = `Ntreated'
-local l=`numcov'+1
-matrix `orbal'[`numcov'+2,3] = round(`totaldiff', 10^(-`bdec')) // totaldiff
-local l=`l'+1		
+matrix `orbal'[`numcov'+2,3] = round(`totaldiff', 10^(-`bdec'))
 matrix `orbal'[`numcov'+3,4] = round(`Fstat',10^(-`bdec'))
-local l=`l'+1			
 matrix `orbal'[`numcov'+4,4] = round(`pval_global',10^(-`bdec'))
 
 matrix colnames `orbal' = "Mean `G0'" "Mean `G1'" "StMeanDiff" p-value 
@@ -186,7 +186,7 @@ qui gen `psweight' = ///
 	`Ncontrols'/(`Ntreated'+`Ncontrols')/(1-`pscore')*(`treatvar'==0) ///
 	if `touse' & `comsup' 
 
-* Compute and store coefficients, mean difference and p-values
+* Compute stats for each covariate 
 *-------------------------------------------------------------------------------
 
 local j = 0
@@ -204,10 +204,13 @@ foreach var of varlist `covariates' {
 	scalar diff`j'=m[1,1] // mean difference
 	local pval`j' = m[4,1] // p-value 
 
-	// standardized mean difference
+	// Standardized mean difference
 	qui summ `var' if `touse' & `comsup'
 	local stddiff`j' = (diff`j')/r(sd)
 }
+
+* Global stats
+*-------------------------------------------------------------------------------
 
 // Mean of absolute standardized mean differences (ie. stddiff + ... + stddiff`k')
 /* todo: this begs to be vectorized */
@@ -243,12 +246,9 @@ foreach var of varlist `covariates' {
 }
 
 matrix `balimp'[`numcov'+1,1] = `Ncontrols'
-matrix `balimp'[`numcov'+1,2] = `Ntreated'			
-local l=`numcov'+1
+matrix `balimp'[`numcov'+1,2] = `Ntreated'
 matrix `balimp'[`numcov'+2,3] = round(`totaldiff',10^(-`bdec'))
-local l=`l'+1		
-matrix `balimp'[`numcov'+3,4] = round(`Fstat',10^(-`bdec'))			
-local l=`l'+1			
+matrix `balimp'[`numcov'+3,4] = round(`Fstat',10^(-`bdec'))				
 matrix `balimp'[`numcov'+4,4] = round(`pval_global',10^(-`bdec'))			
 
 
