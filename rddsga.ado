@@ -137,6 +137,8 @@ di in ye	     "**************************************************** "
 
 tempname orbal
 matrix `orbal' = J(`numcov'+4,4,.)
+matrix colnames `orbal' = "Mean `G0'" "Mean `G1'" "StMeanDiff" p-value
+matrix rownames `orbal' = `covariates' Observations Abs(StMeanDiff) F-statistic p-value
 
 local j=0                              
 foreach var of varlist `covariates' {
@@ -145,7 +147,6 @@ foreach var of varlist `covariates' {
 	matrix `orbal'[`j',2] = round(`coef`j'_T1', 10^(-`bdec'))
 	matrix `orbal'[`j',3] = round(`stddiff`j'', 10^(-`bdec'))
 	matrix `orbal'[`j',4] = round(`pval`j'', 10^(-`bdec'))
-	local rown3 "`rown3' `var'"
 }
 
 matrix `orbal'[`numcov'+1,1] = `Ncontrols'
@@ -154,20 +155,7 @@ matrix `orbal'[`numcov'+2,3] = round(`totaldiff', 10^(-`bdec'))
 matrix `orbal'[`numcov'+3,4] = round(`Fstat', 10^(-`bdec'))
 matrix `orbal'[`numcov'+4,4] = round(`pval_global', 10^(-`bdec'))
 
-matrix colnames `orbal' = "Mean `G0'" "Mean `G1'" "StMeanDiff" p-value 
-matrix rownames `orbal' = `rown3' Observations Abs(StMeanDiff) F-statistic p-value
-
-local form ", noheader"
-*XXX RD: where is format coming from? how does one specify it as non-missing? XXX
-if "`format'" != "" {
-	local form "`form' `format'"
-}
 matrix list `orbal' `form'
-
-if "`matrix'" != "" {
-	matrix `matrix' = `orbal'
-}
-
 return matrix baltab0 = `orbal'
 
 *-------------------------------------------------------------------------------
