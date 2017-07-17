@@ -137,25 +137,23 @@ local m`l'4: di e(F)
 local l=`l'+1
 local m`l'4: di 1-F(e(df_m),e(df_r),e(F))
 
-**************************
-*** Propensity-score Weighting
-**************************
+*-------------------------------------------------------------------------------
+* Propensity Score Weighting
+*-------------------------------------------------------------------------------
 
 // Count observations in each treatment group
 qui count if `touse' & `comsup' & `treatvar'==0
-local Npsweight0 = `r(N)'
+local Ncontrols = `r(N)'
 qui count if `touse' & `comsup' & `treatvar'==1
-local Npsweight1 = `r(N)'
+local Ntreated = `r(N)'
 
 * compute psweights
 
-qui sum `treatvar' if `touse' & `comsup' & `treatvar'==1
-local hd=r(N)
-qui sum high_direct if `touse' & `comsup' & `treatvar'==0
-local ld=r(N)
-
-*** gen the psweight for each observation using non-conditional probability and conditional probability.
-qui gen `psweight' = `hd'/(`hd'+`ld')/`pscore'*(`treatvar'==1) + `ld'/(`hd'+`ld')/(1-`pscore')*(`treatvar'==0) if `touse' & `comsup' 
+// Compute propensity score weighting vector 
+qui gen `psweight' = ///
+	`Ntreated'/(`Ntreated'+`Ncontrols')/`pscore'*(`treatvar'==1) + ///
+	`Ncontrols'/(`Ntreated'+`Ncontrols')/(1-`pscore')*(`treatvar'==0) ///
+	if `touse' & `comsup' 
 
 
 local j=0
@@ -266,8 +264,8 @@ foreach var of varlist `covariates' {
 	local rown4 "`rown4' `var'"
 }
 
-matrix `balimp'[`numcov'+1,1] = `Npsweight0'
-matrix `balimp'[`numcov'+1,2] = `Npsweight1'			
+matrix `balimp'[`numcov'+1,1] = `Ncontrols'
+matrix `balimp'[`numcov'+1,2] = `Ntreated'			
 local l=`numcov'+1
 matrix `balimp'[`numcov'+2,3] = round(`Weight`l'_3',10^(-`bdec'))
 local l=`l'+1		
