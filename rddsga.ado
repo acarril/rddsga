@@ -153,25 +153,32 @@ qui gen `psweight' = ///
 	`Ncontrols'/(`Ntreated'+`Ncontrols')/(1-`pscore')*(`treatvar'==0) ///
 	if `touse' & `comsup' 
 
-
-local j=0
+// Compute and store coefficients, mean difference and p-value
 foreach var of varlist `covariates' {
 	local j=`j'+1
 
-	// Store coefficients
-	qui reg `var' `T0' `treatvar' [iw=`psweight'] if `touse' & `comsup', noconstant
+	// Compute and store coefficients
+	qui reg `var' `T0' `treatvar' [iw=`psweight'] if `touse' & `comsup', ///
+		noconstant noheader notable
 	local coef_control_`j' =   _b[`T0']
 	local coef_treatment_`j' = _b[`treatvar']
 
-	qui reg `var' `T0' [iw=`psweight'] if `touse' & `comsup' 
-	mat m=r(table)
+	// Compute and store p-values
+	qui reg `var' `T0' [iw=`psweight'] if `touse' & `comsup', ///
+		noheader notable
+
+	matrix m = r(table)
+	matrix list m 
 	scalar dif_`var'=m[1,1]
-	local Weight`j'_4:  di m[4,1] // p-value 
+	local Weight`j'_4 = m[4,1] // p-value 
+*	scalar list dif_`var'
+*	di "Weight`j'_4: `Weight`j'_4'"
 
 	qui tabstat `var' if `touse' & `comsup'  , stat(sd) save
 	matrix overall= r(StatTotal)'
 	local stdiff_`j'=(dif_`var')/overall[1,1]
 	local Weight`j'_3:  di  (dif_`var')/overall[1,1]
+	*di "lala: `lala'"
 }
 
 
@@ -289,12 +296,6 @@ return matrix balimp = `balimp'
 *** RETURN
 
 eret clear 
-
-*** Produce the comsup variable to be generated after running the command
-/* if `"`comsup'"' != "" {
-	qui g comsup = `COMSUP'
-	label var comsup "Dummy for obs. in common support"
-} */
 
 end
 
