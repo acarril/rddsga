@@ -88,10 +88,8 @@ else qui gen `comsup' == 1 if `touse'
 // Count observations in each treatment group
 qui count if `touse' & `treatvar'==0
 local Ncontrols = `r(N)'
-di "Ncontrols:`Ncontrols'"
 qui count if `touse' & `treatvar'==1
 local Ntreated = `r(N)'
-di "Ntreated:`Ntreated'"
 
 // Compute stats
 local j=0
@@ -99,10 +97,10 @@ foreach var of varlist `covariates' {
 	local j=`j'+1
 
 	*get mean group 1 and mean group 2
-	qui reg `var'  `T0' `treatvar'  if `touse', noconstant
-	mat m=r(table)
-	/* mean G0  */ 	local m`j'1:  di m[1,1]
-	/* mean G1 */ 	local m`j'2:  di m[1,2]
+	qui reg `var' `T0' `treatvar' if `touse', noconstant
+	local coef`j'_T0 = _b[`T0']
+	local coef`j'_T1 = _b[`treatvar']
+
 
 
 	qui reg `var'  `T0'  if `touse'
@@ -151,8 +149,8 @@ matrix `orbal' = J(`numcov'+4,4,.)
 local j=0                              
 foreach var of varlist `covariates' {
 	local j=`j'+1  
-	matrix `orbal'[`j',1] = round(`m`j'1',10^(-`bdec'))	
-	matrix `orbal'[`j',2] = round(`m`j'2',10^(-`bdec'))
+	matrix `orbal'[`j',1] = round(`coef`j'_T0',10^(-`bdec'))	
+	matrix `orbal'[`j',2] = round(`coef`j'_T1',10^(-`bdec'))
 	matrix `orbal'[`j',3] = round(`m`j'3',10^(-`bdec'))
 	matrix `orbal'[`j',4] = round(`m`j'4',10^(-`bdec'))
 	local rown3 "`rown3' `var'"
@@ -209,8 +207,8 @@ foreach var of varlist `covariates' {
 	// Compute and store coefficients
 	qui reg `var' `T0' `treatvar' [iw=`psweight'] if `touse' & `comsup', ///
 		noconstant
-	local coef_control_`j' =   _b[`T0']
-	local coef_treatment_`j' = _b[`treatvar']
+	local coef`j'_T0 =   _b[`T0']
+	local coef`j'_T1 = _b[`treatvar']
 
 	// Compute and store p-values
 	qui reg `var' `T0' [iw=`psweight'] if `touse' & `comsup'
@@ -260,8 +258,8 @@ matrix `balimp' = J(`numcov'+4,4,.)
 local j=0                              
 foreach var of varlist `covariates' {
 	local j=`j'+1  
-	matrix `balimp'[`j',1] = round(`coef_control_`j'', 10^(-`bdec'))	
-	matrix `balimp'[`j',2] = round(`coef_treatment_`j'', 10^(-`bdec'))	
+	matrix `balimp'[`j',1] = round(`coef`j'_T0', 10^(-`bdec'))	
+	matrix `balimp'[`j',2] = round(`coef`j'_T1', 10^(-`bdec'))	
 	matrix `balimp'[`j',3] = round(`Weight`j'_3', 10^(-`bdec'))
 	matrix `balimp'[`j',4] = round(`Weight`j'_4', 10^(-`bdec'))	
 	
