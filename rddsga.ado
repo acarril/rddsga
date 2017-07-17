@@ -1,4 +1,4 @@
-*! 0.1 Alvaro Carril 14jul2017
+*! 0.1 Alvaro Carril 17jul2017
 program define rddsga, rclass
 version 11.1 /* todo: check if this is the real minimum */
 syntax varlist(min=2 numeric) [if] [in] [ , ///
@@ -74,8 +74,9 @@ ereturn clear // Clear e() stored results
 // Genterate common support varible
 if `"`comsup'"' != `""' {
 	qui sum `pscore' if `treatvar' == 1
-	qui gen `comsup' = (`pscore' >= `r(min)' & ///
-											`pscore' <= `r(max)') if `touse'
+	qui gen `comsup' = ///
+		(`pscore' >= `r(min)' & ///
+		 `pscore' <= `r(max)') if `touse'
 	label var `comsup' "Dummy for obs. in common support"
 }
 else qui gen `comsup' == 1 if `touse'
@@ -159,14 +160,12 @@ foreach var of varlist `covariates' {
 
 	// Compute and store coefficients
 	qui reg `var' `T0' `treatvar' [iw=`psweight'] if `touse' & `comsup', ///
-		noconstant noheader notable
+		noconstant
 	local coef_control_`j' =   _b[`T0']
 	local coef_treatment_`j' = _b[`treatvar']
 
 	// Compute and store p-values
-	qui reg `var' `T0' [iw=`psweight'] if `touse' & `comsup', ///
-		noheader notable
-
+	qui reg `var' `T0' [iw=`psweight'] if `touse' & `comsup'
 	matrix m = r(table)
 	matrix list m 
 	scalar dif_`var'=m[1,1]
@@ -174,7 +173,7 @@ foreach var of varlist `covariates' {
 *	scalar list dif_`var'
 *	di "Weight`j'_4: `Weight`j'_4'"
 
-	qui tabstat `var' if `touse' & `comsup'  , stat(sd) save
+	qui tabstat `var' if `touse' & `comsup', stat(sd) save
 	matrix overall= r(StatTotal)'
 	local stdiff_`j'=(dif_`var')/overall[1,1]
 	local Weight`j'_3:  di  (dif_`var')/overall[1,1]
