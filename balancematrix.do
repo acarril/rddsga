@@ -20,11 +20,7 @@ if (dis_cutoff2>-4 & dis_cutoff2<4), ///
 
 capture program drop balancematrix
 program define balancematrix, rclass
-*** parte 1
-
-
-*** parte 2
-/* 1:matrix_name 2:numcov */
+/* 1:matrix_out 2:numcov 3:matrix_in */
 tempname `1'
 matrix `1' = J(`numcov'+4,4,.)
 matrix colnames `1' = "Mean `G0'" "Mean `G1'" "StMeanDiff" p-value 
@@ -39,8 +35,8 @@ forvalues j = 1/`numcov' {
   local rown3 "`rown3' `var'"
 }
 
-matrix `1'[`numcov'+1,1] = `N0'
-matrix `1'[`numcov'+1,2] = `N1'     
+matrix `1'[`numcov'+1,1] = `Ncontrols'
+matrix `1'[`numcov'+1,2] = `Ntreated'     
 local l=`numcov'+1
 matrix `1'[`numcov'+2,3] = round(`m`l'3',10^(-`bdec'))
 local l=`l'+1   
