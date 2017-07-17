@@ -53,26 +53,26 @@ else {
 	local G1="G1"
 }
 
-/*******/
-/* NEW */
-/*******/
+*-------------------------------------------------------------------------------
+* Propensity Score
+*-------------------------------------------------------------------------------
 
 // Fit binary response model
 capture drop comsup /* todo: don't drop automatically, user-generated name */
 qui `binarymodel' `treatvar' `covariates' if `touse'
 
-// Generate pscore variable and clear results
+// Generate pscore variable and clear stored results
 tempvar pscore
 qui predict double `pscore' if `touse'
 label var `pscore' "Estimated propensity score"
 ereturn clear // Clear e() stored results
 
-/* NEW */
-/*******/
+*-------------------------------------------------------------------------------
+* Common Support
+*-------------------------------------------------------------------------------
 
-// Region of common support
-if `"`comsup'"' != `""'  {
-	// Genterate common support varible
+// Genterate common support varible
+if `"`comsup'"' != `""' {
 	qui sum `pscore' if `treatvar' == 1
 	qui gen `comsup' = (`pscore' >= `r(min)' & ///
 											`pscore' <= `r(max)') if `touse'
@@ -80,15 +80,17 @@ if `"`comsup'"' != `""'  {
 }
 else qui gen `comsup' == 1 if `touse'
 
-// Count observations in each sample
+*-------------------------------------------------------------------------------
+* Original Balance
+*-------------------------------------------------------------------------------
+
+// Count observations in each treatment group
 qui count if `touse' & `treatvar'==0
 local N0 = `r(N)'
 qui count if `touse' & `treatvar'==1
 local N1 = `r(N)'
 
-
-*** Original balance
-
+// Compute stats
 local j=0
 foreach var of varlist `covariates' {
 	local j=`j'+1
@@ -136,7 +138,7 @@ local l=`l'+1
 local m`l'4: di 1-F(e(df_m),e(df_r),e(F))
 
 **************************
-*** Propensity-score Weighting // empieza con touse y com
+*** Propensity-score Weighting
 **************************
 
 
