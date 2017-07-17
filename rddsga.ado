@@ -140,9 +140,7 @@ matrix `orbal' = J(`numcov'+4,4,.)
 matrix colnames `orbal' = "Mean `G0'" "Mean `G1'" "StMeanDiff" p-value
 matrix rownames `orbal' = `covariates' Observations Abs(StMeanDiff) F-statistic p-value
 
-local j=0                              
-foreach var of varlist `covariates' {
-	local j=`j'+1  
+forvalues j = 1/`numcov' {
 	matrix `orbal'[`j',1] = round(`coef`j'_T0', 10^(-`bdec'))	
 	matrix `orbal'[`j',2] = round(`coef`j'_T1', 10^(-`bdec'))
 	matrix `orbal'[`j',3] = round(`stddiff`j'', 10^(-`bdec'))
@@ -155,7 +153,7 @@ matrix `orbal'[`numcov'+2,3] = round(`totaldiff', 10^(-`bdec'))
 matrix `orbal'[`numcov'+3,4] = round(`Fstat', 10^(-`bdec'))
 matrix `orbal'[`numcov'+4,4] = round(`pval_global', 10^(-`bdec'))
 
-matrix list `orbal' `form'
+matrix list `orbal' `form', noheader
 return matrix baltab0 = `orbal'
 
 *-------------------------------------------------------------------------------
@@ -222,10 +220,8 @@ tempname balimp
 matrix `balimp' = J(`numcov'+4, 4, .)
 matrix colnames `balimp' = "Mean `G0'" "Mean `G1'" "StMeanDiff" p-value
 matrix rownames `balimp' = `covariates' Observations Abs(StMeanDiff) F-statistic p-value
-
-local j=0                              
-foreach var of varlist `covariates' {
-	local j=`j'+1  
+                            
+forvalues j = 1/`numcov' {
 	matrix `balimp'[`j',1] = round(`coef`j'_T0', 10^(-`bdec'))	
 	matrix `balimp'[`j',2] = round(`coef`j'_T1', 10^(-`bdec'))	
 	matrix `balimp'[`j',3] = round(`stddiff`j'', 10^(-`bdec'))
@@ -238,7 +234,7 @@ matrix `balimp'[`numcov'+2,3] = round(`totaldiff', 10^(-`bdec'))
 matrix `balimp'[`numcov'+3,4] = round(`Fstat', 10^(-`bdec'))				
 matrix `balimp'[`numcov'+4,4] = round(`pval_global', 10^(-`bdec'))			
 
-matrix list `balimp'
+matrix list `balimp', noheader
 return matrix baltab1 = `balimp'
 
 ereturn clear
