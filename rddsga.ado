@@ -170,7 +170,7 @@ local pval_global = 1-F(e(df_m),e(df_r),e(F))
 *-------------------------------------------------------------------------------
 tempname `matname'
 matrix `matname' = J(`numcov'+4, 4, .)
-matrix colnames `matname' = "Mean T0" "Mean T1" "Std diff" "p-value"
+matrix colnames `matname' = mean_T0 mean_T1 std_diff p-value
 matrix rownames `matname' = `covariates' Observations "Total diff" F-statistic p-value
 
 forvalues j = 1/`numcov' {
