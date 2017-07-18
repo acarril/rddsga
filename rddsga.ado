@@ -90,9 +90,8 @@ if "`psw'" != "" { // if psw
   qui `binarymodel' `treatvar' `covariates' if `touse'
 
   // Generate pscore variable and clear stored results
-  qui predict double `pscore' if `touse'
-  label var `pscore' "Estimated propensity score"
-  ereturn clear // Clear e() stored results
+  qui predict `pscore' if `touse'
+  ereturn clear
 
   // Genterate common support varible
   capture drop `comsup'
