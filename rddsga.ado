@@ -55,6 +55,11 @@ return add
 
 // Display balance matrix and global stats
 matlist oribal, border(rows) format(%9.3g) title("Original balance:")
+di "Obs. in T0: " oribal_Ncontrols
+di "Obs. in T1: " oribal_Ntreated
+di "Sum of abs(std_diff) = " oribal_totaldiff
+di "F-statistic: " oribal_Fstat
+di "Global p-value: " oribal_pval_global
 
 * Propensity Score Weighting balance
 *-------------------------------------------------------------------------------
@@ -65,8 +70,12 @@ balancematrix, matname(pswbal)  ///
 return add
 
 // Display balance matrix and global stats
-*matrix list pswbal, format(%9.3g) title("Propensity Score Weighting balance")
 matlist pswbal, border(rows) format(%9.3g) title("Propensity Score Weighting balance:")
+di "Obs. in T0: " pswbal_Ncontrols
+di "Obs. in T1: " pswbal_Ntreated
+di "Sum of abs(std_diff) = " pswbal_totaldiff
+di "F-statistic: " pswbal_Fstat
+di "Global p-value: " pswbal_pval_global
 
 * Clear any ereturn results and end main program
 *-------------------------------------------------------------------------------
@@ -85,8 +94,6 @@ syntax, matname(string) /// important inputs, differ by call
   touse(name) covariates(varlist) /// unchanging inputs
   [psw psweight(name) pscore(name) comsup(name) binarymodel(string)] /// only needed for PSW balance
 	treatvar(name) t0(name) numcov(int) // todo: eliminate these? can be computed by subroutine at low cost
-  
-tempname `matname'
 
 * Create variables specific to PSW matrix
 *-------------------------------------------------------------------------------
@@ -176,7 +183,6 @@ local pval_global = 1-F(e(df_m),e(df_r),e(F))
 * Create balance matrix
 *-------------------------------------------------------------------------------
 // Matrix parameters
-tempname `matname'
 matrix `matname' = J(`numcov', 4, .)
 matrix colnames `matname' = mean_T0 mean_T1 std_diff p-value
 matrix rownames `matname' = `covariates'
@@ -190,6 +196,12 @@ forvalues j = 1/`numcov' {
 }
 
 // Return matrix and other scalars
+scalar `matname'_Ncontrols = `Ncontrols'
+scalar `matname'_Ntreated = `Ntreated'
+scalar `matname'_totaldiff = `totaldiff'
+scalar `matname'_Fstat = `Fstat'
+scalar `matname'_pval_global = `pval_global'
+
 return matrix `matname' = `matname', copy
 return scalar `matname'_N_T0 = `Ncontrols'
 return scalar `matname'_N_T1 = `Ntreated'
