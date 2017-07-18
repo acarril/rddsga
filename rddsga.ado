@@ -57,7 +57,7 @@ return add
 matlist oribal, border(rows) format(%9.3g) title("Original balance:")
 di "Obs. in T0: " oribal_Ncontrols
 di "Obs. in T1: " oribal_Ntreated
-di "Sum of abs(std_diff) = " oribal_totaldiff
+di "Sum of abs(std_diff) = " oribal_avgdiff
 di "F-statistic: " oribal_Fstat
 di "Global p-value: " oribal_pval_global
 
@@ -73,7 +73,7 @@ return add
 matlist pswbal, border(rows) format(%9.3g) title("Propensity Score Weighting balance:")
 di "Obs. in T0: " pswbal_Ncontrols
 di "Obs. in T1: " pswbal_Ntreated
-di "Sum of abs(std_diff) = " pswbal_totaldiff
+di "Sum of abs(std_diff) = " pswbal_avgdiff
 di "F-statistic: " pswbal_Fstat
 di "Global p-value: " pswbal_pval_global
 
@@ -168,11 +168,11 @@ foreach var of varlist `covariates' {
 *-------------------------------------------------------------------------------
 // Mean of absolute standardized mean differences (ie. stddiff + ... + stddiff`k')
 /* todo: this begs to be vectorized */
-local totaldiff = 0
+local avgdiff = 0
 forvalues j = 1/`numcov' {
-  local totaldiff = abs(`stddiff`j'') + `totaldiff' // sum over `j' (covariates)
+  local avgdiff = abs(`stddiff`j'') + `avgdiff' // sum over `j' (covariates)
 }
-local totaldiff = `totaldiff'/`numcov' // compute mean 
+local avgdiff = `avgdiff'/`numcov' // compute mean 
 
 // F-statistic and global p-value
 if "`psw'" == "" qui reg `varlist' if `touse'
@@ -198,12 +198,12 @@ forvalues j = 1/`numcov' {
 // Return matrix and other scalars
 scalar `matname'_Ncontrols = `Ncontrols'
 scalar `matname'_Ntreated = `Ntreated'
-scalar `matname'_totaldiff = `totaldiff'
+scalar `matname'_avgdiff = `avgdiff'
 scalar `matname'_Fstat = `Fstat'
 scalar `matname'_pval_global = `pval_global'
 
 return matrix `matname' = `matname', copy
-return scalar `matname'_totaldiff = `totaldiff'
+return scalar `matname'_avgdiff = `avgdiff'
 return scalar `matname'_Fstat = `Fstat'
 return scalar `matname'_pvalue = `pval_global'
 return scalar `matname'_N_T1 = `Ntreated'
