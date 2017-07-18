@@ -130,6 +130,8 @@ if "`psw'" != "" { // if psw
     if `touse' & `comsup' 
 } // end if psw
 
+
+
 * Count obs. in each treatment group if not PSW matrix
 *-------------------------------------------------------------------------------
 else { // if nopsw
@@ -161,7 +163,6 @@ foreach var of varlist `covariates' {
   // Standardized mean difference
   if "`psw'" == "" qui summ `var' if `touse'
   else qui summ `var' if `touse' & `comsup'
-  di diff`j' "/" r(sd)
   local stddiff`j' = (diff`j')/r(sd)
 }
 
@@ -228,6 +229,9 @@ KNOWN ISSUES/BUGS:
   - Global stats don't agree with the ones computed by original balancepscore
     ~ computed mean in differences is same; r(sd) is different, maybe due to
       differences in treatment groups? check if variable.
+  - Per-covariate stats don't agree with original balancepscore
+    ~ In original balance this was due to different usage of `touse'; original
+      ado includes obs. with missing values in depvar (and covariates?)
 
 TODOS AND IDEAS:
   - Create subroutine of matlist formatting for display of balancematrix output
