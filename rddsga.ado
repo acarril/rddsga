@@ -203,7 +203,8 @@ local Ncontrols = `r(N)'
 qui count if `touse' & `comsup' & `treatvar'==1
 local Ntreated = `r(N)'
 
-// Compute propensity score weighting vector 
+// Compute propensity score weighting vector
+cap drop `psweight'
 qui gen `psweight' = ///
   `Ntreated'/(`Ntreated'+`Ncontrols')/`pscore'*(`treatvar'==1) + ///
   `Ncontrols'/(`Ntreated'+`Ncontrols')/(1-`pscore')*(`treatvar'==0) ///
