@@ -54,7 +54,7 @@ balancematrix, matname(oribal)  ///
 return add
 
 // Display balance matrix and global stats
-matrix list oribal, format(%9.3g) title("Original balance")
+matlist oribal, border(rows) format(%9.3g) title("Original balance:")
 
 * Propensity Score Weighting balance
 *-------------------------------------------------------------------------------
@@ -65,7 +65,8 @@ balancematrix, matname(pswbal)  ///
 return add
 
 // Display balance matrix and global stats
-matrix list pswbal, format(%9.3g) title("Propensity Score Weighting balance")
+*matrix list pswbal, format(%9.3g) title("Propensity Score Weighting balance")
+matlist pswbal, border(rows) format(%9.3g) title("Propensity Score Weighting balance:")
 
 * Clear any ereturn results and end main program
 *-------------------------------------------------------------------------------
@@ -210,7 +211,8 @@ CHANGE LOG
 	- Modify some option names and internal locals
 
 TODOS (AND IDEAS TO MAKE RDDSGA EVEN COOLER)
-- Create sub-program with loop that defines balance matrices (CHECK)
-- Implement matrix manipulation in Mata
-- Get rid of t0 hack for control units
+  - Create subroutine with loop that defines balance matrices (CHECK)
+  - Create subroutine of matlist formatting for display of balancematrix output
+  - Implement matrix manipulation in Mata
+  - Get rid of t0 hack for control units
 */
