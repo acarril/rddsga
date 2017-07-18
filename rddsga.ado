@@ -186,7 +186,7 @@ matrix `matname'[`numcov'+2,3] = `totaldiff'
 matrix `matname'[`numcov'+3,4] = `Fstat'
 matrix `matname'[`numcov'+4,4] = `pval_global'
 
-matrix list `matname'
+matrix list `matname', format(%9.3g)
 return matrix `matname' = `matname'
 end
 
@@ -196,6 +196,7 @@ end
 CHANGE LOG
 0.2
 	- Implement balancematrix as separate subroutine
+  - Standardize balancematrix output
 0.1
 	- First working version, independent of project
 	- Remove any LaTeX output
