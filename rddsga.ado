@@ -57,92 +57,11 @@ else {
 * Original Balance
 *-------------------------------------------------------------------------------
 
-* Common Support
-*-------------------------------------------------------------------------------
-
-// Fit binary response model
-qui `binarymodel' `treatvar' `covariates' if `touse'
-
-// Generate pscore variable (vector of 1s for original balance)
-capture drop `pscore'
-qui gen `pscore' = 1 if `touse'
-
-// Genterate common support varible (vector of 1s for original balance)
-capture drop `comsup'
-qui gen `comsup' = 1 if `touse'
-
-* Balance table matrix
-*-------------------------------------------------------------------------------
-
-// Count observations in each treatment group
-qui count if `touse' & `comsup' & `treatvar'==0
-local Ncontrols = `r(N)'
-qui count if `touse' & `comsup' & `treatvar'==1
-local Ntreated = `r(N)'
-
-* Compute stats for each covariate 
-*-------------------------------------------------------------------------------
-
-local j=0
-foreach var of varlist `covariates' {
-	local j=`j'+1
-
-	// Compute and store conditional expectations
-	qui reg `var' `t0' `treatvar' if `touse', noconstant
-	local coef`j'_T0 = _b[`t0']
-	local coef`j'_T1 = _b[`treatvar']
-
-	// Compute and store mean differences and their p-values
-	qui reg `var' `t0' if `touse'
-	matrix m=r(table)
-	scalar diff`j' = m[1,1] // mean difference
-	local pval`j' = m[4,1] // p-value 
-
-	// Standardized mean difference
-	qui summ `var' if `touse'
-	local stddiff`j' = (diff`j')/r(sd)
-}
-
-* Global stats
-*-------------------------------------------------------------------------------
-
-// Mean of absolute standardized mean differences (ie. stddiff + ... + stddiff`k')
-/* todo: this begs to be vectorized */
-local totaldiff = 0
-forvalues j = 1/`numcov' {
-	local totaldiff = abs(`stddiff`j'') + `totaldiff' // sum over `j' (covariates)
-}
-local totaldiff = `totaldiff'/`numcov' // compute mean 
-
-// F-statistic and global p-value
-qui reg `varlist' if `touse'
-local Fstat = e(F)
-local pval_global = 1-F(e(df_m),e(df_r),e(F))
-
-di in ye       "**************************************************** "
-di in ye	     "ORIGINAL BALANCE "
-di in ye	     "**************************************************** "
-
-tempname orbal
-matrix `orbal' = J(`numcov'+4,4,.)
-matrix colnames `orbal' = "Mean `G0'" "Mean `G1'" "StMeanDiff" p-value
-matrix rownames `orbal' = `covariates' Observations Abs(StMeanDiff) F-statistic p-value
-
-forvalues j = 1/`numcov' {
-	matrix `orbal'[`j',1] = round(`coef`j'_T0', 10^(-`bdec'))	
-	matrix `orbal'[`j',2] = round(`coef`j'_T1', 10^(-`bdec'))
-	matrix `orbal'[`j',3] = round(`stddiff`j'', 10^(-`bdec'))
-	matrix `orbal'[`j',4] = round(`pval`j'', 10^(-`bdec'))
-}
-
-matrix `orbal'[`numcov'+1,1] = `Ncontrols'
-matrix `orbal'[`numcov'+1,2] = `Ntreated'
-matrix `orbal'[`numcov'+2,3] = round(`totaldiff', 10^(-`bdec'))
-matrix `orbal'[`numcov'+3,4] = round(`Fstat', 10^(-`bdec'))
-matrix `orbal'[`numcov'+4,4] = round(`pval_global', 10^(-`bdec'))
-
-matrix list `orbal' `form', noheader
-return matrix baltab0 = `orbal'
+balancematrix, matname(orbal2) touse(`touse') comsup(`comsup') treatvar(`treatvar') pscore(`pscore') ///
+  psweight(weight5) covariates(`covariates') treatvar(`treatvar') numcov(`numcov') ///
+  t0(`t0') bdec(`bdec') binarymodel(`binarymodel') nopsw
+matrix m = r(orbal2)
+return matrix orbal2 = m
 
 *-------------------------------------------------------------------------------
 * Propensity Score Weighting
@@ -170,7 +89,7 @@ end
 *-------------------------------------------------------------------------------
 * balancematrix: compute balance table matrices and other statistics
 *-------------------------------------------------------------------------------
-
+capture program drop balancematrix
 program define balancematrix, rclass
 syntax, matname(string) psweight(name) comsup(name) /// important inputs, differ by call
 	touse(name) treatvar(name) pscore(name) covariates(varlist) bdec(int) /// unchanging inputs
@@ -179,7 +98,9 @@ syntax, matname(string) psweight(name) comsup(name) /// important inputs, differ
 
 * Create variables specific to PSW matrix
 *-------------------------------------------------------------------------------
-if `"`nopsw'"' == `""' { // if psw
+
+if "`psw'" == "" { // if psw
+
   // Fit binary response model
   qui `binarymodel' `treatvar' `covariates' if `touse'
 
@@ -230,20 +151,20 @@ foreach var of varlist `covariates' {
   local j=`j'+1
 
   // Compute and store conditional expectations
-  if `"`nopsw'"' != `""' qui reg `var' `t0' `treatvar' if `touse', noconstant
+  if "`psw'" != "" qui reg `var' `t0' `treatvar' if `touse', noconstant
   else qui reg `var' `t0' `treatvar' [iw=`psweight'] if `touse' & `comsup', noconstant
   local coef`j'_T0 = _b[`t0']
   local coef`j'_T1 = _b[`treatvar']
 
   // Compute and store mean differences and their p-values
-  if `"`nopsw'"' != `""' qui reg `var' `t0' if `touse'
+  if "`psw'" != "" qui reg `var' `t0' if `touse'
   else qui reg `var' `t0' [iw=`psweight'] if `touse' & `comsup'
   matrix m = r(table)
   scalar diff`j'=m[1,1] // mean difference
   local pval`j' = m[4,1] // p-value 
 
   // Standardized mean difference
-  if `"`nopsw'"' != `""' qui summ `var' if `touse'
+  if "`psw'" != "" qui summ `var' if `touse'
   else qui summ `var' if `touse' & `comsup'
   local stddiff`j' = (diff`j')/r(sd)
 }
@@ -260,7 +181,7 @@ forvalues j = 1/`numcov' {
 local totaldiff = `totaldiff'/`numcov' // compute mean 
 
 // F-statistic and global p-value
-if `"`nopsw'"' != `""' qui reg `varlist' if `touse'
+if "`psw'" != "" qui reg `varlist' if `touse'
 else qui reg `varlist' [iw=`psweight'] if `touse' & `comsup' 
 local Fstat = e(F)
 local pval_global = 1-F(e(df_m),e(df_r),e(F))
