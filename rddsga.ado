@@ -199,9 +199,11 @@ syntax, matname(string) psweight(name) comsup(name) /// important inputs, differ
   [nopsw]
 
 // Count observations in each treatment group
-qui count if `touse' & `comsup' & `treatvar'==0
+if `"`nopsw'"' != `""' qui count if `touse' & `treatvar'==0
+else qui count if `touse' & `comsup' & `treatvar'==0
 local Ncontrols = `r(N)'
-qui count if `touse' & `comsup' & `treatvar'==1
+if `"`nopsw'"' != `""' qui count if `touse' & `treatvar'==1
+else qui count if `touse' & `comsup' & `treatvar'==1
 local Ntreated = `r(N)'
 
 // Compute propensity score weighting vector
