@@ -59,18 +59,17 @@ else {
 
 * Original balance
 *-------------------------------------------------------------------------------
-balancematrix, matname(orbal) ///
-  touse(`touse') comsup(`comsup') treatvar(`treatvar') pscore(`pscore') ///
-  psweight(weight5) covariates(`covariates') numcov(`numcov') ///
-  t0(`t0') bdec(`bdec') binarymodel(`binarymodel') 
+balancematrix, matname(orbal)  ///
+  touse(`touse') covariates(`covariates') bdec(`bdec') ///
+  treatvar(`treatvar') t0(`t0') numcov(`numcov')
 return add
 
 * Propensity Score Weighting balance
 *-------------------------------------------------------------------------------
-balancematrix, matname(pwsbal) psw /// 
-  touse(`touse') comsup(`comsup') treatvar(`treatvar') pscore(`pscore') ///
-	psweight(weight5) covariates(`covariates') numcov(`numcov') ///
-	t0(`t0') bdec(`bdec') binarymodel(`binarymodel')
+balancematrix, matname(pwsbal)  ///
+  touse(`touse') covariates(`covariates') bdec(`bdec') ///
+  psw psweight(weight5) pscore(`pscore') comsup(`comsup') binarymodel(`binarymodel') ///
+	treatvar(`treatvar') t0(`t0') numcov(`numcov')
 return add
 
 * Clear any ereturn results and end main program
@@ -88,11 +87,10 @@ end
 
 program define balancematrix, rclass
 syntax, matname(string) /// important inputs, differ by call
-  [psw psweight(name) comsup(name) pscore(name) binarymodel(string)] /// only needed for PSW balance
-	touse(name) covariates(varlist) bdec(int) /// unchanging inputs
-	treatvar(name) t0(name) numcov(int) // todo: eliminate these; can be computed by subroutine at low cost
+  touse(name) covariates(varlist) bdec(int) /// unchanging inputs
+  [psw psweight(name) pscore(name) comsup(name) binarymodel(string)] /// only needed for PSW balance
+	treatvar(name) t0(name) numcov(int) // todo: eliminate these? can be computed by subroutine at low cost
   
-
 * Create variables specific to PSW matrix
 *-------------------------------------------------------------------------------
 
@@ -140,7 +138,7 @@ else { // if nopsw
   local Ntreated = `r(N)'
 } // end if nopsw
 
-* Stats for each covariate 
+* Compute stats specific for each covariate 
 *-------------------------------------------------------------------------------
 local j = 0
 foreach var of varlist `covariates' {
@@ -165,7 +163,7 @@ foreach var of varlist `covariates' {
   local stddiff`j' = (diff`j')/r(sd)
 }
 
-* Global stats
+* Compute global stats
 *-------------------------------------------------------------------------------
 
 // Mean of absolute standardized mean differences (ie. stddiff + ... + stddiff`k')
@@ -182,7 +180,7 @@ else qui reg `varlist' [iw=`psweight'] if `touse' & `comsup'
 local Fstat = e(F)
 local pval_global = 1-F(e(df_m),e(df_r),e(F))
 
-* Balance matrix
+* Create balance matrix
 *-------------------------------------------------------------------------------
 
 tempname `matname'
