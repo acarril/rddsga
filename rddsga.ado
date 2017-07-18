@@ -54,41 +54,30 @@ else {
 }
 
 *-------------------------------------------------------------------------------
-* Propensity Score
-*-------------------------------------------------------------------------------
-
-// Fit binary response model
-capture drop comsup /* todo: don't drop automatically, user-generated name */
-qui `binarymodel' `treatvar' `covariates' if `touse'
-
-// Generate pscore variable and clear stored results
-tempvar pscore
-qui predict double `pscore' if `touse'
-label var `pscore' "Estimated propensity score"
-ereturn clear // Clear e() stored results
-
-*-------------------------------------------------------------------------------
-* Common Support
-*-------------------------------------------------------------------------------
-
-// Genterate common support varible
-if `"`comsup'"' != `""' {
-	qui sum `pscore' if `treatvar' == 1
-	qui gen `comsup' = ///
-		(`pscore' >= `r(min)' & ///
-		 `pscore' <= `r(max)') if `touse'
-	label var `comsup' "Dummy for obs. in common support"
-}
-else qui gen `comsup' == 1 if `touse'
-
-*-------------------------------------------------------------------------------
 * Original Balance
 *-------------------------------------------------------------------------------
 
+* Common Support
+*-------------------------------------------------------------------------------
+
+// Fit binary response model
+qui `binarymodel' `treatvar' `covariates' if `touse'
+
+// Generate pscore variable (vector of 1s for original balance)
+capture drop `pscore'
+qui gen `pscore' = 1 if `touse'
+
+// Genterate common support varible (vector of 1s for original balance)
+capture drop `comsup'
+qui gen `comsup' = 1 if `touse'
+
+* Balance table matrix
+*-------------------------------------------------------------------------------
+
 // Count observations in each treatment group
-qui count if `touse' & `treatvar'==0
+qui count if `touse' & `comsup' & `treatvar'==0
 local Ncontrols = `r(N)'
-qui count if `touse' & `treatvar'==1
+qui count if `touse' & `comsup' & `treatvar'==1
 local Ntreated = `r(N)'
 
 * Compute stats for each covariate 
@@ -157,6 +146,32 @@ return matrix baltab0 = `orbal'
 
 *-------------------------------------------------------------------------------
 * Propensity Score Weighting
+*-------------------------------------------------------------------------------
+
+* Common Support
+*-------------------------------------------------------------------------------
+
+// Fit binary response model
+qui `binarymodel' `treatvar' `covariates' if `touse'
+
+// Generate pscore variable and clear stored results
+tempvar pscore
+qui predict double `pscore' if `touse'
+label var `pscore' "Estimated propensity score"
+ereturn clear // Clear e() stored results
+
+// Genterate common support varible
+capture drop `comsup'
+if `"`comsup'"' != `""' {
+	qui sum `pscore' if `treatvar' == 1
+	qui gen `comsup' = ///
+		(`pscore' >= `r(min)' & ///
+		 `pscore' <= `r(max)') if `touse'
+	label var `comsup' "Dummy for obs. in common support"
+}
+else qui gen `comsup' == 1 if `touse'
+
+* Balance table matrix
 *-------------------------------------------------------------------------------
 
 balancematrix, matname(otra) touse(`touse') comsup(`comsup') treatvar(`treatvar') pscore(`pscore') ///
@@ -234,7 +249,7 @@ local Fstat = e(F)
 local pval_global = 1-F(e(df_m),e(df_r),e(F))
 
 di in ye       "**************************************************** "
-di in ye       "Propensity score-psweighting "
+di in ye       "`matname'"
 di in ye       "**************************************************** "
 
 tempname `matname'
