@@ -161,6 +161,7 @@ foreach var of varlist `covariates' {
   // Standardized mean difference
   if "`psw'" == "" qui summ `var' if `touse'
   else qui summ `var' if `touse' & `comsup'
+  di diff`j' "/" r(sd)
   local stddiff`j' = (diff`j')/r(sd)
 }
 
@@ -225,9 +226,10 @@ CHANGE LOG
 
 KNOWN ISSUES/BUGS:
   - Global stats don't agree with the ones computed by original balancepscore
+    ~ computed mean in differences is same; r(sd) is different, maybe due to
+      differences in treatment groups? check if variable.
 
 TODOS AND IDEAS:
-  - Create subroutine with loop that defines balance matrices (CHECK)
   - Create subroutine of matlist formatting for display of balancematrix output
   - Implement matrix manipulation in Mata
   - Get rid of t0 hack for control units
