@@ -5,7 +5,7 @@ syntax varlist(min=2 numeric) [if] [in] [ , ///
 	psweight(name) pscore(name) comsup(name) logit ///
 	namgroup(string) bdec(int 3) ///
 ]
-capture program drop balancematrix
+
 *-------------------------------------------------------------------------------
 * Check inputs
 *-------------------------------------------------------------------------------
@@ -42,33 +42,22 @@ qui gen `t0' = (`treatvar' == 0) if !mi(`treatvar')
 local covariates : list varlist - treatvar
 local numcov `: word count `covariates''
 
-// Treatment groups names
-if `"`namgroup'"' != `""'  {
-	local pos=strpos("`namgroup'","/")
-	local G0=substr("`namgroup'",1,`pos'-1)
-	local G1=substr("`namgroup'",`pos'+1,.)
-}
-else {
-	local G0="G0"
-	local G1="G1"
-}
-
 *-------------------------------------------------------------------------------
 * Compute balance table matrices
 *-------------------------------------------------------------------------------
 
 * Original balance
 *-------------------------------------------------------------------------------
-balancematrix, matname(orbal)  ///
+balancematrix, matname(oribal)  ///
   touse(`touse') covariates(`covariates') bdec(`bdec') ///
   treatvar(`treatvar') t0(`t0') numcov(`numcov')
 return add
 
 * Propensity Score Weighting balance
 *-------------------------------------------------------------------------------
-balancematrix, matname(pwsbal)  ///
+balancematrix, matname(pswbal)  ///
   touse(`touse') covariates(`covariates') bdec(`bdec') ///
-  psw psweight(weight5) pscore(`pscore') comsup(`comsup') binarymodel(`binarymodel') ///
+  psw psweight(`psweight') pscore(`pscore') comsup(`comsup') binarymodel(`binarymodel') ///
 	treatvar(`treatvar') t0(`t0') numcov(`numcov')
 return add
 
@@ -84,7 +73,6 @@ end
 *-------------------------------------------------------------------------------
 * balancematrix: compute balance table matrices and other statistics
 *-------------------------------------------------------------------------------
-
 program define balancematrix, rclass
 syntax, matname(string) /// important inputs, differ by call
   touse(name) covariates(varlist) bdec(int) /// unchanging inputs
@@ -93,7 +81,6 @@ syntax, matname(string) /// important inputs, differ by call
   
 * Create variables specific to PSW matrix
 *-------------------------------------------------------------------------------
-
 if "`psw'" != "" { // if psw
   // Fit binary response model
   qui `binarymodel' `treatvar' `covariates' if `touse'
@@ -142,7 +129,7 @@ else { // if nopsw
 *-------------------------------------------------------------------------------
 local j = 0
 foreach var of varlist `covariates' {
-  local j=`j'+1
+  local ++j
 
   // Compute and store conditional expectations
   if "`psw'" == "" qui reg `var' `t0' `treatvar' if `touse', noconstant /* */
@@ -156,7 +143,7 @@ foreach var of varlist `covariates' {
   matrix m = r(table)
   scalar diff`j'=m[1,1] // mean difference
   local pval`j' = m[4,1] // p-value 
-
+  
   // Standardized mean difference
   if "`psw'" == "" qui summ `var' if `touse'
   else qui summ `var' if `touse' & `comsup'
@@ -165,7 +152,6 @@ foreach var of varlist `covariates' {
 
 * Compute global stats
 *-------------------------------------------------------------------------------
-
 // Mean of absolute standardized mean differences (ie. stddiff + ... + stddiff`k')
 /* todo: this begs to be vectorized */
 local totaldiff = 0
@@ -182,11 +168,10 @@ local pval_global = 1-F(e(df_m),e(df_r),e(F))
 
 * Create balance matrix
 *-------------------------------------------------------------------------------
-
 tempname `matname'
 matrix `matname' = J(`numcov'+4, 4, .)
-matrix colnames `matname' = "Mean `G0'" "Mean `G1'" "StMeanDiff" p-value
-matrix rownames `matname' = `covariates' Observations Abs(StMeanDiff) F-statistic p-value
+matrix colnames `matname' = "Mean T0" "Mean T1" "Std diff" "p-value"
+matrix rownames `matname' = `covariates' Observations "Total diff" F-statistic p-value
 
 forvalues j = 1/`numcov' {
   matrix `matname'[`j',1] = round(`coef`j'_T0', 10^(-`bdec'))  
@@ -203,7 +188,6 @@ matrix `matname'[`numcov'+4,4] = round(`pval_global', 10^(-`bdec'))
 
 matrix list `matname'
 return matrix `matname' = `matname'
-
 end
 
 ********************************************************************************
