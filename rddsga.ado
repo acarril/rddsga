@@ -54,31 +54,27 @@ else {
 }
 
 *-------------------------------------------------------------------------------
-* Original Balance
+* Compute balance table matrices
 *-------------------------------------------------------------------------------
 
-balancematrix, matname(orbal2) touse(`touse') comsup(`comsup') treatvar(`treatvar') pscore(`pscore') ///
+* Original balance
+*-------------------------------------------------------------------------------
+balancematrix, matname(orbal) nopsw ///
+  touse(`touse') comsup(`comsup') treatvar(`treatvar') pscore(`pscore') ///
   psweight(weight5) covariates(`covariates') treatvar(`treatvar') numcov(`numcov') ///
-  t0(`t0') bdec(`bdec') binarymodel(`binarymodel') nopsw
-matrix m = r(orbal2)
-return matrix orbal2 = m
+  t0(`t0') bdec(`bdec') binarymodel(`binarymodel') 
+return add
 
+* Propensity Score Weighting balance
 *-------------------------------------------------------------------------------
-* Propensity Score Weighting
-*-------------------------------------------------------------------------------
-
-***
-
-* Balance table matrix
-*-------------------------------------------------------------------------------
-
-balancematrix, matname(otra) touse(`touse') comsup(`comsup') treatvar(`treatvar') pscore(`pscore') ///
+balancematrix, matname(pwsbal) /// 
+  touse(`touse') comsup(`comsup') treatvar(`treatvar') pscore(`pscore') ///
 	psweight(weight5) covariates(`covariates') treatvar(`treatvar')	numcov(`numcov') ///
 	t0(`t0') bdec(`bdec') binarymodel(`binarymodel')
-matrix m = r(otra)
-return matrix baltab_nueva = m
+return add
 
-// Clear ereturn results and end main program
+* Clear any ereturn results and end main program
+*-------------------------------------------------------------------------------
 ereturn clear
 end
 
@@ -100,7 +96,6 @@ syntax, matname(string) psweight(name) comsup(name) /// important inputs, differ
 *-------------------------------------------------------------------------------
 
 if "`psw'" == "" { // if psw
-
   // Fit binary response model
   qui `binarymodel' `treatvar' `covariates' if `touse'
 
@@ -186,9 +181,8 @@ else qui reg `varlist' [iw=`psweight'] if `touse' & `comsup'
 local Fstat = e(F)
 local pval_global = 1-F(e(df_m),e(df_r),e(F))
 
-di in ye       "**************************************************** "
-di in ye       "`matname'"
-di in ye       "**************************************************** "
+* Balance matrix
+*-------------------------------------------------------------------------------
 
 tempname `matname'
 matrix `matname' = J(`numcov'+4, 4, .)
@@ -208,7 +202,7 @@ matrix `matname'[`numcov'+2,3] = round(`totaldiff', 10^(-`bdec'))
 matrix `matname'[`numcov'+3,4] = round(`Fstat', 10^(-`bdec'))        
 matrix `matname'[`numcov'+4,4] = round(`pval_global', 10^(-`bdec'))      
 
-matrix list `matname', noheader
+matrix list `matname'
 return matrix `matname' = `matname'
 
 end
