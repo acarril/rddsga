@@ -59,7 +59,7 @@ else {
 
 * Original balance
 *-------------------------------------------------------------------------------
-balancematrix, matname(orbal) nopsw ///
+balancematrix, matname(orbal) ///
   touse(`touse') comsup(`comsup') treatvar(`treatvar') pscore(`pscore') ///
   psweight(weight5) covariates(`covariates') numcov(`numcov') ///
   t0(`t0') bdec(`bdec') binarymodel(`binarymodel') 
@@ -67,7 +67,7 @@ return add
 
 * Propensity Score Weighting balance
 *-------------------------------------------------------------------------------
-balancematrix, matname(pwsbal) /// 
+balancematrix, matname(pwsbal) psw /// 
   touse(`touse') comsup(`comsup') treatvar(`treatvar') pscore(`pscore') ///
 	psweight(weight5) covariates(`covariates') numcov(`numcov') ///
 	t0(`t0') bdec(`bdec') binarymodel(`binarymodel')
@@ -88,7 +88,7 @@ end
 
 program define balancematrix, rclass
 syntax, matname(string) /// important inputs, differ by call
-  [nopsw psweight(name) comsup(name) pscore(name) binarymodel(string)] /// only needed for PSW balance
+  [psw psweight(name) comsup(name) pscore(name) binarymodel(string)] /// only needed for PSW balance
 	touse(name) covariates(varlist) bdec(int) /// unchanging inputs
 	treatvar(name) t0(name) numcov(int) // todo: eliminate these; can be computed by subroutine at low cost
   
@@ -96,7 +96,7 @@ syntax, matname(string) /// important inputs, differ by call
 * Create variables specific to PSW matrix
 *-------------------------------------------------------------------------------
 
-if "`psw'" == "" { // if psw
+if "`psw'" != "" { // if psw
   // Fit binary response model
   qui `binarymodel' `treatvar' `covariates' if `touse'
 
@@ -147,20 +147,20 @@ foreach var of varlist `covariates' {
   local j=`j'+1
 
   // Compute and store conditional expectations
-  if "`psw'" != "" qui reg `var' `t0' `treatvar' if `touse', noconstant /* */
+  if "`psw'" == "" qui reg `var' `t0' `treatvar' if `touse', noconstant /* */
   else qui reg `var' `t0' `treatvar' [iw=`psweight'] if `touse' & `comsup', noconstant
   local coef`j'_T0 = _b[`t0']
   local coef`j'_T1 = _b[`treatvar']
 
   // Compute and store mean differences and their p-values
-  if "`psw'" != "" qui reg `var' `t0' if `touse'
+  if "`psw'" == "" qui reg `var' `t0' if `touse'
   else qui reg `var' `t0' [iw=`psweight'] if `touse' & `comsup'
   matrix m = r(table)
   scalar diff`j'=m[1,1] // mean difference
   local pval`j' = m[4,1] // p-value 
 
   // Standardized mean difference
-  if "`psw'" != "" qui summ `var' if `touse'
+  if "`psw'" == "" qui summ `var' if `touse'
   else qui summ `var' if `touse' & `comsup'
   local stddiff`j' = (diff`j')/r(sd)
 }
@@ -177,7 +177,7 @@ forvalues j = 1/`numcov' {
 local totaldiff = `totaldiff'/`numcov' // compute mean 
 
 // F-statistic and global p-value
-if "`psw'" != "" qui reg `varlist' if `touse'
+if "`psw'" == "" qui reg `varlist' if `touse'
 else qui reg `varlist' [iw=`psweight'] if `touse' & `comsup' 
 local Fstat = e(F)
 local pval_global = 1-F(e(df_m),e(df_r),e(F))
