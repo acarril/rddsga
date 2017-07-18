@@ -203,11 +203,12 @@ scalar `matname'_Fstat = `Fstat'
 scalar `matname'_pval_global = `pval_global'
 
 return matrix `matname' = `matname', copy
-return scalar `matname'_N_T0 = `Ncontrols'
-return scalar `matname'_N_T1 = `Ntreated'
 return scalar `matname'_totaldiff = `totaldiff'
 return scalar `matname'_Fstat = `Fstat'
 return scalar `matname'_pvalue = `pval_global'
+return scalar `matname'_N_T1 = `Ntreated'
+return scalar `matname'_N_T0 = `Ncontrols'
+
 end
 
 ********************************************************************************
@@ -222,7 +223,7 @@ CHANGE LOG
 	- Remove any LaTeX output
 	- Modify some option names and internal locals
 
-TODOS (AND IDEAS TO MAKE RDDSGA EVEN COOLER)
+TODOS AND IDEAS:
   - Create subroutine with loop that defines balance matrices (CHECK)
   - Create subroutine of matlist formatting for display of balancematrix output
   - Implement matrix manipulation in Mata
