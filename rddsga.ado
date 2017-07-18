@@ -195,7 +195,8 @@ end
 program define balancematrix, rclass
 syntax, matname(string) psweight(name) comsup(name) /// important inputs, differ by call
 	touse(name) treatvar(name) pscore(name) covariates(varlist) bdec(int) /// unchanging inputs
-	treatvar(name) t0(name) numcov(int) // todo: eliminate these; can be computed by subroutine at low cost
+	treatvar(name) t0(name) numcov(int) /// todo: eliminate these; can be computed by subroutine at low cost
+  [nopsw]
 
 // Count observations in each treatment group
 qui count if `touse' & `comsup' & `treatvar'==0
@@ -204,11 +205,13 @@ qui count if `touse' & `comsup' & `treatvar'==1
 local Ntreated = `r(N)'
 
 // Compute propensity score weighting vector
-cap drop `psweight'
-qui gen `psweight' = ///
-  `Ntreated'/(`Ntreated'+`Ncontrols')/`pscore'*(`treatvar'==1) + ///
-  `Ncontrols'/(`Ntreated'+`Ncontrols')/(1-`pscore')*(`treatvar'==0) ///
-  if `touse' & `comsup' 
+if `"`nopsw'"' == `""' {
+  cap drop `psweight'
+  qui gen `psweight' = ///
+    `Ntreated'/(`Ntreated'+`Ncontrols')/`pscore'*(`treatvar'==1) + ///
+    `Ncontrols'/(`Ntreated'+`Ncontrols')/(1-`pscore')*(`treatvar'==0) ///
+    if `touse' & `comsup' 
+}
 
 * Compute stats for each covariate 
 *-------------------------------------------------------------------------------
@@ -218,18 +221,21 @@ foreach var of varlist `covariates' {
   local j=`j'+1
 
   // Compute and store conditional expectations
-  qui reg `var' `t0' `treatvar' [iw=`psweight'] if `touse' & `comsup', noconstant
+  if `"`nopsw'"' != `""' qui reg `var' `t0' `treatvar' if `touse', noconstant
+  else qui reg `var' `t0' `treatvar' [iw=`psweight'] if `touse' & `comsup', noconstant
   local coef`j'_T0 = _b[`t0']
   local coef`j'_T1 = _b[`treatvar']
 
   // Compute and store mean differences and their p-values
-  qui reg `var' `t0' [iw=`psweight'] if `touse' & `comsup'
+  if `"`nopsw'"' != `""' qui reg `var' `t0' if `touse'
+  else qui reg `var' `t0' [iw=`psweight'] if `touse' & `comsup'
   matrix m = r(table)
   scalar diff`j'=m[1,1] // mean difference
   local pval`j' = m[4,1] // p-value 
 
   // Standardized mean difference
-  qui summ `var' if `touse' & `comsup'
+  if `"`nopsw'"' != `""' qui summ `var' if `touse'
+  else qui summ `var' if `touse' & `comsup'
   local stddiff`j' = (diff`j')/r(sd)
 }
 
@@ -245,7 +251,8 @@ forvalues j = 1/`numcov' {
 local totaldiff = `totaldiff'/`numcov' // compute mean 
 
 // F-statistic and global p-value
-qui reg `varlist' [iw=`psweight'] if `touse' & `comsup' 
+if `"`nopsw'"' != `""' qui reg `varlist' if `touse'
+else qui reg `varlist' [iw=`psweight'] if `touse' & `comsup' 
 local Fstat = e(F)
 local pval_global = 1-F(e(df_m),e(df_r),e(F))
 
