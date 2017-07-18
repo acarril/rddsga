@@ -52,6 +52,8 @@ balancematrix, matname(oribal)  ///
   touse(`touse') covariates(`covariates') ///
   treatvar(`treatvar') t0(`t0') numcov(`numcov')
 return add
+
+// Display balance matrix and global stats
 matrix list oribal, format(%9.3g) title("Original balance")
 
 * Propensity Score Weighting balance
@@ -61,6 +63,8 @@ balancematrix, matname(pswbal)  ///
   psw psweight(`psweight') pscore(`pscore') comsup(`comsup') binarymodel(`binarymodel') ///
 	treatvar(`treatvar') t0(`t0') numcov(`numcov')
 return add
+
+// Display balance matrix and global stats
 matrix list pswbal, format(%9.3g) title("Propensity Score Weighting balance")
 
 * Clear any ereturn results and end main program
@@ -172,9 +176,9 @@ local pval_global = 1-F(e(df_m),e(df_r),e(F))
 *-------------------------------------------------------------------------------
 // Matrix parameters
 tempname `matname'
-matrix `matname' = J(`numcov'+4, 4, .)
+matrix `matname' = J(`numcov', 4, .)
 matrix colnames `matname' = mean_T0 mean_T1 std_diff p-value
-matrix rownames `matname' = `covariates' Observations "Total diff" F-statistic p-value
+matrix rownames `matname' = `covariates'
 
 // Add per-covariate values 
 forvalues j = 1/`numcov' {
@@ -184,15 +188,13 @@ forvalues j = 1/`numcov' {
   matrix `matname'[`j',4] = `pval`j''
 }
 
-// Add global stats 
-matrix `matname'[`numcov'+1,1] = `Ncontrols'
-matrix `matname'[`numcov'+1,2] = `Ntreated'
-matrix `matname'[`numcov'+2,3] = `totaldiff'
-matrix `matname'[`numcov'+3,4] = `Fstat'
-matrix `matname'[`numcov'+4,4] = `pval_global'
-
-// Display and return final matrix
+// Return matrix and other scalars
 return matrix `matname' = `matname', copy
+return scalar `matname'_N_T0 = `Ncontrols'
+return scalar `matname'_N_T1 = `Ntreated'
+return scalar `matname'_totaldiff = `totaldiff'
+return scalar `matname'_Fstat = `Fstat'
+return scalar `matname'_pvalue = `pval_global'
 end
 
 ********************************************************************************
