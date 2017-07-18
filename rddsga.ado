@@ -223,6 +223,9 @@ CHANGE LOG
 	- Remove any LaTeX output
 	- Modify some option names and internal locals
 
+KNOWN ISSUES/BUGS:
+  - Global stats don't agree with the ones computed by original balancepscore
+
 TODOS AND IDEAS:
   - Create subroutine with loop that defines balance matrices (CHECK)
   - Create subroutine of matlist formatting for display of balancematrix output
