@@ -5,7 +5,7 @@ syntax varlist(min=2 numeric) [if] [in] [ , ///
 	psweight(name) pscore(name) comsup(name) logit ///
 	namgroup(string) bdec(int 3) ///
 ]
-
+capture program drop balancematrix
 *-------------------------------------------------------------------------------
 * Check inputs
 *-------------------------------------------------------------------------------
@@ -61,7 +61,7 @@ else {
 *-------------------------------------------------------------------------------
 balancematrix, matname(orbal) nopsw ///
   touse(`touse') comsup(`comsup') treatvar(`treatvar') pscore(`pscore') ///
-  psweight(weight5) covariates(`covariates') treatvar(`treatvar') numcov(`numcov') ///
+  psweight(weight5) covariates(`covariates') numcov(`numcov') ///
   t0(`t0') bdec(`bdec') binarymodel(`binarymodel') 
 return add
 
@@ -69,7 +69,7 @@ return add
 *-------------------------------------------------------------------------------
 balancematrix, matname(pwsbal) /// 
   touse(`touse') comsup(`comsup') treatvar(`treatvar') pscore(`pscore') ///
-	psweight(weight5) covariates(`covariates') treatvar(`treatvar')	numcov(`numcov') ///
+	psweight(weight5) covariates(`covariates') numcov(`numcov') ///
 	t0(`t0') bdec(`bdec') binarymodel(`binarymodel')
 return add
 
@@ -85,12 +85,13 @@ end
 *-------------------------------------------------------------------------------
 * balancematrix: compute balance table matrices and other statistics
 *-------------------------------------------------------------------------------
-capture program drop balancematrix
+
 program define balancematrix, rclass
-syntax, matname(string) psweight(name) comsup(name) /// important inputs, differ by call
-	touse(name) treatvar(name) pscore(name) covariates(varlist) bdec(int) /// unchanging inputs
-	treatvar(name) t0(name) numcov(int) /// todo: eliminate these; can be computed by subroutine at low cost
-  [nopsw] binarymodel(string)
+syntax, matname(string) /// important inputs, differ by call
+  [nopsw psweight(name) comsup(name) pscore(name) binarymodel(string)] /// only needed for PSW balance
+	touse(name) covariates(varlist) bdec(int) /// unchanging inputs
+	treatvar(name) t0(name) numcov(int) // todo: eliminate these; can be computed by subroutine at low cost
+  
 
 * Create variables specific to PSW matrix
 *-------------------------------------------------------------------------------
@@ -146,7 +147,7 @@ foreach var of varlist `covariates' {
   local j=`j'+1
 
   // Compute and store conditional expectations
-  if "`psw'" != "" qui reg `var' `t0' `treatvar' if `touse', noconstant
+  if "`psw'" != "" qui reg `var' `t0' `treatvar' if `touse', noconstant /* */
   else qui reg `var' `t0' `treatvar' [iw=`psweight'] if `touse' & `comsup', noconstant
   local coef`j'_T0 = _b[`t0']
   local coef`j'_T1 = _b[`treatvar']
