@@ -3,7 +3,7 @@ program define rddsga, rclass
 version 11.1 /* todo: check if this is the real minimum */
 syntax varlist(min=2 numeric) [if] [in] [ , ///
 	psweight(name) pscore(name) comsup(name) logit ///
-	namgroup(string) bdec(int 3) ///
+	namgroup(string) ///
 ]
 
 *-------------------------------------------------------------------------------
@@ -49,14 +49,14 @@ local numcov `: word count `covariates''
 * Original balance
 *-------------------------------------------------------------------------------
 balancematrix, matname(oribal)  ///
-  touse(`touse') covariates(`covariates') bdec(`bdec') ///
+  touse(`touse') covariates(`covariates') ///
   treatvar(`treatvar') t0(`t0') numcov(`numcov')
 return add
 
 * Propensity Score Weighting balance
 *-------------------------------------------------------------------------------
 balancematrix, matname(pswbal)  ///
-  touse(`touse') covariates(`covariates') bdec(`bdec') ///
+  touse(`touse') covariates(`covariates') ///
   psw psweight(`psweight') pscore(`pscore') comsup(`comsup') binarymodel(`binarymodel') ///
 	treatvar(`treatvar') t0(`t0') numcov(`numcov')
 return add
@@ -75,7 +75,7 @@ end
 *-------------------------------------------------------------------------------
 program define balancematrix, rclass
 syntax, matname(string) /// important inputs, differ by call
-  touse(name) covariates(varlist) bdec(int) /// unchanging inputs
+  touse(name) covariates(varlist) /// unchanging inputs
   [psw psweight(name) pscore(name) comsup(name) binarymodel(string)] /// only needed for PSW balance
 	treatvar(name) t0(name) numcov(int) // todo: eliminate these? can be computed by subroutine at low cost
   
@@ -143,7 +143,7 @@ foreach var of varlist `covariates' {
   matrix m = r(table)
   scalar diff`j'=m[1,1] // mean difference
   local pval`j' = m[4,1] // p-value 
-  
+
   // Standardized mean difference
   if "`psw'" == "" qui summ `var' if `touse'
   else qui summ `var' if `touse' & `comsup'
@@ -174,17 +174,17 @@ matrix colnames `matname' = "Mean T0" "Mean T1" "Std diff" "p-value"
 matrix rownames `matname' = `covariates' Observations "Total diff" F-statistic p-value
 
 forvalues j = 1/`numcov' {
-  matrix `matname'[`j',1] = round(`coef`j'_T0', 10^(-`bdec'))  
-  matrix `matname'[`j',2] = round(`coef`j'_T1', 10^(-`bdec'))  
-  matrix `matname'[`j',3] = round(`stddiff`j'', 10^(-`bdec'))
-  matrix `matname'[`j',4] = round(`pval`j'', 10^(-`bdec')) 
+  matrix `matname'[`j',1] = `coef`j'_T0'
+  matrix `matname'[`j',2] = `coef`j'_T1'
+  matrix `matname'[`j',3] = `stddiff`j''
+  matrix `matname'[`j',4] = `pval`j''
 }
 
 matrix `matname'[`numcov'+1,1] = `Ncontrols'
 matrix `matname'[`numcov'+1,2] = `Ntreated'
-matrix `matname'[`numcov'+2,3] = round(`totaldiff', 10^(-`bdec'))
-matrix `matname'[`numcov'+3,4] = round(`Fstat', 10^(-`bdec'))        
-matrix `matname'[`numcov'+4,4] = round(`pval_global', 10^(-`bdec'))      
+matrix `matname'[`numcov'+2,3] = `totaldiff'
+matrix `matname'[`numcov'+3,4] = `Fstat'
+matrix `matname'[`numcov'+4,4] = `pval_global'
 
 matrix list `matname'
 return matrix `matname' = `matname'
