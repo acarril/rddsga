@@ -177,19 +177,9 @@ syntax, matname(string) psweight(name) comsup(name) /// important inputs, differ
 	treatvar(name) t0(name) numcov(int) /// todo: eliminate these; can be computed by subroutine at low cost
   [nopsw] binarymodel(string)
 
-
-// Count observations in each treatment group
-if `"`nopsw'"' != `""' qui count if `touse' & `treatvar'==0
-else qui count if `touse' & `comsup' & `treatvar'==0
-local Ncontrols = `r(N)'
-if `"`nopsw'"' != `""' qui count if `touse' & `treatvar'==1
-else qui count if `touse' & `comsup' & `treatvar'==1
-local Ntreated = `r(N)'
-
-
 * Create variables specific to PSW matrix
 *-------------------------------------------------------------------------------
-if `"`nopsw'"' == `""' {
+if `"`nopsw'"' == `""' { // if psw
   // Fit binary response model
   qui `binarymodel' `treatvar' `covariates' if `touse'
 
@@ -210,17 +200,31 @@ if `"`nopsw'"' == `""' {
   }
   else qui gen `comsup' == 1 if `touse'
 
+  // Count observations in each treatment group
+  qui count if `touse' & `comsup' & `treatvar'==0
+  local Ncontrols = `r(N)'
+  qui count if `touse' & `comsup' & `treatvar'==1
+  local Ntreated = `r(N)'
+
   // Compute propensity score weighting vector
   cap drop `psweight'
   qui gen `psweight' = ///
     `Ntreated'/(`Ntreated'+`Ncontrols')/`pscore'*(`treatvar'==1) + ///
     `Ncontrols'/(`Ntreated'+`Ncontrols')/(1-`pscore')*(`treatvar'==0) ///
     if `touse' & `comsup' 
-}
+} // end if psw
+
+* Count obs. in each treatment group if not PSW matrix
+*-------------------------------------------------------------------------------
+else { // if nopsw
+  qui count if `touse' & `treatvar'==0
+  local Ncontrols = `r(N)'
+  qui count if `touse' & `treatvar'==1
+  local Ntreated = `r(N)'
+} // end if nopsw
 
 * Stats for each covariate 
 *-------------------------------------------------------------------------------
-
 local j = 0
 foreach var of varlist `covariates' {
   local j=`j'+1
