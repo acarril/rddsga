@@ -148,35 +148,14 @@ return matrix baltab0 = `orbal'
 * Propensity Score Weighting
 *-------------------------------------------------------------------------------
 
-* Common Support
-*-------------------------------------------------------------------------------
-
-// Fit binary response model
-qui `binarymodel' `treatvar' `covariates' if `touse'
-
-// Generate pscore variable and clear stored results
-tempvar pscore
-qui predict double `pscore' if `touse'
-label var `pscore' "Estimated propensity score"
-ereturn clear // Clear e() stored results
-
-// Genterate common support varible
-capture drop `comsup'
-if `"`comsup'"' != `""' {
-	qui sum `pscore' if `treatvar' == 1
-	qui gen `comsup' = ///
-		(`pscore' >= `r(min)' & ///
-		 `pscore' <= `r(max)') if `touse'
-	label var `comsup' "Dummy for obs. in common support"
-}
-else qui gen `comsup' == 1 if `touse'
+***
 
 * Balance table matrix
 *-------------------------------------------------------------------------------
 
 balancematrix, matname(otra) touse(`touse') comsup(`comsup') treatvar(`treatvar') pscore(`pscore') ///
 	psweight(weight5) covariates(`covariates') treatvar(`treatvar')	numcov(`numcov') ///
-	t0(`t0') bdec(`bdec')
+	t0(`t0') bdec(`bdec') binarymodel(`binarymodel')
 matrix m = r(otra)
 return matrix baltab_nueva = m
 
@@ -196,7 +175,8 @@ program define balancematrix, rclass
 syntax, matname(string) psweight(name) comsup(name) /// important inputs, differ by call
 	touse(name) treatvar(name) pscore(name) covariates(varlist) bdec(int) /// unchanging inputs
 	treatvar(name) t0(name) numcov(int) /// todo: eliminate these; can be computed by subroutine at low cost
-  [nopsw]
+  [nopsw] binarymodel(string)
+
 
 // Count observations in each treatment group
 if `"`nopsw'"' != `""' qui count if `touse' & `treatvar'==0
@@ -206,8 +186,31 @@ if `"`nopsw'"' != `""' qui count if `touse' & `treatvar'==1
 else qui count if `touse' & `comsup' & `treatvar'==1
 local Ntreated = `r(N)'
 
-// Compute propensity score weighting vector
+
+* Create variables specific to PSW matrix
+*-------------------------------------------------------------------------------
 if `"`nopsw'"' == `""' {
+  // Fit binary response model
+  qui `binarymodel' `treatvar' `covariates' if `touse'
+
+  // Generate pscore variable and clear stored results
+  tempvar pscore
+  qui predict double `pscore' if `touse'
+  label var `pscore' "Estimated propensity score"
+  ereturn clear // Clear e() stored results
+
+  // Genterate common support varible
+  capture drop `comsup'
+  if `"`comsup'"' != `""' {
+    qui sum `pscore' if `treatvar' == 1
+    qui gen `comsup' = ///
+      (`pscore' >= `r(min)' & ///
+       `pscore' <= `r(max)') if `touse'
+    label var `comsup' "Dummy for obs. in common support"
+  }
+  else qui gen `comsup' == 1 if `touse'
+
+  // Compute propensity score weighting vector
   cap drop `psweight'
   qui gen `psweight' = ///
     `Ntreated'/(`Ntreated'+`Ncontrols')/`pscore'*(`treatvar'==1) + ///
@@ -215,7 +218,7 @@ if `"`nopsw'"' == `""' {
     if `touse' & `comsup' 
 }
 
-* Compute stats for each covariate 
+* Stats for each covariate 
 *-------------------------------------------------------------------------------
 
 local j = 0
