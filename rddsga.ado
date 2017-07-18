@@ -11,15 +11,15 @@ syntax varlist(min=2 numeric) [if] [in] [ , ///
 *-------------------------------------------------------------------------------
 
 // psweight(): define new propensity score weighting variable or use a tempvar
-if "`psweight'" != `""' confirm new variable `psweight'
+if "`psweight'" != "" confirm new variable `psweight'
 else tempvar psweight
 
 // comsup(): define new common support variable or use a tempvar
-if "`comsup'" != `""' confirm new variable `comsup'
+if "`comsup'" != "" confirm new variable `comsup'
 else tempvar comsup
 
 // pscore(): define new propensity score variable or use a tempvar
-if "`pscore'" != `""' confirm new variable `pscore'
+if "`pscore'" != "" confirm new variable `pscore'
 else tempvar pscore
 
 *-------------------------------------------------------------------------------
@@ -30,7 +30,7 @@ else tempvar pscore
 marksample touse
 
 // Define model to fit (probit is default)
-if "`logit'" != `""' local binarymodel logit
+if "`logit'" != "" local binarymodel logit
 else local binarymodel probit
 
 // Extract treatment variable and create complementary t0 tempvar
@@ -97,7 +97,7 @@ if "`psw'" != "" { // if psw
 
   // Genterate common support varible
   capture drop `comsup'
-  if "`comsup'" != `""' {
+  if "`comsup'" != "" {
     qui sum `pscore' if `treatvar' == 1
     qui gen `comsup' = ///
       (`pscore' >= `r(min)' & ///
