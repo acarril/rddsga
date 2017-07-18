@@ -52,6 +52,7 @@ balancematrix, matname(oribal)  ///
   touse(`touse') covariates(`covariates') ///
   treatvar(`treatvar') t0(`t0') numcov(`numcov')
 return add
+matrix list oribal, format(%9.3g) title("Original balance")
 
 * Propensity Score Weighting balance
 *-------------------------------------------------------------------------------
@@ -60,6 +61,7 @@ balancematrix, matname(pswbal)  ///
   psw psweight(`psweight') pscore(`pscore') comsup(`comsup') binarymodel(`binarymodel') ///
 	treatvar(`treatvar') t0(`t0') numcov(`numcov')
 return add
+matrix list pswbal, format(%9.3g) title("Propensity Score Weighting balance")
 
 * Clear any ereturn results and end main program
 *-------------------------------------------------------------------------------
@@ -79,6 +81,8 @@ syntax, matname(string) /// important inputs, differ by call
   [psw psweight(name) pscore(name) comsup(name) binarymodel(string)] /// only needed for PSW balance
 	treatvar(name) t0(name) numcov(int) // todo: eliminate these? can be computed by subroutine at low cost
   
+tempname `matname'
+
 * Create variables specific to PSW matrix
 *-------------------------------------------------------------------------------
 if "`psw'" != "" { // if psw
@@ -168,11 +172,13 @@ local pval_global = 1-F(e(df_m),e(df_r),e(F))
 
 * Create balance matrix
 *-------------------------------------------------------------------------------
+// Matrix parameters
 tempname `matname'
 matrix `matname' = J(`numcov'+4, 4, .)
 matrix colnames `matname' = mean_T0 mean_T1 std_diff p-value
 matrix rownames `matname' = `covariates' Observations "Total diff" F-statistic p-value
 
+// Add per-covariate values 
 forvalues j = 1/`numcov' {
   matrix `matname'[`j',1] = `coef`j'_T0'
   matrix `matname'[`j',2] = `coef`j'_T1'
@@ -180,14 +186,15 @@ forvalues j = 1/`numcov' {
   matrix `matname'[`j',4] = `pval`j''
 }
 
+// Add global stats 
 matrix `matname'[`numcov'+1,1] = `Ncontrols'
 matrix `matname'[`numcov'+1,2] = `Ntreated'
 matrix `matname'[`numcov'+2,3] = `totaldiff'
 matrix `matname'[`numcov'+3,4] = `Fstat'
 matrix `matname'[`numcov'+4,4] = `pval_global'
 
-matrix list `matname', format(%9.3g)
-return matrix `matname' = `matname'
+// Display and return final matrix
+return matrix `matname' = `matname', copy
 end
 
 ********************************************************************************
