@@ -1,9 +1,9 @@
-*! 0.2 Alvaro Carril 19jul2017
+*! 0.3 Alvaro Carril 19jul2017
 program define rddsga, rclass
 version 11.1 /* todo: check if this is the real minimum */
 syntax varlist(min=2 numeric) [if] [in] [ , ///
-	psweight(name) pscore(name) comsup(name) logit ///
-	namgroup(string) ///
+	psweight(name) pscore(name) comsup(name) balvars(varlist) logit /// balancepscore opts
+	cutoff(name)  /// rddsga opts
 ]
 
 *-------------------------------------------------------------------------------
@@ -38,9 +38,12 @@ local treatvar :	word 1 of `varlist'
 tempvar t0
 qui gen `t0' = (`treatvar' == 0) if !mi(`treatvar')
 
-// Extract covariates
-local covariates : list varlist - treatvar
-local numcov `: word count `covariates''
+// Extract balvars
+local balvars : list varlist - treatvar
+local numcov `: word count `balvars''
+
+// Extract balance variables
+*local
 
 *-------------------------------------------------------------------------------
 * Compute balance table matrices
@@ -49,7 +52,7 @@ local numcov `: word count `covariates''
 * Original balance
 *-------------------------------------------------------------------------------
 balancematrix, matname(oribal)  ///
-  touse(`touse') covariates(`covariates') ///
+  touse(`touse') balvars(`balvars') ///
   treatvar(`treatvar') t0(`t0') numcov(`numcov')
 return add
 
@@ -64,7 +67,7 @@ di "Global p-value: " oribal_pval_global
 * Propensity Score Weighting balance
 *-------------------------------------------------------------------------------
 balancematrix, matname(pswbal)  ///
-  touse(`touse') covariates(`covariates') ///
+  touse(`touse') balvars(`balvars') ///
   psw psweight(`psweight') pscore(`pscore') comsup(`comsup') binarymodel(`binarymodel') ///
 	treatvar(`treatvar') t0(`t0') numcov(`numcov')
 return add
@@ -91,7 +94,7 @@ end
 *-------------------------------------------------------------------------------
 program define balancematrix, rclass
 syntax, matname(string) /// important inputs, differ by call
-  touse(name) covariates(varlist) /// unchanging inputs
+  touse(name) balvars(varlist) /// unchanging inputs
   [psw psweight(name) pscore(name) comsup(name) binarymodel(string)] /// only needed for PSW balance
 	treatvar(name) t0(name) numcov(int) // todo: eliminate these? can be computed by subroutine at low cost
 
@@ -99,7 +102,7 @@ syntax, matname(string) /// important inputs, differ by call
 *-------------------------------------------------------------------------------
 if "`psw'" != "" { // if psw
   // Fit binary response model
-  qui `binarymodel' `treatvar' `covariates' if `touse'
+  qui `binarymodel' `treatvar' `balvars' if `touse'
 
   // Generate pscore variable and clear stored results
   qui predict `pscore' if `touse'
@@ -144,7 +147,7 @@ else { // if nopsw
 * Compute stats specific for each covariate 
 *-------------------------------------------------------------------------------
 local j = 0
-foreach var of varlist `covariates' {
+foreach var of varlist `balvars' {
   local ++j
 
   // Compute and store conditional expectations
@@ -172,7 +175,7 @@ foreach var of varlist `covariates' {
 /* todo: this begs to be vectorized */
 local avgdiff = 0
 forvalues j = 1/`numcov' {
-  local avgdiff = abs(`stddiff`j'') + `avgdiff' // sum over `j' (covariates)
+  local avgdiff = abs(`stddiff`j'') + `avgdiff' // sum over `j' (balvars)
 }
 local avgdiff = `avgdiff'/`numcov' // compute mean 
 
@@ -187,7 +190,7 @@ local pval_global = 1-F(e(df_m),e(df_r),e(F))
 // Matrix parameters
 matrix `matname' = J(`numcov', 4, .)
 matrix colnames `matname' = mean_T0 mean_T1 std_diff p-value
-matrix rownames `matname' = `covariates'
+matrix rownames `matname' = `balvars'
 
 // Add per-covariate values 
 forvalues j = 1/`numcov' {
@@ -217,6 +220,8 @@ end
 
 /* 
 CHANGE LOG
+0.3
+  - Integrate with rddsga.ado v2.0 original program
 0.2
   - Implement balancematrix as separate subroutine
   - Standardize balancematrix output
@@ -231,7 +236,7 @@ KNOWN ISSUES/BUGS:
       differences in treatment groups? check if variable.
   - Per-covariate stats don't agree with original balancepscore
     ~ In original balance this was due to different usage of `touse'; original
-      ado includes obs. with missing values in depvar (and covariates?)
+      ado includes obs. with missing values in depvar (and balvars?)
 
 TODOS AND IDEAS:
   - Create subroutine of matlist formatting for display of balancematrix output
