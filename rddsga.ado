@@ -3,7 +3,7 @@ program define rddsga, rclass
 version 11.1 /* todo: check if this is the real minimum */
 syntax varlist(min=2 numeric) [if] [in] [ , ///
 	psweight(name) pscore(name) comsup(name) balvars(varlist numeric) showbalance logit /// balancepscore opts
-	cutoff(name)  /// rddsga opts
+	cutoff(name) BWidth(numlist sort) /// rddsga opts
 ]
 
 *-------------------------------------------------------------------------------
