@@ -50,6 +50,13 @@ if "`balvars'" == "" local balvars `covariates'
 local balvars : list balvars - treatvar // remove treatvar if present
 local n_balvars `: word count `balvars''
 
+// Extract individual bandwidths
+foreach bw of numlist `bwidth' {
+  local i = `i'+1
+  local bw`i' = `bw'
+  di "`bw`i''"
+}
+
 *-------------------------------------------------------------------------------
 * Compute balance table matrices
 *-------------------------------------------------------------------------------
@@ -93,7 +100,7 @@ if "`showbalance'" != "" {
 * rddsga
 *-------------------------------------------------------------------------------
 
-
+*reg `x' `Z1' `Z0' `C`S`i''' `FE'  if `X'>-(`bw1') & `X'<(`bw1'), vce(cluster gpaoXuceXrk)
 
 * Clear any ereturn results and end main program
 *-------------------------------------------------------------------------------
