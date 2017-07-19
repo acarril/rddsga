@@ -1,4 +1,4 @@
-*! 0.2 Alvaro Carril 17jul2017
+*! 0.2 Alvaro Carril 19jul2017
 program define rddsga, rclass
 version 11.1 /* todo: check if this is the real minimum */
 syntax varlist(min=2 numeric) [if] [in] [ , ///
@@ -57,7 +57,7 @@ return add
 matlist oribal, border(rows) format(%9.3g) title("Original balance:")
 di "Obs. in T0: " oribal_Ncontrols
 di "Obs. in T1: " oribal_Ntreated
-di "Sum of abs(std_diff) = " oribal_avgdiff
+di "Mean abs(std_diff) = " oribal_avgdiff
 di "F-statistic: " oribal_Fstat
 di "Global p-value: " oribal_pval_global
 
@@ -73,7 +73,7 @@ return add
 matlist pswbal, border(rows) format(%9.3g) title("Propensity Score Weighting balance:")
 di "Obs. in T0: " pswbal_Ncontrols
 di "Obs. in T1: " pswbal_Ntreated
-di "Sum of abs(std_diff) = " pswbal_avgdiff
+di "Mean abs(std_diff) = " pswbal_avgdiff
 di "F-statistic: " pswbal_Fstat
 di "Global p-value: " pswbal_pval_global
 
@@ -218,7 +218,7 @@ end
 /* 
 CHANGE LOG
 0.2
-	- Implement balancematrix as separate subroutine
+  - Implement balancematrix as separate subroutine
   - Standardize balancematrix output
 0.1
 	- First working version, independent of project
