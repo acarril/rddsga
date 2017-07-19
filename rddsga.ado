@@ -27,7 +27,7 @@ else tempvar pscore
 *-------------------------------------------------------------------------------
 
 // Mark observations to be used
-marksample touse
+marksample touse, novarlist
 
 // Define model to fit (probit is default)
 if "`logit'" != "" local binarymodel logit
@@ -38,16 +38,10 @@ local treatvar :	word 2 of `varlist'
 tempvar t0
 qui gen `t0' = (`treatvar' == 0) if !mi(`treatvar')
 
-di "LALALA `balvars'"
-
-// Extract balvars
-local balvars : list balvars - treatvar
-local n_balvars `: word count `balvars''
-
-
-
 // Extract balance variables
-*local
+if "`balvars'" != "" local balvars = `varlist'
+local balvars : list balvars - treatvar // remove treatvar if present
+local n_balvars `: word count `balvars''
 
 *-------------------------------------------------------------------------------
 * Compute balance table matrices
