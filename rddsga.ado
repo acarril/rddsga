@@ -37,17 +37,16 @@ local yvar : word 1 of `varlist'
 // Extract assignment variable
 local assignvar :	word 2 of `varlist'
 
-// Create complementary subgroup var
-tempvar subgroup0
-qui gen `subgroup0' = (`subgroup' == 0) if !mi(`subgroup')
-
 // Extract covariates
 local covariates : list varlist - yvar
 local covariates : list covariates - subgroup
 
+// Create complementary subgroup var
+tempvar subgroup0
+qui gen `subgroup0' = (`subgroup' == 0) if !mi(`subgroup')
+
 // Extract balance variables
 if "`balvars'" == "" local balvars `covariates'
-local balvars : list balvars - subgroup // remove subgroup if present
 local n_balvars `: word count `balvars''
 
 // Extract individual bandwidths
@@ -74,9 +73,9 @@ return add
 // Display balance matrix and global stats
 if "`showbalance'" != "" {
   matlist oribal, border(rows) format(%9.3g) title("Original balance:")
-  di "Obs. in T0: " oribal_Ncontrols
-  di "Obs. in T1: " oribal_Ntreated
-  di "Mean abs(std_diff) = " oribal_avgdiff
+  di "Obs. in subgroup == 0: " oribal_N_G0
+  di "Obs. in subgroup == 1: " oribal_N_G1
+  di "Mean abs(std_diff): " oribal_avgdiff
   di "F-statistic: " oribal_Fstat
   di "Global p-value: " oribal_pval_global
 }
@@ -92,9 +91,9 @@ return add
 // Display balance matrix and global stats
 if "`showbalance'" != "" {
   matlist pswbal, border(rows) format(%9.3g) title("Propensity Score Weighting balance:")
-  di "Obs. in T0: " pswbal_Ncontrols
-  di "Obs. in T1: " pswbal_Ntreated
-  di "Mean abs(std_diff) = " pswbal_avgdiff
+  di "Obs. in subgroup == 0: " pswbal_N_G0
+  di "Obs. in subgroup == 1: " pswbal_N_G1
+  di "Mean abs(std_diff): " pswbal_avgdiff
   di "F-statistic: " pswbal_Fstat
   di "Global p-value: " pswbal_pval_global
 }
@@ -154,15 +153,15 @@ if "`psw'" != "" { // if psw
 
   // Count observations in each treatment group
   qui count if `touse' & `comsup' & `subgroup'==0
-  local Ncontrols = `r(N)'
+  local N_G0 = `r(N)'
   qui count if `touse' & `comsup' & `subgroup'==1
-  local Ntreated = `r(N)'
+  local N_G1 = `r(N)'
 
   // Compute propensity score weighting vector
   cap drop `psweight'
   qui gen `psweight' = ///
-    `Ntreated'/(`Ntreated'+`Ncontrols')/`pscore'*(`subgroup'==1) + ///
-    `Ncontrols'/(`Ntreated'+`Ncontrols')/(1-`pscore')*(`subgroup'==0) ///
+    `N_G1'/(`N_G1'+`N_G0')/`pscore'*(`subgroup'==1) + ///
+    `N_G0'/(`N_G1'+`N_G0')/(1-`pscore')*(`subgroup'==0) ///
     if `touse' & `comsup' 
 } // end if psw
 
@@ -172,9 +171,9 @@ if "`psw'" != "" { // if psw
 *-------------------------------------------------------------------------------
 else { // if nopsw
   qui count if `touse' & `subgroup'==0
-  local Ncontrols = `r(N)'
+  local N_G0 = `r(N)'
   qui count if `touse' & `subgroup'==1
-  local Ntreated = `r(N)'
+  local N_G1 = `r(N)'
 } // end if nopsw
 
 * Compute stats specific for each covariate 
@@ -186,8 +185,8 @@ foreach var of varlist `balvars' {
   // Compute and store conditional expectations
   if "`psw'" == "" qui reg `var' `subgroup0' `subgroup' if `touse', noconstant /* */
   else qui reg `var' `subgroup0' `subgroup' [iw=`psweight'] if `touse' & `comsup', noconstant
-  local coef`j'_T0 = _b[`subgroup0']
-  local coef`j'_T1 = _b[`subgroup']
+  local coef`j'_G0 = _b[`subgroup0']
+  local coef`j'_G1 = _b[`subgroup']
 
   // Compute and store mean differences and their p-values
   if "`psw'" == "" qui reg `var' `subgroup0' if `touse'
@@ -222,20 +221,20 @@ local pval_global = 1-F(e(df_m),e(df_r),e(F))
 *-------------------------------------------------------------------------------
 // Matrix parameters
 matrix `matname' = J(`n_balvars', 4, .)
-matrix colnames `matname' = mean_T0 mean_T1 std_diff p-value
+matrix colnames `matname' = mean_G0 mean_G1 std_diff p-value
 matrix rownames `matname' = `balvars'
 
 // Add per-covariate values 
 forvalues j = 1/`n_balvars' {
-  matrix `matname'[`j',1] = `coef`j'_T0'
-  matrix `matname'[`j',2] = `coef`j'_T1'
+  matrix `matname'[`j',1] = `coef`j'_G0'
+  matrix `matname'[`j',2] = `coef`j'_G1'
   matrix `matname'[`j',3] = `stddiff`j''
   matrix `matname'[`j',4] = `pval`j''
 }
 
 // Return matrix and other scalars
-scalar `matname'_Ncontrols = `Ncontrols'
-scalar `matname'_Ntreated = `Ntreated'
+scalar `matname'_N_G0 = `N_G0'
+scalar `matname'_N_G1 = `N_G1'
 scalar `matname'_avgdiff = `avgdiff'
 scalar `matname'_Fstat = `Fstat'
 scalar `matname'_pval_global = `pval_global'
@@ -244,8 +243,8 @@ return matrix `matname' = `matname', copy
 return scalar `matname'_avgdiff = `avgdiff'
 return scalar `matname'_Fstat = `Fstat'
 return scalar `matname'_pvalue = `pval_global'
-return scalar `matname'_N_T1 = `Ntreated'
-return scalar `matname'_N_T0 = `Ncontrols'
+return scalar `matname'_N_G1 = `N_G1'
+return scalar `matname'_N_G0 = `N_G0'
 
 end
 
@@ -254,7 +253,7 @@ end
 /* 
 CHANGE LOG
 0.3
-  - Integrate with rddsga.ado v2.0 original program
+  - Standardize syntax to merge with original rddsga.ado
 0.2
   - Implement balancematrix as separate subroutine
   - Standardize balancematrix output
