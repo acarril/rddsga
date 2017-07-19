@@ -14,7 +14,7 @@ if "`c(os)'" == "Windows" cd "C:\ado\personal\rddsga"
 discard
 
 // Load dataset
-use data/procurement_test2, clear
+use data/procurement_test3, clear
 *use data/midRiskRDDdataset.dta, clear
 // Run command
 rddsga ///
