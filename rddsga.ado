@@ -2,12 +2,11 @@
 program define rddsga, rclass
 version 11.1 /* todo: check if this is the real minimum */
 syntax varlist(min=2 numeric) [if] [in] , [ ///
-  subgroup(name) treatvar(name) ///
-	psweight(name) pscore(name) comsup(name) balvars(varlist numeric) showbalance logit /// balancepscore opts
-	cutoff(name) BWidth(numlist sort) /// rddsga opts
+  subgroup(name) treatvar(name) /// importan inputs
+	psweight(name) pscore(name) comsup(name) /// newvars
+  balvars(varlist numeric) showbalance logit /// balancepscore opts
+	BWidth(numlist sort) /// rddsga opts
 ]
-
-* outcomevar cutoffvar covariates, subgroup() [treatvar()]
 
 *-------------------------------------------------------------------------------
 * Check inputs
@@ -32,17 +31,13 @@ else tempvar pscore
 // Mark observations to be used
 marksample touse, novarlist
 
-// Define model to fit (probit is default)
-if "`logit'" != "" local binarymodel logit
-else local binarymodel probit
-
 // Extract outcome variable
 local yvar : word 1 of `varlist'
 
 // Extract assignment variable
 local assignvar :	word 2 of `varlist'
 
-// Create complimentary var
+// Create complimentary subgroup var
 tempvar t0
 qui gen `t0' = (`subgroup' == 0) if !mi(`subgroup')
 
@@ -59,8 +54,11 @@ local n_balvars `: word count `balvars''
 foreach bw of numlist `bwidth' {
   local i = `i'+1
   local bw`i' = `bw'
-  di "`bw`i''"
 }
+
+// Define model to fit (probit is default)
+if "`logit'" != "" local binarymodel logit
+else local binarymodel probit
 
 *-------------------------------------------------------------------------------
 * Compute balance table matrices
@@ -109,10 +107,10 @@ if "`showbalance'" != "" {
 qui xi: ivreg `Y' `C`S`i''' `FE' (`X1' `X0' = `Z1' `Z0') if `X'>-(`bw`i'') & `X'<(`bw`i''), cluster(`cluster')
 xi: ivregress `yvar' `subgroup'#(`covariates') i.gpaoXuceXrk ///
   (1.`subgroup'#) ///
-  if -(`bw1')<`cutoff' & `cutoff'<(`bw1'), vce(cluster gpaoXuceXrk)
+  if -(`bw1')<`assignvar' & `assignvar'<(`bw1'), vce(cluster gpaoXuceXrk)
 
 *reg `x' `Z1' `Z0' `C`S`i''' `FE'  if `X'>-(`bw1') & `X'<(`bw1'), vce(cluster gpaoXuceXrk)
-*reg I_CURaudit `Z1' `Z0' `C`S`i''' `FE'  if -(`bw1')<`cutoff' & `cutoff'<(`bw1'), vce(cluster gpaoXuceXrk)
+*reg I_CURaudit `Z1' `Z0' `C`S`i''' `FE'  if -(`bw1')<`assignvar' & `assignvar'<(`bw1'), vce(cluster gpaoXuceXrk)
 */
 
 * Clear any ereturn results and end main program
