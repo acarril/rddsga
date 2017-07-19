@@ -16,10 +16,17 @@ discard
 // Load dataset
 use data/procurement_test3, clear
 
+// Obtain bandwidths
+qui rd sh_licitacion high_direct dis_cutoff2
+local w50 = e(w50)
+local w = e(w)
+local w200 = e(w200)
+
 // Run command
 rddsga ///
 sh_licitacion high_direct /// outcome and treatvar
 p1 p2 p3 sh_licitacionPRE2 sh_directoPRE1 sh_licitacionPRE1 sh_directoPRE2 size_PRE1 size_PRE2 I_PREaudit /// covariates
 if (dis_cutoff2>-4 & dis_cutoff2<4), ///
   psweight(peso) pscore(ps_flexmodel41) comsup(soporte) logit showbalance ///
-  balvars(p1 p2 p3 size_PRE1 size_PRE2 audited dTR1-dTR3 Year2 Year1 Zone1-Zone3)
+  balvars(p1 p2 p3 size_PRE1 size_PRE2 audited dTR1-dTR3 Year2 Year1 Zone1-Zone3) ///
+  bw(`w50' `w' `w200')
