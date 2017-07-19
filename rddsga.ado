@@ -33,13 +33,20 @@ marksample touse, novarlist
 if "`logit'" != "" local binarymodel logit
 else local binarymodel probit
 
+// Extract outcome variable
+local yvar : word 1 of `varlist'
+
 // Extract treatment variable and create complementary t0 tempvar
 local treatvar :	word 2 of `varlist'
 tempvar t0
 qui gen `t0' = (`treatvar' == 0) if !mi(`treatvar')
 
+// Extract covariates
+local covariates : list varlist - yvar
+local covariates : list covariates - treatvar
+
 // Extract balance variables
-if "`balvars'" == "" local balvars `varlist'
+if "`balvars'" == "" local balvars `covariates'
 local balvars : list balvars - treatvar // remove treatvar if present
 local n_balvars `: word count `balvars''
 
@@ -81,6 +88,12 @@ if "`showbalance'" != "" {
   di "F-statistic: " pswbal_Fstat
   di "Global p-value: " pswbal_pval_global
 }
+
+*-------------------------------------------------------------------------------
+* rddsga
+*-------------------------------------------------------------------------------
+
+
 
 * Clear any ereturn results and end main program
 *-------------------------------------------------------------------------------
