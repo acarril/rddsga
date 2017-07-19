@@ -2,7 +2,7 @@
 program define rddsga, rclass
 version 11.1 /* todo: check if this is the real minimum */
 syntax varlist(min=2 numeric) [if] [in] [ , ///
-	psweight(name) pscore(name) comsup(name) balvars(varlist) logit /// balancepscore opts
+	psweight(name) pscore(name) comsup(name) balvars(varlist numeric) logit /// balancepscore opts
 	cutoff(name)  /// rddsga opts
 ]
 
@@ -34,13 +34,17 @@ if "`logit'" != "" local binarymodel logit
 else local binarymodel probit
 
 // Extract treatment variable and create complementary t0 tempvar
-local treatvar :	word 1 of `varlist'
+local treatvar :	word 2 of `varlist'
 tempvar t0
 qui gen `t0' = (`treatvar' == 0) if !mi(`treatvar')
 
+di "LALALA `balvars'"
+
 // Extract balvars
-local balvars : list varlist - treatvar
-local numcov `: word count `balvars''
+local balvars : list balvars - treatvar
+local n_balvars `: word count `balvars''
+
+
 
 // Extract balance variables
 *local
@@ -53,7 +57,7 @@ local numcov `: word count `balvars''
 *-------------------------------------------------------------------------------
 balancematrix, matname(oribal)  ///
   touse(`touse') balvars(`balvars') ///
-  treatvar(`treatvar') t0(`t0') numcov(`numcov')
+  treatvar(`treatvar') t0(`t0') n_balvars(`n_balvars')
 return add
 
 // Display balance matrix and global stats
@@ -69,7 +73,7 @@ di "Global p-value: " oribal_pval_global
 balancematrix, matname(pswbal)  ///
   touse(`touse') balvars(`balvars') ///
   psw psweight(`psweight') pscore(`pscore') comsup(`comsup') binarymodel(`binarymodel') ///
-	treatvar(`treatvar') t0(`t0') numcov(`numcov')
+	treatvar(`treatvar') t0(`t0') n_balvars(`n_balvars')
 return add
 
 // Display balance matrix and global stats
@@ -96,7 +100,7 @@ program define balancematrix, rclass
 syntax, matname(string) /// important inputs, differ by call
   touse(name) balvars(varlist) /// unchanging inputs
   [psw psweight(name) pscore(name) comsup(name) binarymodel(string)] /// only needed for PSW balance
-	treatvar(name) t0(name) numcov(int) // todo: eliminate these? can be computed by subroutine at low cost
+	treatvar(name) t0(name) n_balvars(int) // todo: eliminate these? can be computed by subroutine at low cost
 
 * Create variables specific to PSW matrix
 *-------------------------------------------------------------------------------
@@ -174,26 +178,26 @@ foreach var of varlist `balvars' {
 // Mean of absolute standardized mean differences (ie. stddiff + ... + stddiff`k')
 /* todo: this begs to be vectorized */
 local avgdiff = 0
-forvalues j = 1/`numcov' {
+forvalues j = 1/`n_balvars' {
   local avgdiff = abs(`stddiff`j'') + `avgdiff' // sum over `j' (balvars)
 }
-local avgdiff = `avgdiff'/`numcov' // compute mean 
+local avgdiff = `avgdiff'/`n_balvars' // compute mean 
 
 // F-statistic and global p-value
-if "`psw'" == "" qui reg `varlist' if `touse'
-else qui reg `varlist' [iw=`psweight'] if `touse' & `comsup' 
+if "`psw'" == "" qui reg `treatvar' `balvars' if `touse'
+else qui reg `treatvar' `balvars' [iw=`psweight'] if `touse' & `comsup' 
 local Fstat = e(F)
 local pval_global = 1-F(e(df_m),e(df_r),e(F))
 
 * Create balance matrix
 *-------------------------------------------------------------------------------
 // Matrix parameters
-matrix `matname' = J(`numcov', 4, .)
+matrix `matname' = J(`n_balvars', 4, .)
 matrix colnames `matname' = mean_T0 mean_T1 std_diff p-value
 matrix rownames `matname' = `balvars'
 
 // Add per-covariate values 
-forvalues j = 1/`numcov' {
+forvalues j = 1/`n_balvars' {
   matrix `matname'[`j',1] = `coef`j'_T0'
   matrix `matname'[`j',2] = `coef`j'_T1'
   matrix `matname'[`j',3] = `stddiff`j''
