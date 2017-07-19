@@ -2,7 +2,7 @@
 program define rddsga, rclass
 version 11.1 /* todo: check if this is the real minimum */
 syntax varlist(min=2 numeric) [if] [in] [ , ///
-	psweight(name) pscore(name) comsup(name) balvars(varlist numeric) logit /// balancepscore opts
+	psweight(name) pscore(name) comsup(name) balvars(varlist numeric) showbalance logit /// balancepscore opts
 	cutoff(name)  /// rddsga opts
 ]
 
@@ -39,7 +39,7 @@ tempvar t0
 qui gen `t0' = (`treatvar' == 0) if !mi(`treatvar')
 
 // Extract balance variables
-if "`balvars'" != "" local balvars = `varlist'
+if "`balvars'" == "" local balvars `varlist'
 local balvars : list balvars - treatvar // remove treatvar if present
 local n_balvars `: word count `balvars''
 
@@ -55,12 +55,14 @@ balancematrix, matname(oribal)  ///
 return add
 
 // Display balance matrix and global stats
-matlist oribal, border(rows) format(%9.3g) title("Original balance:")
-di "Obs. in T0: " oribal_Ncontrols
-di "Obs. in T1: " oribal_Ntreated
-di "Mean abs(std_diff) = " oribal_avgdiff
-di "F-statistic: " oribal_Fstat
-di "Global p-value: " oribal_pval_global
+if "`showbalance'" != "" {
+  matlist oribal, border(rows) format(%9.3g) title("Original balance:")
+  di "Obs. in T0: " oribal_Ncontrols
+  di "Obs. in T1: " oribal_Ntreated
+  di "Mean abs(std_diff) = " oribal_avgdiff
+  di "F-statistic: " oribal_Fstat
+  di "Global p-value: " oribal_pval_global
+}
 
 * Propensity Score Weighting balance
 *-------------------------------------------------------------------------------
@@ -71,12 +73,14 @@ balancematrix, matname(pswbal)  ///
 return add
 
 // Display balance matrix and global stats
-matlist pswbal, border(rows) format(%9.3g) title("Propensity Score Weighting balance:")
-di "Obs. in T0: " pswbal_Ncontrols
-di "Obs. in T1: " pswbal_Ntreated
-di "Mean abs(std_diff) = " pswbal_avgdiff
-di "F-statistic: " pswbal_Fstat
-di "Global p-value: " pswbal_pval_global
+if "`showbalance'" != "" {
+  matlist pswbal, border(rows) format(%9.3g) title("Propensity Score Weighting balance:")
+  di "Obs. in T0: " pswbal_Ncontrols
+  di "Obs. in T1: " pswbal_Ntreated
+  di "Mean abs(std_diff) = " pswbal_avgdiff
+  di "F-statistic: " pswbal_Fstat
+  di "Global p-value: " pswbal_pval_global
+}
 
 * Clear any ereturn results and end main program
 *-------------------------------------------------------------------------------
