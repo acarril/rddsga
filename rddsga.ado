@@ -37,9 +37,9 @@ local yvar : word 1 of `varlist'
 // Extract assignment variable
 local assignvar :	word 2 of `varlist'
 
-// Create complimentary subgroup var
-tempvar t0
-qui gen `t0' = (`subgroup' == 0) if !mi(`subgroup')
+// Create complementary subgroup var
+tempvar subgroup0
+qui gen `subgroup0' = (`subgroup' == 0) if !mi(`subgroup')
 
 // Extract covariates
 local covariates : list varlist - yvar
@@ -68,7 +68,7 @@ else local binarymodel probit
 *-------------------------------------------------------------------------------
 balancematrix, matname(oribal)  ///
   touse(`touse') balvars(`balvars') ///
-  subgroup(`subgroup') t0(`t0') n_balvars(`n_balvars')
+  subgroup(`subgroup') subgroup0(`subgroup0') n_balvars(`n_balvars')
 return add
 
 // Display balance matrix and global stats
@@ -86,7 +86,7 @@ if "`showbalance'" != "" {
 balancematrix, matname(pswbal)  ///
   touse(`touse') balvars(`balvars') ///
   psw psweight(`psweight') pscore(`pscore') comsup(`comsup') binarymodel(`binarymodel') ///
-	subgroup(`subgroup') t0(`t0') n_balvars(`n_balvars')
+	subgroup(`subgroup') subgroup0(`subgroup0') n_balvars(`n_balvars')
 return add
 
 // Display balance matrix and global stats
@@ -129,7 +129,7 @@ program define balancematrix, rclass
 syntax, matname(string) /// important inputs, differ by call
   touse(name) balvars(varlist) /// unchanging inputs
   [psw psweight(name) pscore(name) comsup(name) binarymodel(string)] /// only needed for PSW balance
-	subgroup(name) t0(name) n_balvars(int) // todo: eliminate these? can be computed by subroutine at low cost
+	subgroup(name) subgroup0(name) n_balvars(int) // todo: eliminate these? can be computed by subroutine at low cost
 
 * Create variables specific to PSW matrix
 *-------------------------------------------------------------------------------
@@ -184,14 +184,14 @@ foreach var of varlist `balvars' {
   local ++j
 
   // Compute and store conditional expectations
-  if "`psw'" == "" qui reg `var' `t0' `subgroup' if `touse', noconstant /* */
-  else qui reg `var' `t0' `subgroup' [iw=`psweight'] if `touse' & `comsup', noconstant
-  local coef`j'_T0 = _b[`t0']
+  if "`psw'" == "" qui reg `var' `subgroup0' `subgroup' if `touse', noconstant /* */
+  else qui reg `var' `subgroup0' `subgroup' [iw=`psweight'] if `touse' & `comsup', noconstant
+  local coef`j'_T0 = _b[`subgroup0']
   local coef`j'_T1 = _b[`subgroup']
 
   // Compute and store mean differences and their p-values
-  if "`psw'" == "" qui reg `var' `t0' if `touse'
-  else qui reg `var' `t0' [iw=`psweight'] if `touse' & `comsup'
+  if "`psw'" == "" qui reg `var' `subgroup0' if `touse'
+  else qui reg `var' `subgroup0' [iw=`psweight'] if `touse' & `comsup'
   matrix m = r(table)
   scalar diff`j'=m[1,1] // mean difference
   local pval`j' = m[4,1] // p-value 
@@ -274,5 +274,5 @@ KNOWN ISSUES/BUGS:
 TODOS AND IDEAS:
   - Create subroutine of matlist formatting for display of balancematrix output
   - Implement matrix manipulation in Mata
-  - Get rid of t0 hack for control units
+  - Get rid of subgroup0 hack for control units
 */
