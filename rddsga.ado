@@ -1,10 +1,13 @@
 *! 0.3 Alvaro Carril 19jul2017
 program define rddsga, rclass
 version 11.1 /* todo: check if this is the real minimum */
-syntax varlist(min=2 numeric) [if] [in] [ , ///
+syntax varlist(min=2 numeric) [if] [in] , [ ///
+  subgroup(name) treatvar(name) ///
 	psweight(name) pscore(name) comsup(name) balvars(varlist numeric) showbalance logit /// balancepscore opts
 	cutoff(name) BWidth(numlist sort) /// rddsga opts
 ]
+
+* outcomevar cutoffvar covariates, subgroup() [treatvar()]
 
 *-------------------------------------------------------------------------------
 * Check inputs
@@ -36,18 +39,20 @@ else local binarymodel probit
 // Extract outcome variable
 local yvar : word 1 of `varlist'
 
-// Extract treatment variable and create complementary t0 tempvar
-local treatvar :	word 2 of `varlist'
+// Extract assignment variable
+local assignvar :	word 2 of `varlist'
+
+// Create complimentary var
 tempvar t0
-qui gen `t0' = (`treatvar' == 0) if !mi(`treatvar')
+qui gen `t0' = (`subgroup' == 0) if !mi(`subgroup')
 
 // Extract covariates
 local covariates : list varlist - yvar
-local covariates : list covariates - treatvar
+local covariates : list covariates - subgroup
 
 // Extract balance variables
 if "`balvars'" == "" local balvars `covariates'
-local balvars : list balvars - treatvar // remove treatvar if present
+local balvars : list balvars - subgroup // remove subgroup if present
 local n_balvars `: word count `balvars''
 
 // Extract individual bandwidths
@@ -65,7 +70,7 @@ foreach bw of numlist `bwidth' {
 *-------------------------------------------------------------------------------
 balancematrix, matname(oribal)  ///
   touse(`touse') balvars(`balvars') ///
-  treatvar(`treatvar') t0(`t0') n_balvars(`n_balvars')
+  subgroup(`subgroup') t0(`t0') n_balvars(`n_balvars')
 return add
 
 // Display balance matrix and global stats
@@ -83,7 +88,7 @@ if "`showbalance'" != "" {
 balancematrix, matname(pswbal)  ///
   touse(`touse') balvars(`balvars') ///
   psw psweight(`psweight') pscore(`pscore') comsup(`comsup') binarymodel(`binarymodel') ///
-	treatvar(`treatvar') t0(`t0') n_balvars(`n_balvars')
+	subgroup(`subgroup') t0(`t0') n_balvars(`n_balvars')
 return add
 
 // Display balance matrix and global stats
@@ -100,7 +105,15 @@ if "`showbalance'" != "" {
 * rddsga
 *-------------------------------------------------------------------------------
 
+/*
+qui xi: ivreg `Y' `C`S`i''' `FE' (`X1' `X0' = `Z1' `Z0') if `X'>-(`bw`i'') & `X'<(`bw`i''), cluster(`cluster')
+xi: ivregress `yvar' `subgroup'#(`covariates') i.gpaoXuceXrk ///
+  (1.`subgroup'#) ///
+  if -(`bw1')<`cutoff' & `cutoff'<(`bw1'), vce(cluster gpaoXuceXrk)
+
 *reg `x' `Z1' `Z0' `C`S`i''' `FE'  if `X'>-(`bw1') & `X'<(`bw1'), vce(cluster gpaoXuceXrk)
+*reg I_CURaudit `Z1' `Z0' `C`S`i''' `FE'  if -(`bw1')<`cutoff' & `cutoff'<(`bw1'), vce(cluster gpaoXuceXrk)
+*/
 
 * Clear any ereturn results and end main program
 *-------------------------------------------------------------------------------
@@ -118,13 +131,13 @@ program define balancematrix, rclass
 syntax, matname(string) /// important inputs, differ by call
   touse(name) balvars(varlist) /// unchanging inputs
   [psw psweight(name) pscore(name) comsup(name) binarymodel(string)] /// only needed for PSW balance
-	treatvar(name) t0(name) n_balvars(int) // todo: eliminate these? can be computed by subroutine at low cost
+	subgroup(name) t0(name) n_balvars(int) // todo: eliminate these? can be computed by subroutine at low cost
 
 * Create variables specific to PSW matrix
 *-------------------------------------------------------------------------------
 if "`psw'" != "" { // if psw
   // Fit binary response model
-  qui `binarymodel' `treatvar' `balvars' if `touse'
+  qui `binarymodel' `subgroup' `balvars' if `touse'
 
   // Generate pscore variable and clear stored results
   qui predict `pscore' if `touse'
@@ -133,7 +146,7 @@ if "`psw'" != "" { // if psw
   // Genterate common support varible
   capture drop `comsup'
   if "`comsup'" != "" {
-    qui sum `pscore' if `treatvar' == 1
+    qui sum `pscore' if `subgroup' == 1
     qui gen `comsup' = ///
       (`pscore' >= `r(min)' & ///
        `pscore' <= `r(max)') if `touse'
@@ -142,16 +155,16 @@ if "`psw'" != "" { // if psw
   else qui gen `comsup' == 1 if `touse'
 
   // Count observations in each treatment group
-  qui count if `touse' & `comsup' & `treatvar'==0
+  qui count if `touse' & `comsup' & `subgroup'==0
   local Ncontrols = `r(N)'
-  qui count if `touse' & `comsup' & `treatvar'==1
+  qui count if `touse' & `comsup' & `subgroup'==1
   local Ntreated = `r(N)'
 
   // Compute propensity score weighting vector
   cap drop `psweight'
   qui gen `psweight' = ///
-    `Ntreated'/(`Ntreated'+`Ncontrols')/`pscore'*(`treatvar'==1) + ///
-    `Ncontrols'/(`Ntreated'+`Ncontrols')/(1-`pscore')*(`treatvar'==0) ///
+    `Ntreated'/(`Ntreated'+`Ncontrols')/`pscore'*(`subgroup'==1) + ///
+    `Ncontrols'/(`Ntreated'+`Ncontrols')/(1-`pscore')*(`subgroup'==0) ///
     if `touse' & `comsup' 
 } // end if psw
 
@@ -160,9 +173,9 @@ if "`psw'" != "" { // if psw
 * Count obs. in each treatment group if not PSW matrix
 *-------------------------------------------------------------------------------
 else { // if nopsw
-  qui count if `touse' & `treatvar'==0
+  qui count if `touse' & `subgroup'==0
   local Ncontrols = `r(N)'
-  qui count if `touse' & `treatvar'==1
+  qui count if `touse' & `subgroup'==1
   local Ntreated = `r(N)'
 } // end if nopsw
 
@@ -173,10 +186,10 @@ foreach var of varlist `balvars' {
   local ++j
 
   // Compute and store conditional expectations
-  if "`psw'" == "" qui reg `var' `t0' `treatvar' if `touse', noconstant /* */
-  else qui reg `var' `t0' `treatvar' [iw=`psweight'] if `touse' & `comsup', noconstant
+  if "`psw'" == "" qui reg `var' `t0' `subgroup' if `touse', noconstant /* */
+  else qui reg `var' `t0' `subgroup' [iw=`psweight'] if `touse' & `comsup', noconstant
   local coef`j'_T0 = _b[`t0']
-  local coef`j'_T1 = _b[`treatvar']
+  local coef`j'_T1 = _b[`subgroup']
 
   // Compute and store mean differences and their p-values
   if "`psw'" == "" qui reg `var' `t0' if `touse'
@@ -202,8 +215,8 @@ forvalues j = 1/`n_balvars' {
 local avgdiff = `avgdiff'/`n_balvars' // compute mean 
 
 // F-statistic and global p-value
-if "`psw'" == "" qui reg `treatvar' `balvars' if `touse'
-else qui reg `treatvar' `balvars' [iw=`psweight'] if `touse' & `comsup' 
+if "`psw'" == "" qui reg `subgroup' `balvars' if `touse'
+else qui reg `subgroup' `balvars' [iw=`psweight'] if `touse' & `comsup' 
 local Fstat = e(F)
 local pval_global = 1-F(e(df_m),e(df_r),e(F))
 
