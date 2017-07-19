@@ -4,7 +4,7 @@ version 11.1 /* todo: check if this is the real minimum */
 syntax varlist(min=2 numeric) [if] [in] , [ ///
   subgroup(name) treatvar(name) /// importan inputs
 	psweight(name) pscore(name) comsup(name) /// newvars
-  balvars(varlist numeric) showbalance logit /// balancepscore opts
+  balance(varlist numeric) showbalance logit /// balancepscore opts
 	BWidth(numlist sort) /// rddsga opts
 ]
 
@@ -46,8 +46,8 @@ tempvar subgroup0
 qui gen `subgroup0' = (`subgroup' == 0) if !mi(`subgroup')
 
 // Extract balance variables
-if "`balvars'" == "" local balvars `covariates'
-local n_balvars `: word count `balvars''
+if "`balance'" == "" local balance `covariates'
+local n_balance `: word count `balance''
 
 // Extract individual bandwidths
 foreach bw of numlist `bwidth' {
@@ -66,8 +66,8 @@ else local binarymodel probit
 * Original balance
 *-------------------------------------------------------------------------------
 balancematrix, matname(oribal)  ///
-  touse(`touse') balvars(`balvars') ///
-  subgroup(`subgroup') subgroup0(`subgroup0') n_balvars(`n_balvars')
+  touse(`touse') balance(`balance') ///
+  subgroup(`subgroup') subgroup0(`subgroup0') n_balance(`n_balance')
 return add
 
 // Display balance matrix and global stats
@@ -83,9 +83,9 @@ if "`showbalance'" != "" {
 * Propensity Score Weighting balance
 *-------------------------------------------------------------------------------
 balancematrix, matname(pswbal)  ///
-  touse(`touse') balvars(`balvars') ///
+  touse(`touse') balance(`balance') ///
   psw psweight(`psweight') pscore(`pscore') comsup(`comsup') binarymodel(`binarymodel') ///
-	subgroup(`subgroup') subgroup0(`subgroup0') n_balvars(`n_balvars')
+	subgroup(`subgroup') subgroup0(`subgroup0') n_balance(`n_balance')
 return add
 
 // Display balance matrix and global stats
@@ -126,15 +126,15 @@ end
 *-------------------------------------------------------------------------------
 program define balancematrix, rclass
 syntax, matname(string) /// important inputs, differ by call
-  touse(name) balvars(varlist) /// unchanging inputs
+  touse(name) balance(varlist) /// unchanging inputs
   [psw psweight(name) pscore(name) comsup(name) binarymodel(string)] /// only needed for PSW balance
-	subgroup(name) subgroup0(name) n_balvars(int) // todo: eliminate these? can be computed by subroutine at low cost
+	subgroup(name) subgroup0(name) n_balance(int) // todo: eliminate these? can be computed by subroutine at low cost
 
 * Create variables specific to PSW matrix
 *-------------------------------------------------------------------------------
 if "`psw'" != "" { // if psw
   // Fit binary response model
-  qui `binarymodel' `subgroup' `balvars' if `touse'
+  qui `binarymodel' `subgroup' `balance' if `touse'
 
   // Generate pscore variable and clear stored results
   qui predict `pscore' if `touse'
@@ -179,7 +179,7 @@ else { // if nopsw
 * Compute stats specific for each covariate 
 *-------------------------------------------------------------------------------
 local j = 0
-foreach var of varlist `balvars' {
+foreach var of varlist `balance' {
   local ++j
 
   // Compute and store conditional expectations
@@ -206,26 +206,26 @@ foreach var of varlist `balvars' {
 // Mean of absolute standardized mean differences (ie. stddiff + ... + stddiff`k')
 /* todo: this begs to be vectorized */
 local avgdiff = 0
-forvalues j = 1/`n_balvars' {
-  local avgdiff = abs(`stddiff`j'') + `avgdiff' // sum over `j' (balvars)
+forvalues j = 1/`n_balance' {
+  local avgdiff = abs(`stddiff`j'') + `avgdiff' // sum over `j' (balance)
 }
-local avgdiff = `avgdiff'/`n_balvars' // compute mean 
+local avgdiff = `avgdiff'/`n_balance' // compute mean 
 
 // F-statistic and global p-value
-if "`psw'" == "" qui reg `subgroup' `balvars' if `touse'
-else qui reg `subgroup' `balvars' [iw=`psweight'] if `touse' & `comsup' 
+if "`psw'" == "" qui reg `subgroup' `balance' if `touse'
+else qui reg `subgroup' `balance' [iw=`psweight'] if `touse' & `comsup' 
 local Fstat = e(F)
 local pval_global = 1-F(e(df_m),e(df_r),e(F))
 
 * Create balance matrix
 *-------------------------------------------------------------------------------
 // Matrix parameters
-matrix `matname' = J(`n_balvars', 4, .)
+matrix `matname' = J(`n_balance', 4, .)
 matrix colnames `matname' = mean_G0 mean_G1 std_diff p-value
-matrix rownames `matname' = `balvars'
+matrix rownames `matname' = `balance'
 
 // Add per-covariate values 
-forvalues j = 1/`n_balvars' {
+forvalues j = 1/`n_balance' {
   matrix `matname'[`j',1] = `coef`j'_G0'
   matrix `matname'[`j',2] = `coef`j'_G1'
   matrix `matname'[`j',3] = `stddiff`j''
@@ -268,10 +268,10 @@ KNOWN ISSUES/BUGS:
       differences in treatment groups? check if variable.
   - Per-covariate stats don't agree with original balancepscore
     ~ In original balance this was due to different usage of `touse'; original
-      ado includes obs. with missing values in depvar (and balvars?)
+      ado includes obs. with missing values in depvar (and balance?)
 
 TODOS AND IDEAS:
   - Create subroutine of matlist formatting for display of balancematrix output
   - Implement matrix manipulation in Mata
-  - Get rid of subgroup0 hack for control units
+  - Get rid of subgroup0 hack
 */
