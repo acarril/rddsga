@@ -53,6 +53,9 @@ local n_balance `: word count `balance''
 if "`logit'" != "" local binarymodel logit
 else local binarymodel probit
 
+// Create bandwidth condition 
+local bwidth abs(`assignvar') < `bwidth'
+
 // Create indicator cutoff variable
 tempvar cutoffvar
 gen `cutoffvar' = (`assignvar'>`cutoff')
@@ -101,11 +104,11 @@ if "`showbalance'" != "" {
 *-------------------------------------------------------------------------------
 
 // IVREG
-/*
+
 ivregress 2sls `yvar' i.`subgroup'#(`covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar') ///
   (i.`subgroup'#`treatment' = i.`subgroup'#`cutoffvar') ///
-  if -(`bwidth')<`assignvar' & `assignvar'<(`bwidth'), vce(cluster gpaoXuceXrk)
-*/
+  if `bwidth', vce(cluster gpaoXuceXrk)
+
 /*
 *reg `x' `Z1' `Z0' `C`S`i''' `FE'  if `X'>-(`bw1') & `X'<(`bw1'), vce(cluster gpaoXuceXrk)
 *reg I_CURaudit `Z1' `Z0' `C`S`i''' `FE'  if -(`bw1')<`assignvar' & `assignvar'<(`bw1'), vce(cluster gpaoXuceXrk)
