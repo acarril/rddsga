@@ -5,7 +5,7 @@ syntax varlist(min=2 numeric) [if] [in] , [ ///
   subgroup(name) treatment(name) /// importan inputs
 	psweight(name) pscore(name) comsup(name) /// newvars
   balance(varlist numeric) showbalance logit /// balancepscore opts
-	BWidth(numlist sort) cutoff(real 0) /// rddsga opts
+	BWidth(real 0) cutoff(real 0) /// rddsga opts
 ]
 
 // Mark observations to be used
@@ -48,12 +48,6 @@ qui gen `subgroup0' = (`subgroup' == 0) if !mi(`subgroup')
 // Extract balance variables
 if "`balance'" == "" local balance `covariates'
 local n_balance `: word count `balance''
-
-// Extract individual bandwidths
-foreach bw of numlist `bwidth' {
-  local i = `i'+1
-  local bw`i' = `bw'
-}
 
 // Define model to fit (probit is default)
 if "`logit'" != "" local binarymodel logit
@@ -110,7 +104,7 @@ if "`showbalance'" != "" {
 /*
 ivregress 2sls `yvar' i.`subgroup'#(`covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar') ///
   (i.`subgroup'#`treatment' = i.`subgroup'#`cutoffvar') ///
-  if -(`bw1')<`assignvar' & `assignvar'<(`bw1'), vce(cluster gpaoXuceXrk)
+  if -(`bwidth')<`assignvar' & `assignvar'<(`bwidth'), vce(cluster gpaoXuceXrk)
 */
 /*
 *reg `x' `Z1' `Z0' `C`S`i''' `FE'  if `X'>-(`bw1') & `X'<(`bw1'), vce(cluster gpaoXuceXrk)
@@ -169,8 +163,6 @@ if "`psw'" != "" { // if psw
     `N_G0'/(`N_G1'+`N_G0')/(1-`pscore')*(`subgroup'==0) ///
     if `touse' & `comsup' 
 } // end if psw
-
-
 
 * Count obs. in each treatment group if not PSW matrix
 *-------------------------------------------------------------------------------
