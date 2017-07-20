@@ -104,11 +104,11 @@ if "`showbalance'" != "" {
 *-------------------------------------------------------------------------------
 
 // IVREG
-
+/*
 ivregress 2sls `yvar' i.`subgroup'#(`covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar') ///
   (i.`subgroup'#`treatment' = i.`subgroup'#`cutoffvar') ///
   if `bwidth', vce(cluster gpaoXuceXrk)
-
+*/
 /*
 *reg `x' `Z1' `Z0' `C`S`i''' `FE'  if `X'>-(`bw1') & `X'<(`bw1'), vce(cluster gpaoXuceXrk)
 *reg I_CURaudit `Z1' `Z0' `C`S`i''' `FE'  if -(`bw1')<`assignvar' & `assignvar'<(`bw1'), vce(cluster gpaoXuceXrk)
@@ -130,16 +130,16 @@ program define balancematrix, rclass
 syntax, matname(string) /// important inputs, differ by call
   touse(name) bwidth(string) balance(varlist) /// unchanging inputs
   [psw psweight(name) pscore(name) comsup(name) binarymodel(string)] /// only needed for PSW balance
-	subgroup(name) subgroup0(name) n_balance(int) // todo: eliminate these? can be computed by subroutine at low cost
+  subgroup(name) subgroup0(name) n_balance(int) // todo: eliminate these? can be computed by subroutine at low cost
 
 * Create variables specific to PSW matrix
 *-------------------------------------------------------------------------------
 if "`psw'" != "" { // if psw
   // Fit binary response model
-  qui `binarymodel' `subgroup' `balance' if `touse'
+  qui `binarymodel' `subgroup' `balance' if `touse' & `bwidth'
 
   // Generate pscore variable and clear stored results
-  qui predict `pscore' if `touse'
+  qui predict `pscore' if `touse' & `bwidth'
   ereturn clear
 
   // Genterate common support varible
@@ -148,15 +148,15 @@ if "`psw'" != "" { // if psw
     qui sum `pscore' if `subgroup' == 1
     qui gen `comsup' = ///
       (`pscore' >= `r(min)' & ///
-       `pscore' <= `r(max)') if `touse'
+       `pscore' <= `r(max)') if `touse' & `bwidth'
     label var `comsup' "Dummy for obs. in common support"
   }
-  else qui gen `comsup' == 1 if `touse'
+  else qui gen `comsup' == 1 if `touse' & `bwidth'
 
   // Count observations in each treatment group
-  qui count if `touse' & `comsup' & `subgroup'==0
+  qui count if `touse' & `bwidth' & `comsup' & `subgroup'==0
   local N_G0 = `r(N)'
-  qui count if `touse' & `comsup' & `subgroup'==1
+  qui count if `touse' & `bwidth' & `comsup' & `subgroup'==1
   local N_G1 = `r(N)'
 
   // Compute propensity score weighting vector
@@ -164,15 +164,15 @@ if "`psw'" != "" { // if psw
   qui gen `psweight' = ///
     `N_G1'/(`N_G1'+`N_G0')/`pscore'*(`subgroup'==1) + ///
     `N_G0'/(`N_G1'+`N_G0')/(1-`pscore')*(`subgroup'==0) ///
-    if `touse' & `comsup' 
+    if `touse' & `bwidth' & `comsup' 
 } // end if psw
 
 * Count obs. in each treatment group if not PSW matrix
 *-------------------------------------------------------------------------------
 else { // if nopsw
-  qui count if `touse' & `subgroup'==0
+  qui count if `touse' & `bwidth' & `subgroup'==0
   local N_G0 = `r(N)'
-  qui count if `touse' & `subgroup'==1
+  qui count if `touse' & `bwidth' & `subgroup'==1
   local N_G1 = `r(N)'
 } // end if nopsw
 
@@ -183,21 +183,21 @@ foreach var of varlist `balance' {
   local ++j
 
   // Compute and store conditional expectations
-  if "`psw'" == "" qui reg `var' `subgroup0' `subgroup' if `touse', noconstant /* */
-  else qui reg `var' `subgroup0' `subgroup' [iw=`psweight'] if `touse' & `comsup', noconstant
+  if "`psw'" == "" qui reg `var' `subgroup0' `subgroup' if `touse' & `bwidth', noconstant /* */
+  else qui reg `var' `subgroup0' `subgroup' [iw=`psweight'] if `touse' & `bwidth' & `comsup', noconstant
   local coef`j'_G0 = _b[`subgroup0']
   local coef`j'_G1 = _b[`subgroup']
 
   // Compute and store mean differences and their p-values
-  if "`psw'" == "" qui reg `var' `subgroup0' if `touse'
-  else qui reg `var' `subgroup0' [iw=`psweight'] if `touse' & `comsup'
+  if "`psw'" == "" qui reg `var' `subgroup0' if `touse' & `bwidth'
+  else qui reg `var' `subgroup0' [iw=`psweight'] if `touse' & `bwidth' & `comsup'
   matrix m = r(table)
   scalar diff`j'=m[1,1] // mean difference
   local pval`j' = m[4,1] // p-value 
 
   // Standardized mean difference
-  if "`psw'" == "" qui summ `var' if `touse'
-  else qui summ `var' if `touse' & `comsup'
+  if "`psw'" == "" qui summ `var' if `touse' & `bwidth'
+  else qui summ `var' if `touse' & `bwidth' & `comsup'
   local stddiff`j' = (diff`j')/r(sd)
 }
 
@@ -212,8 +212,8 @@ forvalues j = 1/`n_balance' {
 local avgdiff = `avgdiff'/`n_balance' // compute mean 
 
 // F-statistic and global p-value
-if "`psw'" == "" qui reg `subgroup' `balance' if `touse'
-else qui reg `subgroup' `balance' [iw=`psweight'] if `touse' & `comsup' 
+if "`psw'" == "" qui reg `subgroup' `balance' if `touse' & `bwidth'
+else qui reg `subgroup' `balance' [iw=`psweight'] if `touse' & `bwidth' & `comsup' 
 local Fstat = e(F)
 local pval_global = 1-F(e(df_m),e(df_r),e(F))
 
