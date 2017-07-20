@@ -2,7 +2,7 @@
 program define rddsga, rclass
 version 11.1 /* todo: check if this is the real minimum */
 syntax varlist(min=2 numeric) [if] [in] , [ ///
-  subgroup(name) treatvar(name) /// importan inputs
+  subgroup(name) treatment(name) /// importan inputs
 	psweight(name) pscore(name) comsup(name) /// newvars
   balance(varlist numeric) showbalance logit /// balancepscore opts
 	BWidth(numlist sort) /// rddsga opts
@@ -102,12 +102,12 @@ if "`showbalance'" != "" {
 * rddsga
 *-------------------------------------------------------------------------------
 
-/*
-qui xi: ivreg `Y' `C`S`i''' `FE' (`X1' `X0' = `Z1' `Z0') if `X'>-(`bw`i'') & `X'<(`bw`i''), cluster(`cluster')
-xi: ivregress `yvar' `subgroup'#(`covariates') i.gpaoXuceXrk ///
-  (1.`subgroup'#) ///
+*qui xi: ivreg `Y' `C`S`i''' `FE' (`X1' `X0' = `Z1' `Z0') if `X'>-(`bw`i'') & `X'<(`bw`i''), cluster(`cluster')
+xi: ivregress 2sls `yvar' `subgroup'#(`covariates') i.gpaoXuceXrk ///
+  (`treatment'#i.`subgroup' = `assignvar'#i.`subgroup') ///
   if -(`bw1')<`assignvar' & `assignvar'<(`bw1'), vce(cluster gpaoXuceXrk)
 
+/*
 *reg `x' `Z1' `Z0' `C`S`i''' `FE'  if `X'>-(`bw1') & `X'<(`bw1'), vce(cluster gpaoXuceXrk)
 *reg I_CURaudit `Z1' `Z0' `C`S`i''' `FE'  if -(`bw1')<`assignvar' & `assignvar'<(`bw1'), vce(cluster gpaoXuceXrk)
 */
