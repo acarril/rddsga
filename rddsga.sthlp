@@ -6,12 +6,12 @@
 {title:Title}
 
 {pstd}
-{hi:rddsga} {hline 2} Estimate the propensity score proposed by {help psestimate##imbens_rubin_2015:Imbens and Rubin (2015)}
+{hi:rddsga} {hline 2} Conduct subgroup analysis with propensity score weighting in RDD settings
 
 {title:Syntax}
 
 {p 8 16 2}
-{cmd:rddsga} {depvar} [{indepvars}] {ifin}
+{cmd:rddsga} {depvar} {it:assignvar} [{indepvars}] {ifin}
 [{cmd:,} {it:options}]
 {p_end}
 
@@ -38,9 +38,9 @@
 {title:Description}
 
 {pstd}
-The {cmd:psestimate} command estimates the propensity score proposed by {help psestimate##imbens_rubin_2015:Imbens and Rubin (2015)}.
-In particular, it implements the algorithm outlined by {help psestimate##imbens_2015:Imbens (2015)}, which estimates the propensity score for a binary dependent variable indicating treatment status.
-The main purpose of the program is to select a linear or quadratic function of covariates to include in the estimation function of the propensity score.
+This program implements a binary subgroup analysis in RDD settings based on propensity score weighting.
+Observations in each subgroup are weighted by the inverse of their conditional probabilities to belong to that subgroup, given a set of covariates.
+Performing RDD analysis separately within each weighted subgroup eliminates potential confounding differences due to other observable factors that may vary systematically across (uneweighted) subgroups.
 
 {pstd}
 A binary treatment variable must be specified as {help depvar:dependent variable}.
@@ -179,12 +179,22 @@ To install the ancillary files (nswre74.dta and replicate_lalonde.do), remember 
 {pstd}
 Additionally, {cmd:psestimate} stores all results stored in {cmd:e()} by {manhelp logit R:logit} after fitting the final model with all selected terms.
 
-{title:Author}
+{title:Authors}
 
 {pstd}
 Alvaro Carril{break}
 Research Analyst at J-PAL LAC{break}
 acarril@fen.uchile.cl
+
+{pstd}
+Andre Cazor{break}
+Research Analyst at J-PAL LAC{break}
+ajcazor@uc.cl
+
+{pstd}
+Stephan Litschig{break}
+Associate Professor at GRIPS{break}
+s-litschig@grips.ac.jp
 
 {title:Acknowledgements}
 
