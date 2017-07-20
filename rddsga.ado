@@ -113,9 +113,10 @@ if "`showbalance'" != "" {
 * rddsga
 *-------------------------------------------------------------------------------
 
+// IVREG
 *qui xi: ivreg `Y' `C`S`i''' `FE' (`X1' `X0' = `Z1' `Z0') if `X'>-(`bw`i'') & `X'<(`bw`i''), cluster(`cluster')
 ivregress 2sls `yvar' i.`subgroup'#(`covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoff') ///
-  (`tXg0' `tXg1' = `cXg0' `cXg1') ///
+  (i.`subgroup'#`treatment' = i.`subgroup'#`cutoff') ///
   if -(`bw1')<`assignvar' & `assignvar'<(`bw1'), vce(cluster gpaoXuceXrk)
 
 /*
