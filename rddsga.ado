@@ -1,4 +1,4 @@
-*! 0.3 Alvaro Carril 20jul2017
+*! 0.4 Alvaro Carril 20jul2017
 program define rddsga, rclass
 version 11.1 /* todo: check if this is the real minimum */
 syntax varlist(min=2 numeric fv) [if] [in] , [ ///
@@ -8,9 +8,6 @@ syntax varlist(min=2 numeric fv) [if] [in] , [ ///
 	BWidth(real 0) cutoff(real 0) ///
   vce(string) ///
 ]
-
-// Mark observations to be used
-marksample touse, novarlist
 
 *-------------------------------------------------------------------------------
 * Check inputs
@@ -26,7 +23,7 @@ if `fvops' {
   _fv_check_depvar `first'
   capture _fv_check_depvar `second'
   if _rc!=0 {
-    di as error "assignvar may not be a factor variable"
+    di as error "assignvar {bf:`second'} may not be a factor variable"
     exit 198
   }
 }
@@ -46,6 +43,9 @@ else tempvar pscore
 *-------------------------------------------------------------------------------
 * Process inputs
 *-------------------------------------------------------------------------------
+
+// Mark observations to be used
+marksample touse, novarlist
 
 // Extract outcome variable
 local depvar : word 1 of `varlist'
@@ -127,11 +127,15 @@ if "`showbalance'" != "" {
 *-------------------------------------------------------------------------------
 
 // IVREG
-/*
+
 ivregress 2sls `depvar' i.`subgroup'#(`fv_covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar') ///
   (i.`subgroup'#1.`treatment' = i.`subgroup'#`cutoffvar') ///
   if `bwidth', vce(`vce') noconstant
-*/
+
+ivregress 2sls `depvar' i.`subgroup'#(`fv_covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar') ///
+  (i.`subgroup'#1.`treatment' = i.`subgroup'#`cutoffvar') ///
+  [pw=`psweight'] if `bwidth', vce(`vce') noconstant
+
 /*
 *reg `x' `Z1' `Z0' `C`S`i''' `FE'  if `X'>-(`bw1') & `X'<(`bw1'), vce(cluster gpaoXuceXrk)
 *reg I_CURaudit `Z1' `Z0' `C`S`i''' `FE'  if -(`bw1')<`assignvar' & `assignvar'<(`bw1'), vce(cluster gpaoXuceXrk)
@@ -275,6 +279,8 @@ end
 
 /* 
 CHANGE LOG
+0.4
+  - First working version with IVREG equation
 0.3
   - Standardize syntax to merge with original rddsga.ado
 0.2
@@ -292,6 +298,7 @@ KNOWN ISSUES/BUGS:
   - Per-covariate stats don't agree with original balancepscore
     ~ In original balance this was due to different usage of `touse'; original
       ado includes obs. with missing values in depvar (and balance?)
+  - Should we use pweights or iweights? iw don't work with ivregress.
 
 TODOS AND IDEAS:
   - Create subroutine of matlist formatting for display of balancematrix output
