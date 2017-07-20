@@ -46,6 +46,7 @@ else tempvar pscore
 
 // Mark observations to be used
 marksample touse, novarlist
+gen touse =  `touse'
 
 // Extract outcome variable
 local depvar : word 1 of `varlist'
@@ -132,7 +133,7 @@ ivregress 2sls `depvar' i.`subgroup'#(`fv_covariates' i.gpaoXuceXr c.`assignvar'
   (i.`subgroup'#1.`treatment' = i.`subgroup'#`cutoffvar') ///
   if `bwidth', vce(`vce') noconstant
 
-ivregress 2sls `depvar' i.`subgroup'#(`fv_covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar') ///
+ivregress 2sls `depvar' i.`subgroup'#(`fv_covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar' `quadratic') /// assignvar^2 cutoffvar^2 (c.`assignvar'#`cutoffvar')^2
   (i.`subgroup'#1.`treatment' = i.`subgroup'#`cutoffvar') ///
   [pw=`psweight'] if `bwidth', vce(`vce') noconstant
 
@@ -163,19 +164,20 @@ syntax, matname(string) /// important inputs, differ by call
 *-------------------------------------------------------------------------------
 if "`psw'" != "" { // if psw
   // Fit binary response model
+  gen band = (`bwidth')
   qui `binarymodel' `subgroup' `balance' if `touse' & `bwidth'
 
   // Generate pscore variable and clear stored results
-  qui predict `pscore' if `touse' & `bwidth'
+  predict double `pscore' if `touse' & `bwidth' & !mi(`subgroup')
   ereturn clear
 
-  // Genterate common support varible
+  // Generate common support variable
   capture drop `comsup'
   if "`comsup'" != "" {
-    qui sum `pscore' if `subgroup' == 1
+    qui sum `pscore' if `subgroup' == 1 /* todo: check why this is like that */
     qui gen `comsup' = ///
       (`pscore' >= `r(min)' & ///
-       `pscore' <= `r(max)') if `touse' & `bwidth'
+       `pscore' <= `r(max)')
     label var `comsup' "Dummy for obs. in common support"
   }
   else qui gen `comsup' == 1 if `touse' & `bwidth'
