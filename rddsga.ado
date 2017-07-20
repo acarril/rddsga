@@ -16,16 +16,21 @@ marksample touse, novarlist
 * Check inputs
 *-------------------------------------------------------------------------------
 
-// Check that depvar is not factor variable
+// Check that depvar and assignvar are not factor variables
 local fvops = "`s(fvops)'" == "true" | _caller() >= 11 
 if `fvops' { 
   local vv: di "version " ///
   string(max(11,_caller())) ", missing: " 
-  gettoken lhs rest : varlist
-  _fv_check_depvar `lhs'
+  gettoken first rest : varlist
+  gettoken second rest : rest
+  _fv_check_depvar `first'
+  capture _fv_check_depvar `second'
+  if _rc!=0 {
+    di as error "assignvar may not be a factor variable"
+    exit 198
+  }
 }
 
-di "`varlist'"
 // psweight(): define new propensity score weighting variable or use a tempvar
 if "`psweight'" != "" confirm new variable `psweight'
 else tempvar psweight
@@ -122,11 +127,11 @@ if "`showbalance'" != "" {
 *-------------------------------------------------------------------------------
 
 // IVREG
-
+/*
 ivregress 2sls `depvar' i.`subgroup'#(`fv_covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar') ///
   (i.`subgroup'#1.`treatment' = i.`subgroup'#`cutoffvar') ///
   if `bwidth', vce(`vce') noconstant
-
+*/
 /*
 *reg `x' `Z1' `Z0' `C`S`i''' `FE'  if `X'>-(`bw1') & `X'<(`bw1'), vce(cluster gpaoXuceXrk)
 *reg I_CURaudit `Z1' `Z0' `C`S`i''' `FE'  if -(`bw1')<`assignvar' & `assignvar'<(`bw1'), vce(cluster gpaoXuceXrk)
