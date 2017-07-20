@@ -15,6 +15,10 @@
 [{cmd:,} {it:options}]
 {p_end}
 
+{phang}
+{it:assignvar} is the assignment variable for which there is a known cutoff at which the conditional mean of the treatment variable changes abruptly.{p_end}
+
+
 {synoptset 20 tabbed}{...}
 {synopthdr}
 {synoptline}
@@ -117,7 +121,7 @@ See {manhelp logit R:logit} and {manhelp maximize R:maximize} for additional inf
 {title:Remarks on executing time}
 
 {pstd}
-The algorithm implemented by {cmd: psestimate} may take a (very) long time executing.
+The algorithm implemented by {cmd: rddsga} may take a (very) long time executing.
 A progress indicator is displayed while the program selects first and second order terms, to monitor progress.
 The number in parenthesis corresponds to the upper bound of iterations the algorithm could perform before running out of covariates (or its combinations, if applicable) to try.
 
@@ -128,56 +132,62 @@ It is a good idea to start using the command with the {opt noquad} option and th
 {title:Examples}
 
 {pstd}
-For these examples I use the "Lalonde Experimental Data (Dehejia-Wahba Sample)", corresponding to the data analyzed by {help psestimate##DW_1999:Dehejia and Wahba (1999)} and available on Dehejia's website.
+For these examples I use the "Lalonde Experimental Data (Dehejia-Wahba Sample)", corresponding to the data analyzed by {help rddsga##DW_1999:Dehejia and Wahba (1999)} and available on Dehejia's website.
 The dataset contains 445 observations with information on treatment status and various other characteristics.
 
 {pstd}
 To install the ancillary files (nswre74.dta and replicate_lalonde.do), remember to use {cmd: net gate} after {cmd: ssc install}:
 
-{phang2}{cmd:. ssc install psestimate}{p_end}
-{phang2}{cmd:. net get psestimate}{p_end}
+{phang2}{cmd:. ssc install rddsga}{p_end}
+{phang2}{cmd:. net get rddsga}{p_end}
 
 {pstd}Setup{p_end}
 {phang2}{cmd:. use nswre74}{p_end}
 
 {pstd}Select PS model for treatment variable{p_end}
-{phang2}{cmd:. psestimate treat}{p_end}
+{phang2}{cmd:. rddsga treat}{p_end}
 
 {pstd}Select PS model from restricted list of covariates and lowered quadratic threshold{p_end}
-{phang2}{cmd:. psestimate treat, totry(age-nodeg re*) cquad(.8)}{p_end}
+{phang2}{cmd:. rddsga treat, totry(age-nodeg re*) cquad(.8)}{p_end}
 
 {pstd}Select PS model with income and unemployment dummies as basic covariates{p_end}
 {phang2}{cmd:. foreach y in 74 75 78 {c -(}} {p_end}
 {phang2}{cmd:.	gen u`y' = (re`y'==0)}{p_end}
 {phang2}{cmd:. }}{p_end}
-{phang2}{cmd:. psestimate treat re* u*}{p_end}
+{phang2}{cmd:. rddsga treat re* u*}{p_end}
 
 {pstd}Estimate propensity score with no quadratic terms{p_end}
-{phang2}{cmd:. psestimate treat, genpscore(ps) noquad}{p_end}
+{phang2}{cmd:. rddsga treat, genpscore(ps) noquad}{p_end}
 
 {pstd}Estimate log odds ratio with explicit selection of linear terms{p_end}
-{phang2}{cmd:. psestimate treat age-nodeg, nolin genlor(logodds)}{p_end}
+{phang2}{cmd:. rddsga treat age-nodeg, nolin genlor(logodds)}{p_end}
 
 {title:Stored results}
 
 {pstd}
-{cmd:psestimate} stores the following in {cmd:r()}:
+{cmd:rddsga} stores the following in {cmd:r()}:
 
-{synoptset 15 tabbed}{...}
-{p2col 5 15 19 2: Scalars}{p_end}
-{synopt:{cmd:r(C_l)}}threshold value of linear terms{p_end}
-{synopt:{cmd:r(C_q)}}threshold value of quadratic terms{p_end}
+{synoptset 20 tabbed}{...}
+{p2col 5 20 24 2: Scalars}{p_end}
+{synopt:{cmd:r(oribal_N_G0)}}number of observations in subgroup 0 (original balance){p_end}
+{synopt:{cmd:r(oribal_N_G1)}}number of observations in subgroup 1 (original balance){p_end}
+{synopt:{cmd:r(oribal_Fstat)}}F-statistic (original balance){p_end}
+{synopt:{cmd:r(oribal_pvalue)}}F-statistic p-value (original balance){p_end}
+{synopt:{cmd:r(oribal_avgdiff)}}Average of absolute values of standardized differences (original balance){p_end}
 
-{p2col 5 15 19 2: Macros}{p_end}
-{synopt:{cmd:r(tvar)}}treatment variable{p_end}
-{synopt:{cmd:r(K_b)}}basic terms (explicitly included){p_end}
-{synopt:{cmd:r(K_l)}}linear terms{p_end}
-{synopt:{cmd:r(K_q)}}quadratic terms{p_end}
-{synopt:{cmd:r(h)}}full model{p_end}
+{synopt:{cmd:r(pswbal_N_G0)}}number of observations in subgroup 0 (PSW balance){p_end}
+{synopt:{cmd:r(pswbal_N_G1)}}number of observations in subgroup 1 (PSW balance){p_end}
+{synopt:{cmd:r(pswbal_Fstat)}}F-statistic (PSW balance){p_end}
+{synopt:{cmd:r(pswbal_pvalue)}}F-statistic p-value (PSW balance){p_end}
+{synopt:{cmd:r(pswbal_avgdiff)}}Average of absolute values of standardized differences (PSW balance){p_end}
+
+{p2col 5 15 19 2: Matrices}{p_end}
+{synopt:{cmd:r(pswbal)}}balance table matrix (original balance){p_end}
+{synopt:{cmd:r(oribal)}}balance table matrix (PSW balance){p_end}
 {p2colreset}{...}
 
 {pstd}
-Additionally, {cmd:psestimate} stores all results stored in {cmd:e()} by {manhelp logit R:logit} after fitting the final model with all selected terms.
+Additionally, {cmd:rddsga} stores all results stored in {cmd:e()} by {manhelp ivregress R:ivregress} after fitting the final model with all selected terms.
 
 {title:Authors}
 
@@ -196,12 +206,12 @@ Stephan Litschig{break}
 Associate Professor at GRIPS{break}
 s-litschig@grips.ac.jp
 
-{title:Acknowledgements}
+{title:Disclaimer}
 
 {pstd}
-This program started as a refinement of Juan Ignacio Elorrieta's work, whose code provided a significant headstart.
-I'm also indebted to Diego Escobar, who helped me to fine tune several features and to squash some bugs.
-All remaining errors are my own.
+This software is provided "as is", without warranty of any kind.
+If you have suggestions or want to report problems, please create a new issue in the {browse "https://github.com/acarril/rddsga/issues":project repository}.
+All remaining errors are our own.
 
 {title:References}
 
