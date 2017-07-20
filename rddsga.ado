@@ -74,8 +74,8 @@ return add
 // Display balance matrix and global stats
 if "`showbalance'" != "" {
   matlist oribal, border(rows) format(%9.3g) title("Original balance:")
-  di "Obs. in subgroup == 0: " oribal_N_G0
-  di "Obs. in subgroup == 1: " oribal_N_G1
+  di "Obs. in subgroup 0: " oribal_N_G0
+  di "Obs. in subgroup 1: " oribal_N_G1
   di "Mean abs(std_diff): " oribal_avgdiff
   di "F-statistic: " oribal_Fstat
   di "Global p-value: " oribal_pval_global
@@ -92,8 +92,8 @@ return add
 // Display balance matrix and global stats
 if "`showbalance'" != "" {
   matlist pswbal, border(rows) format(%9.3g) title("Propensity Score Weighting balance:")
-  di "Obs. in subgroup == 0: " pswbal_N_G0
-  di "Obs. in subgroup == 1: " pswbal_N_G1
+  di "Obs. in subgroup 0: " pswbal_N_G0
+  di "Obs. in subgroup 1: " pswbal_N_G1
   di "Mean abs(std_diff): " pswbal_avgdiff
   di "F-statistic: " pswbal_Fstat
   di "Global p-value: " pswbal_pval_global
