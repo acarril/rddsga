@@ -5,7 +5,7 @@ syntax varlist(min=2 numeric) [if] [in] , [ ///
   subgroup(name) treatment(name) /// importan inputs
 	psweight(name) pscore(name) comsup(name) /// newvars
   balance(varlist numeric) showbalance logit /// balancepscore opts
-	BWidth(numlist sort) /// rddsga opts
+	BWidth(numlist sort) c(real 0) /// rddsga opts
 ]
 
 *-------------------------------------------------------------------------------
@@ -39,7 +39,7 @@ local assignvar :	word 2 of `varlist'
 
 // Extract covariates
 local covariates : list varlist - yvar
-local covariates : list covariates - subgroup
+local covariates : list covariates - assignvar
 
 // Create complementary subgroup var
 tempvar subgroup0
@@ -58,6 +58,17 @@ foreach bw of numlist `bwidth' {
 // Define model to fit (probit is default)
 if "`logit'" != "" local binarymodel logit
 else local binarymodel probit
+
+// cutoff
+tempvar cutoff
+gen `cutoff' = (`assignvar'>`c') if `touse'
+
+// treatment con subgrupo
+tempvar tXg0 tXg1 cXg0 cXg1
+gen `tXg0' = `treatment'*`subgroup0'
+gen `tXg1' = `treatment'*`subgroup'
+gen `cXg0' = `cutoff'*`subgroup0'
+gen `cXg1' = `cutoff'*`subgroup'
 
 *-------------------------------------------------------------------------------
 * Compute balance table matrices
@@ -103,8 +114,8 @@ if "`showbalance'" != "" {
 *-------------------------------------------------------------------------------
 
 *qui xi: ivreg `Y' `C`S`i''' `FE' (`X1' `X0' = `Z1' `Z0') if `X'>-(`bw`i'') & `X'<(`bw`i''), cluster(`cluster')
-xi: ivregress 2sls `yvar' `subgroup'#(`covariates') i.gpaoXuceXrk ///
-  (`treatment'#i.`subgroup' = `assignvar'#i.`subgroup') ///
+ivregress 2sls `yvar' i.`subgroup'#(`covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoff') ///
+  (`tXg0' `tXg1' = `cXg0' `cXg1') ///
   if -(`bw1')<`assignvar' & `assignvar'<(`bw1'), vce(cluster gpaoXuceXrk)
 
 /*
