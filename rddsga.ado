@@ -67,7 +67,7 @@ gen `cutoffvar' = (`assignvar'>`cutoff')
 * Original balance
 *-------------------------------------------------------------------------------
 balancematrix, matname(oribal)  ///
-  touse(`touse') balance(`balance') ///
+  touse(`touse') bwidth(`bwidth') balance(`balance') ///
   subgroup(`subgroup') subgroup0(`subgroup0') n_balance(`n_balance')
 return add
 
@@ -84,7 +84,7 @@ if "`showbalance'" != "" {
 * Propensity Score Weighting balance
 *-------------------------------------------------------------------------------
 balancematrix, matname(pswbal)  ///
-  touse(`touse') balance(`balance') ///
+  touse(`touse') bwidth(`bwidth') balance(`balance') ///
   psw psweight(`psweight') pscore(`pscore') comsup(`comsup') binarymodel(`binarymodel') ///
 	subgroup(`subgroup') subgroup0(`subgroup0') n_balance(`n_balance')
 return add
@@ -128,7 +128,7 @@ end
 *-------------------------------------------------------------------------------
 program define balancematrix, rclass
 syntax, matname(string) /// important inputs, differ by call
-  touse(name) balance(varlist) /// unchanging inputs
+  touse(name) bwidth(string) balance(varlist) /// unchanging inputs
   [psw psweight(name) pscore(name) comsup(name) binarymodel(string)] /// only needed for PSW balance
 	subgroup(name) subgroup0(name) n_balance(int) // todo: eliminate these? can be computed by subroutine at low cost
 
