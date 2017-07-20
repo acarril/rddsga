@@ -63,13 +63,6 @@ else local binarymodel probit
 tempvar cutoff
 gen `cutoff' = (`assignvar'>`c') if `touse'
 
-// treatment con subgrupo
-tempvar tXg0 tXg1 cXg0 cXg1
-gen `tXg0' = `treatment'*`subgroup0'
-gen `tXg1' = `treatment'*`subgroup'
-gen `cXg0' = `cutoff'*`subgroup0'
-gen `cXg1' = `cutoff'*`subgroup'
-
 *-------------------------------------------------------------------------------
 * Compute balance table matrices
 *-------------------------------------------------------------------------------
