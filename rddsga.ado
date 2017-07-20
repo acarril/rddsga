@@ -24,6 +24,7 @@ if `fvops' {
   _fv_check_depvar `lhs'
 }
 
+di "`varlist'"
 // psweight(): define new propensity score weighting variable or use a tempvar
 if "`psweight'" != "" confirm new variable `psweight'
 else tempvar psweight
@@ -49,7 +50,15 @@ local assignvar :	word 2 of `varlist'
 // Define covariates list
 local covariates : list varlist - depvar
 local covariates : list covariates - assignvar
-di "`covariates'"
+
+// Add c. stub to continuous covariates for factor interactions
+/* Note that this list also includes indicator variables */
+foreach var in `covariates' {
+  capture _fv_check_depvar `var'
+  if _rc != 0 local fv_covariates `fv_covariates' `var'
+  else local fv_covariates `fv_covariates' c.`var'
+}
+
 // Create complementary subgroup var
 tempvar subgroup0
 qui gen `subgroup0' = (`subgroup' == 0) if !mi(`subgroup')
@@ -68,9 +77,6 @@ local bwidth abs(`assignvar') < `bwidth'
 // Create indicator cutoff variable
 tempvar cutoffvar
 gen `cutoffvar' = (`assignvar'>`cutoff')
-
-// Create list of continuous covariates for factor interactions
-
 
 *-------------------------------------------------------------------------------
 * Compute balance table matrices
@@ -117,7 +123,7 @@ if "`showbalance'" != "" {
 
 // IVREG
 
-ivregress 2sls `depvar' i.`subgroup'#(`covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar') ///
+ivregress 2sls `depvar' i.`subgroup'#(`fv_covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar') ///
   (i.`subgroup'#`treatment' = i.`subgroup'#`cutoffvar') ///
   if `bwidth', vce(cluster gpaoXuceXrk)
 

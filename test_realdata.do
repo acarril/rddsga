@@ -24,7 +24,7 @@ local w200 = e(w200)
 
 // Run command
 rddsga ///
-i.sh_licitacion dis_cutoff /// outcome and assignvar
+sh_licitacion dis_cutoff /// outcome and assignvar
 p1 p2 i.p3 c.sh_licitacionPRE2 /*sh_directoPRE1 sh_licitacionPRE1 sh_directoPRE2 size_PRE1 size_PRE2*/ I_PREaudit /// covariates
 , ///
   psweight(peso) pscore(ps_flexmodel41) comsup(soporte) logit showbalance ///
