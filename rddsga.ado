@@ -1,4 +1,4 @@
-*! 0.3 Alvaro Carril 19jul2017
+*! 0.3 Alvaro Carril 20jul2017
 program define rddsga, rclass
 version 11.1 /* todo: check if this is the real minimum */
 syntax varlist(min=2 numeric) [if] [in] , [ ///
