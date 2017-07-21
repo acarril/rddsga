@@ -128,18 +128,23 @@ if "`dibalance'" != "" {
 *-------------------------------------------------------------------------------
 
 // IVREG
-/*
+
 qui ivregress 2sls `depvar' i.`sgroup'#(`fv_covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar') ///
   (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') ///
   if `touse' & `bwidth', vce(`vce') noconstant
-*/
-ivregress 2sls `depvar' i.`sgroup'#(`fv_covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar' `quadratic') /// assignvar^2 cutoffvar^2 (c.`assignvar'#`cutoffvar')^2
+estimates store Original
+
+qui ivregress 2sls `depvar' i.`sgroup'#(`fv_covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar' `quadratic') /// assignvar^2 cutoffvar^2 (c.`assignvar'#`cutoffvar')^2
   (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') ///
   [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant 
+estimates store PSW
 
+estimates table Original PSW, b(%9.3g) se(%9.3g) keep(i.`sgroup'#1.`treatment') stats(N)
+return add 
 
 * Coefficients and standard errors of treatment, by subgroup
 *-------------------------------------------------------------------------------
+/*
 // Extract coefficients matrix
 matrix b = e(b)
 matrix coefs = b[1,1..2]
@@ -163,7 +168,7 @@ matrix colnames se = `se_colnames'
 
 // Return standard errors matrix 
 return matrix se = se
-
+*/
 
 end
 
