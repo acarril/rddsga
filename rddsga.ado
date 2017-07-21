@@ -2,10 +2,10 @@
 program define rddsga, rclass
 version 11.1 /* todo: check if this is the real minimum */
 syntax varlist(min=2 numeric fv) [if] [in] , [ ///
-  subgroup(name) treatment(name) /// importan inputs
-	psweight(name) pscore(name) comsup(name) /// newvars
-  balance(varlist numeric) showbalance logit /// balancepscore opts
-	BWidth(real 0) cutoff(real 0) ///
+  SUBGroup(name) Treatment(name) /// important inputs
+	PSWeight(name) PSCore(name) COMsup(name) /// newvars
+  BALance(varlist numeric) DIBALance logit /// balancepscore opts
+	BWidth(real 0) Cutoff(real 0) ///
   vce(string) ///
 ]
 
@@ -96,7 +96,7 @@ balancematrix, matname(oribal)  ///
 return add
 
 // Display balance matrix and global stats
-if "`showbalance'" != "" {
+if "`dibalance'" != "" {
   matlist oribal, border(rows) format(%9.3g) title("Original balance:")
   di "Obs. in subgroup 0: " oribal_N_G0
   di "Obs. in subgroup 1: " oribal_N_G1
@@ -114,7 +114,7 @@ balancematrix, matname(pswbal)  ///
 return add
 
 // Display balance matrix and global stats
-if "`showbalance'" != "" {
+if "`dibalance'" != "" {
   matlist pswbal, border(rows) format(%9.3g) title("Propensity Score Weighting balance:")
   di "Obs. in subgroup 0: " pswbal_N_G0
   di "Obs. in subgroup 1: " pswbal_N_G1
