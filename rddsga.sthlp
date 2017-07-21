@@ -10,7 +10,7 @@
 
 {p 8 16 2}
 {cmd:rddsga} {depvar} {it:assignvar} [{indepvars}] {ifin}
-[{cmd:,} {it:options}]
+{cmd:,} {it:options}
 {p_end}
 
 {phang}
@@ -19,41 +19,29 @@
 {synoptset 22 tabbed}{...}
 {synopthdr}
 {synoptline}
-{syntab :Balance}
+{p2col 3 4 4 2:* RD design}{p_end}
 {synopt :{opth sg:roup(varname)}}subgroup indicator variable{p_end}
 {synopt :{opth t:reatment(varname)}}indicator for the assignment variable above the cutoff; if not specified, a sharp RDD is assumed{p_end}
-{synopt :{opth psw:eight(newvar)}}name of new variable with propensity score weighting; if not specified, no variable will be generated{p_end}
-{synopt :{opth psc:ore(newvar)}}name of new variable with propensity score; if not specified, no variable will be generated{p_end}
-{synopt :{opth com:sup(newvar)}}name of new binary variable indicating common support; if not specified, no variable will be generated{p_end}
-{synopt :{opth bal:ance(varlist)}}variables for which the propensity score weighting is calculated; default is {indepvars}{p_end}
-{synopt :{opt dibal:ance}}display original balance and propensity score weighting balance tables and statistics{p_end}
-{synopt :{opt logit}}predict propensity score using a {manhelp logit R:logit} model; default is {manhelp probit R:probit}{p_end}
+{synopt :{opt c:utoff(real)}}specifies the cutoff value in {it:assignvar}{p_end}
+{synopt :{opt bw:idth(real)}}specifies the bandwidth around the cutoff{p_end}
 
-{synopt :{opth c:utoff(real)}}specifies the cutoff value in {it:assignvar}{p_end}
-{synopt :{opth bw:idth(real)}}specifies the bandwidth around the cutoff{p_end}
+{syntab :Balance}
+{synopt :{opth bal:ance(varlist)}}variables for which the propensity score weighting is calculated; default is {indepvars}{p_end}
+{synopt :{opt logit}}predict propensity score using a {manhelp logit R:logit} model; default is {manhelp probit R:probit}{p_end}
 
 {syntab :Model}
 {synopt :{opth vce(vcetype)}}{it:vcetype} may be {opt un:adjusted},
    {opt r:obust}, {opt cl:uster} {it:clustvar}, {opt boot:strap},
    {opt jack:knife}, or {opt hac} {help ivregress##kernel:{it:kernel}}{p_end}
 
-{syntab :Balance}
-{synopt :{opt nocon:stant}}suppress constant term{p_end}
-
-{synoptset 20 tabbed}{...}
-{synopthdr}
+{syntab :Reporting/Output}
+{synopt :{opt dibal:ance}}display original balance and propensity score weighting balance tables and statistics{p_end}
+{synopt :{opth psw:eight(newvar)}}name of new variable with propensity score weighting; if not specified, no variable will be generated{p_end}
+{synopt :{opth com:sup(newvar)}}name of new binary variable indicating common support; if not specified, no variable will be generated{p_end}
+{synopt :{opth psc:ore(newvar)}}name of new variable with propensity score; if not specified, no variable will be generated{p_end}
 {synoptline}
-{synoptset 20 tabbed}{...}
-{synopt:{opth t:otry(indepvars)}} specify list of covariates to try; default is all{p_end}
-{synopt:{opth not:ry(varlist)}} specify list of covariates to exclude; default is none{p_end}
-{synopt:{opt nol:in}} prevent algorithm of testing linear terms{p_end}
-{synopt:{opt noq:uad}} prevent algorithm of testing quadratic terms{p_end}
-{synopt:{opt cl:inear(real)}} threshold value for likelihood ratio test of first order covariates; default is 1{p_end}
-{synopt:{opt cq:uadratic(real)}} threshold value for likelihood ratio test of second order covariates; default is 2.71{p_end}
-{synopt:{opt iter:ate(#)}} perform maximum of # iterations in each logit; default is 16000{p_end}
-{synopt:{opth genps:core(newvar)}} generate new variable with propensity score estimation{p_end}
-{synopt:{opth genl:or(newvar)}} generate new variable with log odds ratio{p_end}
-{synoptline}
+{p2colreset}{...}
+{p 4 6 2}* These options must be specified.{p_end}
 {p 4 6 2}
 {it:indepvars} may contain factor variables; see {help fvvarlist}.{p_end}
 
