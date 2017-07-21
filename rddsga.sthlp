@@ -1,12 +1,11 @@
 {smcl}
 {* *! version 1.0 Jul 2017}{...}
-{cmd:help rddsga}{...}
-{hline}
 
 {title:Title}
 
 {pstd}
-{hi:rddsga} {hline 2} Conduct subgroup analysis with propensity score weighting in RDD settings
+{hi:rddsga} {hline 2} Subgroup analysis with propensity score weighting in RDD settings
+
 
 {title:Syntax}
 
@@ -17,6 +16,19 @@
 
 {phang}
 {it:assignvar} is the assignment variable for which there is a known cutoff at which the conditional mean of the treatment variable changes abruptly.{p_end}
+
+{synoptset 22 tabbed}{...}
+{synopthdr}
+{synoptline}
+{syntab :Model}
+{synopt :{opt nocon:stant}}suppress constant term{p_end}
+{synopt :{opt h:ascons}}has user-supplied constant{p_end}
+
+{syntab :SE/Robust}
+{synopt :{opth vce(vcetype)}}{it:vcetype} may be {opt un:adjusted},
+   {opt r:obust}, {opt cl:uster} {it:clustvar}, {opt boot:strap},
+   {opt jack:knife}, or {opt hac} {help ivregress##kernel:{it:kernel}}{p_end}
+
 
 
 {synoptset 20 tabbed}{...}
