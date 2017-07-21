@@ -27,7 +27,7 @@
 
 {syntab :Balance}
 {synopt :{opth bal:ance(varlist)}}variables for which the propensity score weighting is calculated; default is {indepvars}{p_end}
-{synopt :{opt logit}}predict propensity score using a {manhelp logit R:logit} model; default is {manhelp probit R:probit}{p_end}
+{synopt :{opt probit}}predict propensity score using a {manhelp probit R:probit} model; default is {manhelp logit R:logit}{p_end}
 
 {syntab :Model}
 {synopt :{opth vce(vcetype)}}{it:vcetype} may be {opt un:adjusted},
@@ -53,6 +53,9 @@
 {cmd:rddsga} allows to conduct a binary subgroup analysis in RDD settings based on propensity score weighting.
 Observations in each subgroup are weighted by the inverse of their conditional probabilities to belong to that subgroup, given a set of covariates.
 Performing RDD analysis separately within each weighted subgroup eliminates potential confounding differences due to other observable factors that may vary systematically across (uneweighted) subgroups.
+
+{pstd}
+In order to assess the statistical significance of the difference in means for each covariate, 
 
 
 {marker options}{...}
