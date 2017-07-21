@@ -144,7 +144,7 @@ qui ivregress 2sls `depvar' i.`sgroup'#(`fv_covariates' i.gpaoXuceXr c.`assignva
 
 * Clear any ereturn results and end main program
 *-------------------------------------------------------------------------------
-ereturn clear
+*ereturn clear
 end
 
 *===============================================================================
@@ -170,7 +170,7 @@ if "`psw'" != "" { // if psw
   qui predict double `pscore' if `touse' & `bwidth' & !mi(`sgroup')
   ereturn clear
 
-  // Generate common support variable
+  // Compute common support area by default; if not, equal comsup to 1
   if "`comsupaux'" != "nocomsupaux" {
     qui sum `pscore' if `sgroup' == 1 /* todo: check why this is like that */
     qui gen `comsup' = ///
@@ -179,7 +179,6 @@ if "`psw'" != "" { // if psw
     label var `comsup' "Dummy for obs. in common support"
   }
   else qui gen `comsup' = 1 if `touse' & `bwidth' & !mi(`sgroup')
-  gen comsup = `comsup'
 
   // Count observations in each treatment group
   qui count if `touse' & `bwidth' & `comsup' & `sgroup'==0

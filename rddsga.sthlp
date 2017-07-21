@@ -28,6 +28,7 @@
 {syntab :Balance}
 {synopt :{opth bal:ance(varlist)}}variables for which the propensity score weighting is calculated; default is {indepvars}{p_end}
 {synopt :{opt probit}}predict propensity score using a {manhelp probit R:probit} model; default is {manhelp logit R:logit}{p_end}
+{synopt :{opt nocom:sup}}do not restrict sample to area of common support{p_end}
 
 {syntab :Model}
 {synopt :{opth vce(vcetype)}}{it:vcetype} may be {opt un:adjusted},
