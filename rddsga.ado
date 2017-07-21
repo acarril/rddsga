@@ -180,7 +180,7 @@ if "`psw'" != "" { // if psw
        `pscore' <= `r(max)')
     label var `comsup' "Dummy for obs. in common support"
   }
-  else qui gen `comsup' == 1 if `touse' & `bwidth'
+  else qui gen `comsup' == 1 if `touse' & `bwidth' & !mi(`sgroup')
 
   // Count observations in each treatment group
   qui count if `touse' & `bwidth' & `comsup' & `sgroup'==0
