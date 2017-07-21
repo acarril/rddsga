@@ -3,7 +3,7 @@ program define rddsga, rclass
 version 11.1 /* todo: check if this is the real minimum */
 syntax varlist(min=2 numeric fv) [if] [in] , [ ///
   SGroup(name) Treatment(name) /// important inputs
-	PSWeight(name) PSCore(name) COMsup(name) /// newvars
+	PSWeight(name) PSCore(name) COMsup(name) noCOMsupaux /// newvars
   BALance(varlist numeric) DIBALance probit /// balancepscore opts
 	BWidth(real 0) Cutoff(real 0) ///
   vce(string) ///
@@ -108,9 +108,9 @@ if "`dibalance'" != "" {
 * Propensity Score Weighting balance
 *-------------------------------------------------------------------------------
 balancematrix, matname(pswbal)  ///
-  touse(`touse') bwidth(`bwidth') balance(`balance') ///
-  psw psweight(`psweight') pscore(`pscore') comsup(`comsup') binarymodel(`binarymodel') ///
-	sgroup(`sgroup') sgroup0(`sgroup0') n_balance(`n_balance')
+  psw psweight(`psweight') touse(`touse') bwidth(`bwidth') balance(`balance') ///
+  pscore(`pscore') comsup(`comsup') comsupaux(`comsupaux') binarymodel(`binarymodel') ///
+	sgroup(`sgroup') sgroup0(`sgroup0') n_balance(`n_balance') 
 return add
 
 // Display balance matrix and global stats
@@ -157,14 +157,13 @@ end
 program define balancematrix, rclass
 syntax, matname(string) /// important inputs, differ by call
   touse(name) bwidth(string) balance(varlist) /// unchanging inputs
-  [psw psweight(name) pscore(name) comsup(name) binarymodel(string)] /// only needed for PSW balance
+  [psw psweight(name) pscore(name) comsup(name) comsupaux(string) binarymodel(string)] /// only needed for PSW balance
   sgroup(name) sgroup0(name) n_balance(int) // todo: eliminate these? can be computed by subroutine at low cost
 
 * Create variables specific to PSW matrix
 *-------------------------------------------------------------------------------
 if "`psw'" != "" { // if psw
   // Fit binary response model
-  gen band = (`bwidth')
   qui `binarymodel' `sgroup' `balance' if `touse' & `bwidth'
 
   // Generate pscore variable and clear stored results
@@ -172,15 +171,15 @@ if "`psw'" != "" { // if psw
   ereturn clear
 
   // Generate common support variable
-  capture drop `comsup'
-  if "`comsup'" != "" {
+  if "`comsupaux'" != "nocomsupaux" {
     qui sum `pscore' if `sgroup' == 1 /* todo: check why this is like that */
     qui gen `comsup' = ///
       (`pscore' >= `r(min)' & ///
        `pscore' <= `r(max)')
     label var `comsup' "Dummy for obs. in common support"
   }
-  else qui gen `comsup' == 1 if `touse' & `bwidth' & !mi(`sgroup')
+  else qui gen `comsup' = 1 if `touse' & `bwidth' & !mi(`sgroup')
+  gen comsup = `comsup'
 
   // Count observations in each treatment group
   qui count if `touse' & `bwidth' & `comsup' & `sgroup'==0
