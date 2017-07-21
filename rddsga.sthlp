@@ -1,6 +1,5 @@
 {smcl}
 {* *! version 1.0 Jul 2017}{...}
-
 {title:Title}
 
 {pstd}
@@ -20,16 +19,26 @@
 {synoptset 22 tabbed}{...}
 {synopthdr}
 {synoptline}
-{syntab :Model}
-{synopt :{opt nocon:stant}}suppress constant term{p_end}
-{synopt :{opt h:ascons}}has user-supplied constant{p_end}
+{syntab :Balance}
+{synopt :{opth sg:roup(varname)}}subgroup indicator variable{p_end}
+{synopt :{opth t:reatment(varname)}}indicator for the assignment variable above the cutoff; if not specified, a sharp RDD is assumed{p_end}
+{synopt :{opth psw:eight(newvar)}}name of new variable with propensity score weighting; if not specified, no variable will be generated{p_end}
+{synopt :{opth psc:ore(newvar)}}name of new variable with propensity score; if not specified, no variable will be generated{p_end}
+{synopt :{opth com:sup(newvar)}}name of new binary variable indicating common support; if not specified, no variable will be generated{p_end}
+{synopt :{opth bal:ance(varlist)}}variables for which the propensity score weighting is calculated; default is {indepvars}{p_end}
+{synopt :{opt dibal:ance}}display original balance and propensity score weighting balance tables and statistics{p_end}
+{synopt :{opt logit}}predict propensity score using a {manhelp logit R:logit} model; default is {manhelp probit R:probit}{p_end}
 
-{syntab :SE/Robust}
+{synopt :{opth c:utoff(real)}}specifies the cutoff value in {it:assignvar}{p_end}
+{synopt :{opth bw:idth(real)}}specifies the bandwidth around the cutoff{p_end}
+
+{syntab :Model}
 {synopt :{opth vce(vcetype)}}{it:vcetype} may be {opt un:adjusted},
    {opt r:obust}, {opt cl:uster} {it:clustvar}, {opt boot:strap},
    {opt jack:knife}, or {opt hac} {help ivregress##kernel:{it:kernel}}{p_end}
 
-
+{syntab :Balance}
+{synopt :{opt nocon:stant}}suppress constant term{p_end}
 
 {synoptset 20 tabbed}{...}
 {synopthdr}
@@ -54,7 +63,7 @@
 {title:Description}
 
 {pstd}
-This program implements a binary subgroup analysis in RDD settings based on propensity score weighting.
+{cmd:rddsga} allows to conduct a binary subgroup analysis in RDD settings based on propensity score weighting.
 Observations in each subgroup are weighted by the inverse of their conditional probabilities to belong to that subgroup, given a set of covariates.
 Performing RDD analysis separately within each weighted subgroup eliminates potential confounding differences due to other observable factors that may vary systematically across (uneweighted) subgroups.
 
