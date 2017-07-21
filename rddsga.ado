@@ -2,7 +2,7 @@
 program define rddsga, rclass
 version 11.1 /* todo: check if this is the real minimum */
 syntax varlist(min=2 numeric fv) [if] [in] , [ ///
-  SUBGroup(name) Treatment(name) /// important inputs
+  SGroup(name) Treatment(name) /// important inputs
 	PSWeight(name) PSCore(name) COMsup(name) /// newvars
   BALance(varlist numeric) DIBALance logit /// balancepscore opts
 	BWidth(real 0) Cutoff(real 0) ///
@@ -65,9 +65,9 @@ foreach var in `covariates' {
   else local fv_covariates `fv_covariates' c.`var'
 }
 
-// Create complementary subgroup var
-tempvar subgroup0
-qui gen `subgroup0' = (`subgroup' == 0) if !mi(`subgroup')
+// Create complementary sgroup var
+tempvar sgroup0
+qui gen `sgroup0' = (`sgroup' == 0) if !mi(`sgroup')
 
 // Extract balance variables
 if "`balance'" == "" local balance `covariates'
@@ -92,14 +92,14 @@ gen `cutoffvar' = (`assignvar'>`cutoff')
 *-------------------------------------------------------------------------------
 balancematrix, matname(oribal)  ///
   touse(`touse') bwidth(`bwidth') balance(`balance') ///
-  subgroup(`subgroup') subgroup0(`subgroup0') n_balance(`n_balance')
+  sgroup(`sgroup') sgroup0(`sgroup0') n_balance(`n_balance')
 return add
 
 // Display balance matrix and global stats
 if "`dibalance'" != "" {
   matlist oribal, border(rows) format(%9.3g) title("Original balance:")
-  di "Obs. in subgroup 0: " oribal_N_G0
-  di "Obs. in subgroup 1: " oribal_N_G1
+  di "Obs. in sgroup 0: " oribal_N_G0
+  di "Obs. in sgroup 1: " oribal_N_G1
   di "Mean abs(std_diff): " oribal_avgdiff
   di "F-statistic: " oribal_Fstat
   di "Global p-value: " oribal_pval_global
@@ -110,14 +110,14 @@ if "`dibalance'" != "" {
 balancematrix, matname(pswbal)  ///
   touse(`touse') bwidth(`bwidth') balance(`balance') ///
   psw psweight(`psweight') pscore(`pscore') comsup(`comsup') binarymodel(`binarymodel') ///
-	subgroup(`subgroup') subgroup0(`subgroup0') n_balance(`n_balance')
+	sgroup(`sgroup') sgroup0(`sgroup0') n_balance(`n_balance')
 return add
 
 // Display balance matrix and global stats
 if "`dibalance'" != "" {
   matlist pswbal, border(rows) format(%9.3g) title("Propensity Score Weighting balance:")
-  di "Obs. in subgroup 0: " pswbal_N_G0
-  di "Obs. in subgroup 1: " pswbal_N_G1
+  di "Obs. in sgroup 0: " pswbal_N_G0
+  di "Obs. in sgroup 1: " pswbal_N_G1
   di "Mean abs(std_diff): " pswbal_avgdiff
   di "F-statistic: " pswbal_Fstat
   di "Global p-value: " pswbal_pval_global
@@ -129,13 +129,13 @@ if "`dibalance'" != "" {
 
 // IVREG
 
-ivregress 2sls `depvar' i.`subgroup'#(`fv_covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar') ///
-  (i.`subgroup'#1.`treatment' = i.`subgroup'#`cutoffvar') ///
+ivregress 2sls `depvar' i.`sgroup'#(`fv_covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar') ///
+  (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') ///
   if `bwidth', vce(`vce') noconstant
 
-ivregress 2sls `depvar' i.`subgroup'#(`fv_covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar' `quadratic') /// assignvar^2 cutoffvar^2 (c.`assignvar'#`cutoffvar')^2
-  (i.`subgroup'#1.`treatment' = i.`subgroup'#`cutoffvar') ///
-  [pw=`psweight'] if `bwidth', vce(`vce') noconstant
+ivregress 2sls `depvar' i.`sgroup'#(`fv_covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar' `quadratic') /// assignvar^2 cutoffvar^2 (c.`assignvar'#`cutoffvar')^2
+  (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') ///
+  [pw=`psweight'] if `bwidth', vce(`vce') noconstant 
 
 /*
 *reg `x' `Z1' `Z0' `C`S`i''' `FE'  if `X'>-(`bw1') & `X'<(`bw1'), vce(cluster gpaoXuceXrk)
@@ -158,23 +158,23 @@ program define balancematrix, rclass
 syntax, matname(string) /// important inputs, differ by call
   touse(name) bwidth(string) balance(varlist) /// unchanging inputs
   [psw psweight(name) pscore(name) comsup(name) binarymodel(string)] /// only needed for PSW balance
-  subgroup(name) subgroup0(name) n_balance(int) // todo: eliminate these? can be computed by subroutine at low cost
+  sgroup(name) sgroup0(name) n_balance(int) // todo: eliminate these? can be computed by subroutine at low cost
 
 * Create variables specific to PSW matrix
 *-------------------------------------------------------------------------------
 if "`psw'" != "" { // if psw
   // Fit binary response model
   gen band = (`bwidth')
-  qui `binarymodel' `subgroup' `balance' if `touse' & `bwidth'
+  qui `binarymodel' `sgroup' `balance' if `touse' & `bwidth'
 
   // Generate pscore variable and clear stored results
-  predict double `pscore' if `touse' & `bwidth' & !mi(`subgroup')
+  predict double `pscore' if `touse' & `bwidth' & !mi(`sgroup')
   ereturn clear
 
   // Generate common support variable
   capture drop `comsup'
   if "`comsup'" != "" {
-    qui sum `pscore' if `subgroup' == 1 /* todo: check why this is like that */
+    qui sum `pscore' if `sgroup' == 1 /* todo: check why this is like that */
     qui gen `comsup' = ///
       (`pscore' >= `r(min)' & ///
        `pscore' <= `r(max)')
@@ -183,25 +183,25 @@ if "`psw'" != "" { // if psw
   else qui gen `comsup' == 1 if `touse' & `bwidth'
 
   // Count observations in each treatment group
-  qui count if `touse' & `bwidth' & `comsup' & `subgroup'==0
+  qui count if `touse' & `bwidth' & `comsup' & `sgroup'==0
   local N_G0 = `r(N)'
-  qui count if `touse' & `bwidth' & `comsup' & `subgroup'==1
+  qui count if `touse' & `bwidth' & `comsup' & `sgroup'==1
   local N_G1 = `r(N)'
 
   // Compute propensity score weighting vector
   cap drop `psweight'
   qui gen `psweight' = ///
-    `N_G1'/(`N_G1'+`N_G0')/`pscore'*(`subgroup'==1) + ///
-    `N_G0'/(`N_G1'+`N_G0')/(1-`pscore')*(`subgroup'==0) ///
+    `N_G1'/(`N_G1'+`N_G0')/`pscore'*(`sgroup'==1) + ///
+    `N_G0'/(`N_G1'+`N_G0')/(1-`pscore')*(`sgroup'==0) ///
     if `touse' & `bwidth' & `comsup' 
 } // end if psw
 
 * Count obs. in each treatment group if not PSW matrix
 *-------------------------------------------------------------------------------
 else { // if nopsw
-  qui count if `touse' & `bwidth' & `subgroup'==0
+  qui count if `touse' & `bwidth' & `sgroup'==0
   local N_G0 = `r(N)'
-  qui count if `touse' & `bwidth' & `subgroup'==1
+  qui count if `touse' & `bwidth' & `sgroup'==1
   local N_G1 = `r(N)'
 } // end if nopsw
 
@@ -212,14 +212,14 @@ foreach var of varlist `balance' {
   local ++j
 
   // Compute and store conditional expectations
-  if "`psw'" == "" qui reg `var' `subgroup0' `subgroup' if `touse' & `bwidth', noconstant /* */
-  else qui reg `var' `subgroup0' `subgroup' [iw=`psweight'] if `touse' & `bwidth' & `comsup', noconstant
-  local coef`j'_G0 = _b[`subgroup0']
-  local coef`j'_G1 = _b[`subgroup']
+  if "`psw'" == "" qui reg `var' `sgroup0' `sgroup' if `touse' & `bwidth', noconstant /* */
+  else qui reg `var' `sgroup0' `sgroup' [iw=`psweight'] if `touse' & `bwidth' & `comsup', noconstant
+  local coef`j'_G0 = _b[`sgroup0']
+  local coef`j'_G1 = _b[`sgroup']
 
   // Compute and store mean differences and their p-values
-  if "`psw'" == "" qui reg `var' `subgroup0' if `touse' & `bwidth'
-  else qui reg `var' `subgroup0' [iw=`psweight'] if `touse' & `bwidth' & `comsup'
+  if "`psw'" == "" qui reg `var' `sgroup0' if `touse' & `bwidth'
+  else qui reg `var' `sgroup0' [iw=`psweight'] if `touse' & `bwidth' & `comsup'
   matrix m = r(table)
   scalar diff`j'=m[1,1] // mean difference
   local pval`j' = m[4,1] // p-value 
@@ -241,8 +241,8 @@ forvalues j = 1/`n_balance' {
 local avgdiff = `avgdiff'/`n_balance' // compute mean 
 
 // F-statistic and global p-value
-if "`psw'" == "" qui reg `subgroup' `balance' if `touse' & `bwidth'
-else qui reg `subgroup' `balance' [iw=`psweight'] if `touse' & `bwidth' & `comsup' 
+if "`psw'" == "" qui reg `sgroup' `balance' if `touse' & `bwidth'
+else qui reg `sgroup' `balance' [iw=`psweight'] if `touse' & `bwidth' & `comsup' 
 local Fstat = e(F)
 local pval_global = 1-F(e(df_m),e(df_r),e(F))
 
@@ -305,5 +305,5 @@ KNOWN ISSUES/BUGS:
 TODOS AND IDEAS:
   - Create subroutine of matlist formatting for display of balancematrix output
   - Implement matrix manipulation in Mata
-  - Get rid of subgroup0 hack
+  - Get rid of sgroup0 hack
 */
