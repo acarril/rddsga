@@ -128,23 +128,43 @@ if "`dibalance'" != "" {
 *-------------------------------------------------------------------------------
 
 // IVREG
-
+/*
 qui ivregress 2sls `depvar' i.`sgroup'#(`fv_covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar') ///
   (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') ///
-  if `bwidth', vce(`vce') noconstant
-
-qui ivregress 2sls `depvar' i.`sgroup'#(`fv_covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar' `quadratic') /// assignvar^2 cutoffvar^2 (c.`assignvar'#`cutoffvar')^2
-  (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') ///
-  [pw=`psweight'] if `bwidth', vce(`vce') noconstant 
-
-/*
-*reg `x' `Z1' `Z0' `C`S`i''' `FE'  if `X'>-(`bw1') & `X'<(`bw1'), vce(cluster gpaoXuceXrk)
-*reg I_CURaudit `Z1' `Z0' `C`S`i''' `FE'  if -(`bw1')<`assignvar' & `assignvar'<(`bw1'), vce(cluster gpaoXuceXrk)
+  if `touse' & `bwidth', vce(`vce') noconstant
 */
+ivregress 2sls `depvar' i.`sgroup'#(`fv_covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar' `quadratic') /// assignvar^2 cutoffvar^2 (c.`assignvar'#`cutoffvar')^2
+  (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') ///
+  [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant 
 
-* Clear any ereturn results and end main program
+
+* Coefficients and standard errors of treatment, by subgroup
 *-------------------------------------------------------------------------------
-*ereturn clear
+// Extract coefficients matrix
+matrix b = e(b)
+matrix coefs = b[1,1..2]
+return matrix coefs = coefs
+
+// Extract variance-covariance matrix
+matrix V = e(V)
+matrix V = V[1..2,1..2]
+
+// Compute standard errors matrix 
+mata: mata_V = st_matrix("V")
+mata: se = sqrt(mata_V)
+mata: se
+mata: st_matrix("se", se)
+
+// Apply row and column names lost in mata importing
+local se_rownames : rownames V
+local se_colnames : colnames V
+matrix rownames se = `se_rownames'
+matrix colnames se = `se_colnames'
+
+// Return standard errors matrix 
+return matrix se = se
+
+
 end
 
 *===============================================================================
