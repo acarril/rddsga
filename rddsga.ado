@@ -46,7 +46,6 @@ else tempvar pscore
 
 // Mark observations to be used
 marksample touse, novarlist
-gen touse =  `touse'
 
 // Extract outcome variable
 local depvar : word 1 of `varlist'
