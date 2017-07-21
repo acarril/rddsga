@@ -4,7 +4,7 @@ version 11.1 /* todo: check if this is the real minimum */
 syntax varlist(min=2 numeric fv) [if] [in] , [ ///
   SGroup(name) Treatment(name) /// important inputs
 	PSWeight(name) PSCore(name) COMsup(name) /// newvars
-  BALance(varlist numeric) DIBALance logit /// balancepscore opts
+  BALance(varlist numeric) DIBALance probit /// balancepscore opts
 	BWidth(real 0) Cutoff(real 0) ///
   vce(string) ///
 ]
@@ -73,9 +73,9 @@ qui gen `sgroup0' = (`sgroup' == 0) if !mi(`sgroup')
 if "`balance'" == "" local balance `covariates'
 local n_balance `: word count `balance''
 
-// Define model to fit (probit is default)
-if "`logit'" != "" local binarymodel logit
-else local binarymodel probit
+// Define model to fit (logit is default)
+if "`probit'" != "" local binarymodel probit
+else local binarymodel logit
 
 // Create bandwidth condition 
 local bwidth abs(`assignvar') < `bwidth'
@@ -98,8 +98,8 @@ return add
 // Display balance matrix and global stats
 if "`dibalance'" != "" {
   matlist oribal, border(rows) format(%9.3g) title("Original balance:")
-  di "Obs. in sgroup 0: " oribal_N_G0
-  di "Obs. in sgroup 1: " oribal_N_G1
+  di "Obs. in subgroup 0: " oribal_N_G0
+  di "Obs. in subgroup 1: " oribal_N_G1
   di "Mean abs(std_diff): " oribal_avgdiff
   di "F-statistic: " oribal_Fstat
   di "Global p-value: " oribal_pval_global
@@ -116,8 +116,8 @@ return add
 // Display balance matrix and global stats
 if "`dibalance'" != "" {
   matlist pswbal, border(rows) format(%9.3g) title("Propensity Score Weighting balance:")
-  di "Obs. in sgroup 0: " pswbal_N_G0
-  di "Obs. in sgroup 1: " pswbal_N_G1
+  di "Obs. in subgroup 0: " pswbal_N_G0
+  di "Obs. in subgroup 1: " pswbal_N_G1
   di "Mean abs(std_diff): " pswbal_avgdiff
   di "F-statistic: " pswbal_Fstat
   di "Global p-value: " pswbal_pval_global
@@ -129,11 +129,11 @@ if "`dibalance'" != "" {
 
 // IVREG
 
-ivregress 2sls `depvar' i.`sgroup'#(`fv_covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar') ///
+qui ivregress 2sls `depvar' i.`sgroup'#(`fv_covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar') ///
   (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') ///
   if `bwidth', vce(`vce') noconstant
 
-ivregress 2sls `depvar' i.`sgroup'#(`fv_covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar' `quadratic') /// assignvar^2 cutoffvar^2 (c.`assignvar'#`cutoffvar')^2
+qui ivregress 2sls `depvar' i.`sgroup'#(`fv_covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar' `quadratic') /// assignvar^2 cutoffvar^2 (c.`assignvar'#`cutoffvar')^2
   (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') ///
   [pw=`psweight'] if `bwidth', vce(`vce') noconstant 
 
@@ -168,7 +168,7 @@ if "`psw'" != "" { // if psw
   qui `binarymodel' `sgroup' `balance' if `touse' & `bwidth'
 
   // Generate pscore variable and clear stored results
-  predict double `pscore' if `touse' & `bwidth' & !mi(`sgroup')
+  qui predict double `pscore' if `touse' & `bwidth' & !mi(`sgroup')
   ereturn clear
 
   // Generate common support variable
@@ -281,6 +281,8 @@ end
 
 /* 
 CHANGE LOG
+0.5
+  - Default binarymodel is logit
 0.4
   - First working version with IVREG equation
 0.3
