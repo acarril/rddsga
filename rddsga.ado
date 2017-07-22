@@ -6,7 +6,7 @@ syntax varlist(min=2 numeric fv) [if] [in] , [ ///
 	PSWeight(name) PSCore(name) COMsup(name) noCOMsupaux /// newvars
   BALance(varlist numeric) DIBALance probit /// balancepscore opts
 	BWidth(real 0) Cutoff(real 0) ///
-  vce(string) ///
+  vce(string) ivreg rform ///
 ]
 
 *-------------------------------------------------------------------------------
@@ -123,21 +123,46 @@ if "`dibalance'" != "" {
 }
 
 *-------------------------------------------------------------------------------
-* rddsga
+* Model
 *-------------------------------------------------------------------------------
 
-// IVREG
+* Reduced form
+*-------------------------------------------------------------------------------
+if "`rform'" != "" {
+  // Original
+* qui xi: reg `Y' `Z0' `Z1' `C`S`i''' `FE'  if `X'>-(`bw`i'') & `X'<(`bw`i''), vce(cluster `cluster')
+  reg `depvar' i.`sgroup'#`cutoffvar' ///
+    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
+    if `touse' & `bwidth', vce(`vce') noconstant
+  estimates store Original
+  // PSW
+  reg `depvar' i.`sgroup'#`cutoffvar' ///
+    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
+    [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
+  // Store estimates
+  estimates store PSW
+}
 
-qui ivregress 2sls `depvar' i.`sgroup'#(`fv_covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar') ///
-  (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') ///
-  if `touse' & `bwidth', vce(`vce') noconstant
-estimates store Original
+* Instrumental variables
+*-------------------------------------------------------------------------------
+if "`ivreg'" != "" {
+  // Original
+  qui ivregress 2sls `depvar' ///
+    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
+    (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') ///
+    if `touse' & `bwidth', vce(`vce') noconstant
+  estimates store Original
+  // PSW
+  qui ivregress 2sls `depvar' ///
+    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') /// quad = assignvar^2 cutoffvar^2 (c.`assignvar'#`cutoffvar')^2
+    (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') /// (exogenous = endogenous)
+    [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
+  // Store estimates
+  estimates store PSW
+}
 
-qui ivregress 2sls `depvar' i.`sgroup'#(`fv_covariates' i.gpaoXuceXr c.`assignvar' c.`assignvar'#`cutoffvar' `quadratic') /// assignvar^2 cutoffvar^2 (c.`assignvar'#`cutoffvar')^2
-  (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') ///
-  [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant 
-estimates store PSW
 
+// Output
 estimates table Original PSW, b(%9.3g) se(%9.3g) keep(i.`sgroup'#1.`treatment') stats(N)
 return add 
 
@@ -304,6 +329,7 @@ end
 /* 
 CHANGE LOG
 0.5
+  - Implement output reporting with estimates table
   - Default binarymodel is logit
 0.4
   - First working version with IVREG equation
@@ -330,4 +356,6 @@ TODOS AND IDEAS:
   - Create subroutine of matlist formatting for display of balancematrix output
   - Implement matrix manipulation in Mata
   - Get rid of sgroup0 hack
+  - Allow that groupvar is not necessarily an indicator variable
+  - Is it possible to allow for N subgroups?
 */

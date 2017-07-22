@@ -17,16 +17,17 @@ discard
 use data/procurement_test3, clear
 
 // Obtain bandwidths
-qui rd sh_licitacion high_direct dis_cutoff2
-local w50 = e(w50)
-local w = e(w)
-local w200 = e(w200)
+*qui rd sh_licitacion high_direct dis_cutoff2
+*local w50 = e(w50)
+*local w = e(w)
+*local w200 = e(w200)
 
 // Run command
 rddsga ///
 sh_licitacion dis_cutoff /// outcome and assignvar
-p1 p2 p3 sh_licitacionPRE2 sh_directoPRE1 sh_licitacionPRE1 sh_directoPRE2 size_PRE1 size_PRE2 I_PREaudit /// covariates
+p1 p2 p3 sh_licitacionPRE2 sh_directoPRE1 sh_licitacionPRE1 sh_directoPRE2 size_PRE1 size_PRE2 I_PREaudit i.gpaoXuceXr /// covariates
 , ///
-  psweight(peso) pscore(ps_flexmodel41) comsup(comsup) ///
+  rform ///
+  psweight(peso2) pscore(ps_flexmodel42) comsup(comsup2) ///
   balance(p1 p2 p3 size_PRE1 size_PRE2 audited dTR1-dTR3 Year2 Year1 Zone1-Zone3) ///
   bwidth(4) sgroup(high_direct) cutoff(0) treatment(I_CURaudit) vce(cluster gpaoXuceXrk)
