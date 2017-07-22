@@ -82,6 +82,7 @@ local bwidth abs(`assignvar') < `bwidth'
 // Create indicator cutoff variable
 tempvar cutoffvar
 gen `cutoffvar' = (`assignvar'>`cutoff')
+lab var `cutoffvar' "Treatment"
 
 *-------------------------------------------------------------------------------
 * Compute balance table matrices
@@ -126,25 +127,37 @@ if "`dibalance'" != "" {
 * Model
 *-------------------------------------------------------------------------------
 
+label define sgroup 0 "G0" 1 "G1"
+label values `sgroup' sgroup
+
+label variable `cutoffvar' "lala"
+
+label define treatment 0 "Control" 1 "Treated"
+label values `cutoffvar' treatment
+
 * Reduced form
 *-------------------------------------------------------------------------------
 if "`rform'" != "" {
   // Original
-* qui xi: reg `Y' `Z0' `Z1' `C`S`i''' `FE'  if `X'>-(`bw`i'') & `X'<(`bw`i''), vce(cluster `cluster')
-  reg `depvar' i.`sgroup'#`cutoffvar' ///
+  qui reg `depvar' i.`sgroup'#1.`cutoffvar' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
     if `touse' & `bwidth', vce(`vce') noconstant
   estimates store Original
+
   // PSW
-  reg `depvar' i.`sgroup'#`cutoffvar' ///
+  qui reg `depvar' i.`sgroup'#1.`cutoffvar' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
   // Store estimates
   estimates store PSW
+
+  // Output
+  estimates table Original PSW, b(%9.3g) se(%9.3g) keep(i.`sgroup'#1.`cutoffvar') stats(N) varlabel title("Reduced form:")
 }
 
 * Instrumental variables
 *-------------------------------------------------------------------------------
+*  qui xi: ivreg `Y' `C`S`i''' `FE' (`X0' `X1' = `Z0' `Z1') if `X'>-(`bw`i'') & `X'<(`bw`i''), cluster(`cluster')
 if "`ivreg'" != "" {
   // Original
   qui ivregress 2sls `depvar' ///
@@ -159,11 +172,11 @@ if "`ivreg'" != "" {
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
   // Store estimates
   estimates store PSW
+
+  // Output
+  estimates table Original PSW, b(%9.3g) se(%9.3g) keep(i.`sgroup'#1.`treatment') stats(N) varlabel title("IV regression:")
 }
 
-
-// Output
-estimates table Original PSW, b(%9.3g) se(%9.3g) keep(i.`sgroup'#1.`treatment') stats(N)
 return add 
 
 * Coefficients and standard errors of treatment, by subgroup
