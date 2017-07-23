@@ -6,7 +6,7 @@ syntax varlist(min=2 numeric fv) [if] [in] , [ ///
 	PSWeight(name) PSCore(name) COMsup(name) noCOMsupaux /// newvars
   BALance(varlist numeric) DIBALance probit /// balancepscore opts
 	BWidth(real 0) Cutoff(real 0) ///
-  vce(string) ivreg rform fstage ///
+  vce(string) IVreg REDUCEDform FIRSTstage ///
 ]
 
 *-------------------------------------------------------------------------------
@@ -138,7 +138,7 @@ label values `cutoffvar' treatment
 * First stage
 *-------------------------------------------------------------------------------
 * qui xi: reg `x' `Z0' `Z1' `C`S`i''' `FE'  if `X'>-(`bw`i'') & `X'<(`bw`i''), vce(cluster `cluster')
-if "`fstage'" != "" {
+if "`firststage'" != "" {
   // Original
   qui reg `cutoffvar' i.`sgroup'#1.`cutoffvar' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
@@ -146,7 +146,7 @@ if "`fstage'" != "" {
   estimates store Original
 
   // PSW
-  qui reg `cutoffvar' i.`sgroup'#1.`cutoffvar' ///
+  qui reg `sgroup' i.`sgroup'#1.`cutoffvar' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
   // Store estimates
@@ -159,7 +159,7 @@ if "`fstage'" != "" {
 
 * Reduced form
 *-------------------------------------------------------------------------------
-if "`rform'" != "" {
+if "`reducedform'" != "" {
   // Original
   qui reg `depvar' i.`sgroup'#1.`cutoffvar' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
@@ -193,6 +193,7 @@ if "`ivreg'" != "" {
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') /// quad = assignvar^2 cutoffvar^2 (c.`assignvar'#`cutoffvar')^2
     (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') /// (exogenous = endogenous)
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
+  estat firststage, all
   // Store estimates
   estimates store PSW
 
