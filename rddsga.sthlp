@@ -103,23 +103,34 @@ In order to assess the statistical significance of the difference in means for e
 {pstd}
 Additionally, {cmd:rddsga} stores all results stored in {cmd:e()} by {manhelp ivregress R:ivregress} after fitting the weighted model.
 
+
 {marker authors}{...}
 {title:Authors}
 
 {pstd}
 Alvaro Carril{break}
-Research Analyst at J-PAL LAC{break}
+J-PAL LAC{break}
 acarril@fen.uchile.cl
 
 {pstd}
 Andre Cazor{break}
-Research Analyst at J-PAL LAC{break}
+J-PAL LAC{break}
 ajcazor@uc.cl
 
 {pstd}
+Maria Paula Gerardino{break}
+Inter-American Development Bank{break}
+mariage@iadb.org
+
+{pstd}
 Stephan Litschig{break}
-Associate Professor at GRIPS{break}
+National Graduate Institute for Policy Studies{break}
 s-litschig@grips.ac.jp
+
+{pstd}
+Dina Pomeranz{break}
+University of Zurich and NBER{break}
+dina.pomeranz@econ.uzh.ch
 
 
 {marker disclaimer}{...}
