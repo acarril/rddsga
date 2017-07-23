@@ -6,7 +6,7 @@ syntax varlist(min=2 numeric fv) [if] [in] , [ ///
 	PSWeight(name) PSCore(name) COMsup(name) noCOMsupaux /// newvars
   BALance(varlist numeric) DIBALance probit /// balancepscore opts
 	BWidth(real 0) Cutoff(real 0) ///
-  vce(string) ivreg rform ///
+  vce(string) ivreg rform fstage ///
 ]
 
 *-------------------------------------------------------------------------------
@@ -135,6 +135,28 @@ label variable `cutoffvar' "lala"
 label define treatment 0 "Control" 1 "Treated"
 label values `cutoffvar' treatment
 
+* First stage
+*-------------------------------------------------------------------------------
+* qui xi: reg `x' `Z0' `Z1' `C`S`i''' `FE'  if `X'>-(`bw`i'') & `X'<(`bw`i''), vce(cluster `cluster')
+if "`fstage'" != "" {
+  // Original
+  qui reg `cutoffvar' i.`sgroup'#1.`cutoffvar' ///
+    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
+    if `touse' & `bwidth', vce(`vce') noconstant
+  estimates store Original
+
+  // PSW
+  qui reg `cutoffvar' i.`sgroup'#1.`cutoffvar' ///
+    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
+    [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
+  // Store estimates
+  estimates store PSW
+
+  // Output
+  estimates table Original PSW, b(%14.3g) se(%14.3g) keep(i.`sgroup'#1.`cutoffvar') stats(N) varlabel title("First stage:")
+  estimates clear
+}
+
 * Reduced form
 *-------------------------------------------------------------------------------
 if "`rform'" != "" {
@@ -153,6 +175,7 @@ if "`rform'" != "" {
 
   // Output
   estimates table Original PSW, b(%9.3g) se(%9.3g) keep(i.`sgroup'#1.`cutoffvar') stats(N) varlabel title("Reduced form:")
+  estimates clear
 }
 
 * Instrumental variables
@@ -175,6 +198,7 @@ if "`ivreg'" != "" {
 
   // Output
   estimates table Original PSW, b(%9.3g) se(%9.3g) keep(i.`sgroup'#1.`treatment') stats(N) varlabel title("IV regression:")
+  estimates clear
 }
 
 return add 
