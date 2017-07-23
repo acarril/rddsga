@@ -140,13 +140,13 @@ label values `cutoffvar' treatment
 * qui xi: reg `x' `Z0' `Z1' `C`S`i''' `FE'  if `X'>-(`bw`i'') & `X'<(`bw`i''), vce(cluster `cluster')
 if "`firststage'" != "" {
   // Original
-  qui reg `cutoffvar' i.`sgroup'#1.`cutoffvar' ///
+  qui reg `treatment' i.`sgroup'#1.`cutoffvar' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
     if `touse' & `bwidth', vce(`vce') noconstant
   estimates store Original
 
   // PSW
-  qui reg `sgroup' i.`sgroup'#1.`cutoffvar' ///
+  qui reg `treatment' i.`sgroup'#1.`cutoffvar' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
   // Store estimates
@@ -193,8 +193,6 @@ if "`ivreg'" != "" {
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') /// quad = assignvar^2 cutoffvar^2 (c.`assignvar'#`cutoffvar')^2
     (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') /// (exogenous = endogenous)
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
-  estat firststage, all
-  // Store estimates
   estimates store PSW
 
   // Output
