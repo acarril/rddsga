@@ -98,7 +98,7 @@ return add
 
 // Display balance matrix and global stats
 if "`dibalance'" != "" {
-  matlist oribal, border(rows) format(%9.3g) title("Original balance:")
+  matlist oribal, border(rows) format(%9.3g) title("Unweighted balance:")
   di "Obs. in subgroup 0: " oribal_N_G0
   di "Obs. in subgroup 1: " oribal_N_G1
   di "Mean abs(std_diff): " oribal_avgdiff
