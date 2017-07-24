@@ -6,7 +6,7 @@ syntax varlist(min=2 numeric fv) [if] [in] , [ ///
 	PSWeight(name) PSCore(name) COMsup(name) noCOMsupaux /// newvars
   BALance(varlist numeric) DIBALance probit /// balancepscore opts
 	BWidth(real 0) Cutoff(real 0) ///
-  vce(string) IVreg REDUCEDform FIRSTstage ///
+  IVreg REDUCEDform FIRSTstage vce(string) ///
 ]
 
 *-------------------------------------------------------------------------------
