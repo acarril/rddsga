@@ -200,8 +200,9 @@ if "`ivreg'" != "" {
   estimates store PSW
 
   // Output
-  estout Original PSW, ///
-    keep(*`sgroup'#1.`treatment') cells(b(star fmt(3)) se(par fmt(2))) label ///
+  esttab Original PSW, ///
+    keep(*`sgroup'#1.`treatment') b(3) label ///
+    se(2) star(* 0.10 ** 0.05 *** 0.01) ///
     stats(N N_clust rmse, fmt(0 0 3) label(N N_clust rmse))
   estimates table Original PSW, ///
     b(%9.3g) se(%9.3g) keep(i.`sgroup'#1.`treatment') ///
