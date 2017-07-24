@@ -221,7 +221,9 @@ if "`ivreg'" != "" {
   estimates store noW_ivreg
   
   // PSW
-  qui ivregress 2sls `depvar' ///
+  *gen assign_cutoff = `assignvar'*`cutoffvar'
+  *local quad c.`assignvar'#c.`assignvar' c.`cutoffvar'#c.`cutoffvar'
+    qui ivregress 2sls `depvar' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') /// quad = assignvar^2 cutoffvar^2 (c.`assignvar'#`cutoffvar')^2
     (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') /// (exogenous = endogenous)
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
