@@ -148,15 +148,15 @@ if "`firststage'" != "" {
   qui reg `treatment' i.`sgroup'#1.`cutoffvar' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
     if `touse' & `bwidth', vce(`vce') noconstant
-  estimates store noW_firststage
   estimates title: "Unweighted first stage"
+  estimates store noW_firststage
   
   // PSW
   qui reg `treatment' i.`sgroup'#1.`cutoffvar' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
-  estimates store PSW_firststage
   estimates title: "PSW first stage"
+  estimates store PSW_firststage
   
   // Output with esttab if installed; if not, default to estimates table 
   capture which estout
@@ -182,15 +182,15 @@ if "`reducedform'" != "" {
   qui reg `depvar' i.`sgroup'#1.`cutoffvar' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
     if `touse' & `bwidth', vce(`vce') noconstant
-  estimates store noW_reducedform
   estimates title: "Unweighted reduced form"
+  estimates store noW_reducedform
 
   // PSW
   qui reg `depvar' i.`sgroup'#1.`cutoffvar' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
-  estimates store PSW_reducedform
   estimates title: "PSW reduced form"
+  estimates store PSW_reducedform
 
   // Output with esttab if installed; if not, default to estimates table 
   capture which estout
@@ -217,15 +217,16 @@ if "`ivreg'" != "" {
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
     (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') ///
     if `touse' & `bwidth', vce(`vce') noconstant
-  estimates store noW_ivreg
   estimates title: "Unweighted IVREG"
+  estimates store noW_ivreg
+  
   // PSW
   qui ivregress 2sls `depvar' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') /// quad = assignvar^2 cutoffvar^2 (c.`assignvar'#`cutoffvar')^2
     (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') /// (exogenous = endogenous)
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
-  estimates store PSW_ivreg
   estimates title: "PSW IVREG"
+  estimates store PSW_ivreg
 
   // Output with esttab if installed; if not, default to estimates table 
   capture which estout
