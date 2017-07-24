@@ -72,6 +72,9 @@ The estimated coefficients for the interaction of indicator variables for each s
 Although {cmd:rddsga} can output results without any additional packages, the presence of {browse "http://repec.sowi.unibe.ch/stata/estout/":estout} is automatically detected and used to produce better-looking output.
 In any case, the full estimation results can be retrieved with {help estimates dir}.
 
+{pstd}
+Additional details regarding the methodology implemented by {cmd: rddsga} can be found in {help rddsga##mainpaper: Gerardino, Litschig, Olken and Pomeranz (2017)}.
+
 
 {marker options}{...}
 {title:Options}
@@ -86,7 +89,7 @@ In any case, the full estimation results can be retrieved with {help estimates d
 
 
 {marker examples}{...}
-{title:Examples}
+{* title:Examples}
 
 
 {marker results}{...}
@@ -161,7 +164,7 @@ dina.pomeranz@econ.uzh.ch
 
 {pstd}
 This software is provided "as is", without warranty of any kind.
-If you have suggestions or want to report problems, please create a new issue in the {browse "https://github.com/acarril/rddsga/issues":project repository}.
+If you have suggestions or want to report problems, please create a new issue in the {browse "https://github.com/acarril/rddsga/issues":project repository} or contact the project maintainer.
 All remaining errors are our own.
 
 
