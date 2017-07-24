@@ -132,9 +132,12 @@ if "`dibalance'" != "" {
 
 label define sgroup 0 "Subgroup 0" 1 "Subgroup 1"
 label values `sgroup' sgroup
-label variable `cutoffvar' "lala"
+
+label define cutoffvar 0 "Cutoff 0" 1 "Cutoff 1"
+label values `cutoffvar' cutoffvar
+label variable `cutoffvar' "Cutoff"
+
 label define treatment 0 "Control" 1 "Treated"
-label values `cutoffvar' treatment
 label values `treatment' treatment
 
 * First stage
@@ -146,12 +149,14 @@ if "`firststage'" != "" {
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
     if `touse' & `bwidth', vce(`vce') noconstant
   estimates store noW_firststage
+  estimates title: "Unweighted first stage"
   
   // PSW
   qui reg `treatment' i.`sgroup'#1.`cutoffvar' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
   estimates store PSW_firststage
+  estimates title: "PSW first stage"
   
   // Output with esttab if installed; if not, default to estimates table 
   capture which estout
@@ -178,12 +183,14 @@ if "`reducedform'" != "" {
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
     if `touse' & `bwidth', vce(`vce') noconstant
   estimates store noW_reducedform
+  estimates title: "Unweighted reduced form"
 
   // PSW
   qui reg `depvar' i.`sgroup'#1.`cutoffvar' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
   estimates store PSW_reducedform
+  estimates title: "PSW reduced form"
 
   // Output with esttab if installed; if not, default to estimates table 
   capture which estout
@@ -211,12 +218,14 @@ if "`ivreg'" != "" {
     (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') ///
     if `touse' & `bwidth', vce(`vce') noconstant
   estimates store noW_ivreg
+  estimates title: "Unweighted IVREG"
   // PSW
   qui ivregress 2sls `depvar' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') /// quad = assignvar^2 cutoffvar^2 (c.`assignvar'#`cutoffvar')^2
     (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') /// (exogenous = endogenous)
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
   estimates store PSW_ivreg
+  estimates title: "PSW IVREG"
 
   // Output with esttab if installed; if not, default to estimates table 
   capture which estout
@@ -235,8 +244,7 @@ if "`ivreg'" != "" {
   }
 }
 
-return add 
-
+ereturn clear
 end
 
 *===============================================================================
