@@ -200,7 +200,9 @@ if "`ivreg'" != "" {
   estimates store PSW
 
   // Output
-  estout Original PSW
+  estout Original PSW, ///
+    keep(*`sgroup'#1.`treatment') cells(b(star fmt(3)) se(par fmt(2))) label ///
+    stats(N N_clust rmse, fmt(0 0 3) label(N N_clust rmse))
   estimates table Original PSW, ///
     b(%9.3g) se(%9.3g) keep(i.`sgroup'#1.`treatment') ///
     stats(N N_clust rmse) varlabel title("IV regression:") fvlabel
