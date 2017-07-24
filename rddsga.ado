@@ -234,17 +234,14 @@ if "`ivreg'" != "" {
   estimates store PSW_ivreg
 
   // Compute difference
-  nlcom Difference: _b[0.`sgroup'#1.`treatment'] - _b[1.`sgroup'#1.`treatment']
-  matrix diff_b = r(b)
-  estadd scalar diff = diff_b[1,1]
-  matrix diff_V = r(V)
-  estadd scalar diff_se = sqrt(diff_V[1,1])
+  eststo iv_psw_diff: nlcom Difference: _b[0.`sgroup'#1.`treatment'] - _b[1.`sgroup'#1.`treatment']
+  appendmodels PSW_ivreg iv_psw_diff
 
   // Output with esttab if installed; if not, default to estimates table 
   capture which estout
   if _rc!=111 {
     qui estadd local bwidthtab `bwidthtab'
-    esttab noW_ivreg PSW_ivreg, ///
+    esttab noW_ivreg iv_psw, ///
       title("IV regression:") nonumbers mtitles("Unweighted" "PSW") ///
       keep(*`sgroup'#1.`treatment')  label ///
       b(3) se(3) star(* 0.10 ** 0.05 *** 0.01) ///
@@ -387,6 +384,48 @@ return scalar `matname'_pvalue = `pval_global'
 return scalar `matname'_N_G1 = `N_G1'
 return scalar `matname'_N_G0 = `N_G0'
 
+end
+
+*-------------------------------------------------------------------------------
+* appendmodels: stack different models' coefficients
+*-------------------------------------------------------------------------------
+*! version 1.0.0  14aug2007  Ben Jann
+program define appendmodels, eclass
+// using first equation of model
+version 8
+syntax namelist
+tempname b V tmp
+foreach name of local namelist {
+    qui est restore `name'
+    mat `tmp' = e(b)
+    local eq1: coleq `tmp'
+    gettoken eq1 : eq1
+    mat `tmp' = `tmp'[1,"`eq1':"]
+    local cons = colnumb(`tmp',"_cons")
+    if `cons'<. & `cons'>1 {
+        mat `tmp' = `tmp'[1,1..`cons'-1]
+    }
+    mat `b' = nullmat(`b') , `tmp'
+    mat `tmp' = e(V)
+    mat `tmp' = `tmp'["`eq1':","`eq1':"]
+    if `cons'<. & `cons'>1 {
+        mat `tmp' = `tmp'[1..`cons'-1,1..`cons'-1]
+    }
+    capt confirm matrix `V'
+    if _rc {
+        mat `V' = `tmp'
+    }
+    else {
+        mat `V' = ///
+        ( `V' , J(rowsof(`V'),colsof(`tmp'),0) ) \ ///
+        ( J(rowsof(`tmp'),colsof(`V'),0) , `tmp' )
+    }
+}
+local names: colfullnames `b'
+mat coln `V' = ``names''
+mat rown `V' = ``names''
+eret post `b' `V'
+eret local cmd "whatever"
 end
 
 ********************************************************************************
