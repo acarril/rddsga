@@ -127,13 +127,14 @@ if "`dibalance'" != "" {
 * Model
 *-------------------------------------------------------------------------------
 
-label define sgroup 0 "G0" 1 "G1"
+label define sgroup 0 "Subgroup 0" 1 "Subgroup 1"
 label values `sgroup' sgroup
 
 label variable `cutoffvar' "lala"
 
 label define treatment 0 "Control" 1 "Treated"
 label values `cutoffvar' treatment
+label values `treatment' treatment
 
 * First stage
 *-------------------------------------------------------------------------------
@@ -153,7 +154,9 @@ if "`firststage'" != "" {
   estimates store PSW
 
   // Output
-  estimates table Original PSW, b(%14.3g) se(%14.3g) keep(i.`sgroup'#1.`cutoffvar') stats(N) varlabel title("First stage:")
+  estimates table Original PSW, ///
+    b(%14.3g) se(%14.3g) keep(i.`sgroup'#1.`cutoffvar') ///
+    stats(N N_clust rmse) varlabel title("First stage:")
   estimates clear
 }
 
@@ -174,13 +177,14 @@ if "`reducedform'" != "" {
   estimates store PSW
 
   // Output
-  estimates table Original PSW, b(%9.3g) se(%9.3g) keep(i.`sgroup'#1.`cutoffvar') stats(N) varlabel title("Reduced form:")
+  estimates table Original PSW, ///
+    b(%9.3g) se(%9.3g) keep(i.`sgroup'#1.`cutoffvar') ///
+    stats(N N_clust rmse) varlabel title("Reduced form:")
   estimates clear
 }
 
 * Instrumental variables
 *-------------------------------------------------------------------------------
-*  qui xi: ivreg `Y' `C`S`i''' `FE' (`X0' `X1' = `Z0' `Z1') if `X'>-(`bw`i'') & `X'<(`bw`i''), cluster(`cluster')
 if "`ivreg'" != "" {
   // Original
   qui ivregress 2sls `depvar' ///
@@ -196,7 +200,11 @@ if "`ivreg'" != "" {
   estimates store PSW
 
   // Output
-  estimates table Original PSW, b(%9.3g) se(%9.3g) keep(i.`sgroup'#1.`treatment') stats(N) varlabel title("IV regression:")
+  estout Original PSW
+  estimates table Original PSW, ///
+    b(%9.3g) se(%9.3g) keep(i.`sgroup'#1.`treatment') ///
+    stats(N N_clust rmse) varlabel title("IV regression:") fvlabel
+  return add
   estimates clear
 }
 
