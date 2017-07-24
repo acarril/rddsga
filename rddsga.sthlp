@@ -115,7 +115,16 @@ In any case, the full estimation results can be retrieved with {help estimates d
 {p2colreset}{...}
 
 {pstd}
-Additionally, {cmd:rddsga} stores all results stored in {cmd:e()} by {manhelp ivregress R:ivregress} after fitting the weighted model.
+Additionally, {cmd:rddsga} stores all estimation results, both for the unweighted and PSW models, using {help estimates store}. The full list can be retrieved using {help estimates dir}:
+
+{synoptset 20 tabbed}{...}
+{p2col 5 20 24 2: Estimates}{p_end}
+{synopt:{cmd:noW_firststage}}Unweighted first stage{p_end}
+{synopt:{cmd:PSW_firststage}}PSW first stage{p_end}
+{synopt:{cmd:noW_reducedform}}Unweighted reduced form{p_end}
+{synopt:{cmd:PSW_reducedform}}PSW reduced form{p_end}
+{synopt:{cmd:noW_ivreg}}Unweighted instrumental variables{p_end}
+{synopt:{cmd:PSW_ivreg}}PSW instrumental variables{p_end}
 
 
 {marker authors}{...}
