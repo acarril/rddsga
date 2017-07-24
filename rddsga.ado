@@ -1,4 +1,4 @@
-*! 0.4 Alvaro Carril 20jul2017
+*! 0.5 Alvaro Carril 24jul2017
 program define rddsga, rclass
 version 11.1 /* todo: check if this is the real minimum */
 syntax varlist(min=2 numeric fv) [if] [in] , [ ///
@@ -77,6 +77,7 @@ if "`probit'" != "" local binarymodel probit
 else local binarymodel logit
 
 // Create bandwidth condition 
+local bwidthtab `bwidth'
 local bwidth abs(`assignvar') < `bwidth'
 
 // Create indicator cutoff variable
@@ -127,37 +128,46 @@ if "`dibalance'" != "" {
 * Model
 *-------------------------------------------------------------------------------
 
+// Variable and value labels
+
 label define sgroup 0 "Subgroup 0" 1 "Subgroup 1"
 label values `sgroup' sgroup
-
 label variable `cutoffvar' "lala"
-
 label define treatment 0 "Control" 1 "Treated"
 label values `cutoffvar' treatment
 label values `treatment' treatment
 
 * First stage
 *-------------------------------------------------------------------------------
-* qui xi: reg `x' `Z0' `Z1' `C`S`i''' `FE'  if `X'>-(`bw`i'') & `X'<(`bw`i''), vce(cluster `cluster')
+
 if "`firststage'" != "" {
   // Original
   qui reg `treatment' i.`sgroup'#1.`cutoffvar' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
     if `touse' & `bwidth', vce(`vce') noconstant
-  estimates store Original
-
+  estimates store noW_firststage
+  
   // PSW
   qui reg `treatment' i.`sgroup'#1.`cutoffvar' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
-  // Store estimates
-  estimates store PSW
-
-  // Output
-  estimates table Original PSW, ///
-    b(%14.3g) se(%14.3g) keep(i.`sgroup'#1.`cutoffvar') ///
-    stats(N N_clust rmse) varlabel title("First stage:")
-  estimates clear
+  estimates store PSW_firststage
+  
+  // Output with esttab if installed; if not, default to estimates table 
+  capture which estout
+  if _rc!=111 {
+    qui estadd local bwidthtab `bwidthtab'
+    esttab noW_firststage PSW_firststage, ///
+      title("First stage:") nonumbers mtitles("Unweighted" "PSW") ///
+      keep(*`sgroup'#1.`cutoffvar') b(3) label ///
+      se(3) star(* 0.10 ** 0.05 *** 0.01) ///
+      stats(N N_clust rmse bwidthtab, fmt(0 0 3) label(Observations Clusters RMSE Bandwidth))
+  }
+  else {
+    estimates table noW_firststage PSW_firststage, ///
+      b(%9.3g) se(%9.3g) keep(i.`sgroup'#1.`cutoffvar') ///
+      stats(N) varlabel title("First stage:") fvlabel
+  }
 }
 
 * Reduced form
@@ -167,20 +177,29 @@ if "`reducedform'" != "" {
   qui reg `depvar' i.`sgroup'#1.`cutoffvar' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
     if `touse' & `bwidth', vce(`vce') noconstant
-  estimates store Original
+  estimates store noW_reducedform
 
   // PSW
   qui reg `depvar' i.`sgroup'#1.`cutoffvar' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
-  // Store estimates
-  estimates store PSW
+  estimates store PSW_reducedform
 
-  // Output
-  estimates table Original PSW, ///
-    b(%9.3g) se(%9.3g) keep(i.`sgroup'#1.`cutoffvar') ///
-    stats(N N_clust rmse) varlabel title("Reduced form:")
-  estimates clear
+  // Output with esttab if installed; if not, default to estimates table 
+  capture which estout
+  if _rc!=111 {
+    qui estadd local bwidthtab `bwidthtab'
+    esttab noW_reducedform PSW_reducedform, ///
+      title("Reduced form:") nonumbers mtitles("Unweighted" "PSW") ///
+      keep(*`sgroup'#1.`cutoffvar') b(3) label ///
+      se(3) star(* 0.10 ** 0.05 *** 0.01) ///
+      stats(N N_clust rmse bwidthtab, fmt(0 0 3) label(Observations Clusters RMSE Bandwidth))
+  }
+  else {
+    estimates table noW_reducedform PSW_reducedform, ///
+      b(%9.3g) se(%9.3g) keep(i.`sgroup'#1.`cutoffvar') ///
+      stats(N) varlabel title("Reduced form:") fvlabel
+  }
 }
 
 * Instrumental variables
@@ -191,55 +210,32 @@ if "`ivreg'" != "" {
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
     (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') ///
     if `touse' & `bwidth', vce(`vce') noconstant
-  estimates store Original
+  estimates store noW_ivreg
   // PSW
   qui ivregress 2sls `depvar' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') /// quad = assignvar^2 cutoffvar^2 (c.`assignvar'#`cutoffvar')^2
     (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') /// (exogenous = endogenous)
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
-  estimates store PSW
+  estimates store PSW_ivreg
 
-  // Output
-  esttab Original PSW, ///
-    keep(*`sgroup'#1.`treatment') b(3) label ///
-    se(2) star(* 0.10 ** 0.05 *** 0.01) ///
-    stats(N N_clust rmse, fmt(0 0 3) label(N N_clust rmse))
-  estimates table Original PSW, ///
-    b(%9.3g) se(%9.3g) keep(i.`sgroup'#1.`treatment') ///
-    stats(N N_clust rmse) varlabel title("IV regression:") fvlabel
-  return add
-  estimates clear
+  // Output with esttab if installed; if not, default to estimates table 
+  capture which estout
+  if _rc!=111 {
+    qui estadd local bwidthtab `bwidthtab'
+    esttab noW_ivreg PSW_ivreg, ///
+      title("IV regression:") nonumbers mtitles("Unweighted" "PSW") ///
+      keep(*`sgroup'#1.`treatment') b(3) label ///
+      se(3) star(* 0.10 ** 0.05 *** 0.01) ///
+      stats(N N_clust rmse bwidthtab, fmt(0 0 3) label(Observations Clusters RMSE Bandwidth))
+  }
+  else{
+    estimates table noW_ivreg PSW_ivreg, ///
+      b(%9.3g) se(%9.3g) keep(i.`sgroup'#1.`treatment') ///
+      stats(N) varlabel title("IV regression:") fvlabel
+  }
 }
 
 return add 
-
-* Coefficients and standard errors of treatment, by subgroup
-*-------------------------------------------------------------------------------
-/*
-// Extract coefficients matrix
-matrix b = e(b)
-matrix coefs = b[1,1..2]
-return matrix coefs = coefs
-
-// Extract variance-covariance matrix
-matrix V = e(V)
-matrix V = V[1..2,1..2]
-
-// Compute standard errors matrix 
-mata: mata_V = st_matrix("V")
-mata: se = sqrt(mata_V)
-mata: se
-mata: st_matrix("se", se)
-
-// Apply row and column names lost in mata importing
-local se_rownames : rownames V
-local se_colnames : colnames V
-matrix rownames se = `se_rownames'
-matrix colnames se = `se_colnames'
-
-// Return standard errors matrix 
-return matrix se = se
-*/
 
 end
 
@@ -376,7 +372,8 @@ end
 /* 
 CHANGE LOG
 0.5
-  - Implement output reporting with estimates table
+  - Fist working version with IVREG, reduced form and first stage equations
+  - Implement output reporting with estimates table and estout
   - Default binarymodel is logit
 0.4
   - First working version with IVREG equation
