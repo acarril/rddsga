@@ -108,7 +108,7 @@ Additionally, {cmd:rddsga} stores all results stored in {cmd:e()} by {manhelp iv
 {title:Authors}
 
 {pstd}
-Alvaro Carril{break}
+Alvaro Carril (maintainer){break}
 J-PAL LAC{break}
 acarril@fen.uchile.cl
 
