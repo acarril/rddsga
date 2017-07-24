@@ -37,6 +37,7 @@
 {synopt :{opth vce(vcetype)}}{it:vcetype} may be {opt un:adjusted},
    {opt r:obust}, {opt cl:uster} {it:clustvar}, {opt boot:strap},
    {opt jack:knife}, or {opt hac} {help ivregress##kernel:{it:kernel}}{p_end}
+{synopt :{opt quad:ratic}}use quadratic spline; default is linear{p_end}
 
 {syntab :Reporting/Output}
 {synopt :{opt dibal:ance}}display original balance and propensity score weighting balance tables and statistics{p_end}

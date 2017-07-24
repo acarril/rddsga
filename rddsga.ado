@@ -1,13 +1,11 @@
 *! 0.5 Alvaro Carril 24jul2017
 program define rddsga, rclass
 version 11.1 /* todo: check if this is the real minimum */
-syntax varlist(min=2 numeric fv) [if] [in] , [ ///
-  SGroup(name) Treatment(name) /// important inputs
-	PSWeight(name) PSCore(name) COMsup(name) noCOMsupaux /// newvars
-  BALance(varlist numeric) DIBALance probit /// balancepscore opts
-	BWidth(real 0) Cutoff(real 0) ///
-  IVreg REDUCEDform FIRSTstage vce(string) ///
-]
+syntax varlist(min=2 numeric fv) [if] [in] , ///
+  SGroup(name) Cutoff(real) BWidth(real) [ Treatment(name) /// important inputs
+  	PSWeight(name) PSCore(name) COMsup(name) noCOMsupaux /// newvars
+    BALance(varlist numeric) DIBALance probit /// balancepscore opts
+    IVreg REDUCEDform FIRSTstage vce(string) QUADratic ] // model opts
 
 *-------------------------------------------------------------------------------
 * Check inputs
@@ -85,6 +83,13 @@ tempvar cutoffvar
 gen `cutoffvar' = (`assignvar'>`cutoff')
 lab var `cutoffvar' "Treatment"
 
+// Compute spline options
+if "`quadratic'" != "" {
+  tempvar assignXcutoff
+  gen `assignXcutoff' = `assignvar'*`cutoffvar'
+  local quad c.`assignvar'#c.`assignvar' c.`assignXcutoff'#c.`assignXcutoff'
+}
+
 *-------------------------------------------------------------------------------
 * Compute balance table matrices
 *-------------------------------------------------------------------------------
@@ -146,14 +151,14 @@ label values `treatment' treatment
 if "`firststage'" != "" {
   // Original
   qui reg `treatment' i.`sgroup'#1.`cutoffvar' ///
-    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
+    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     if `touse' & `bwidth', vce(`vce') noconstant
   estimates title: "Unweighted first stage"
   estimates store noW_firststage
   
   // PSW
   qui reg `treatment' i.`sgroup'#1.`cutoffvar' ///
-    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
+    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
   estimates title: "PSW first stage"
   estimates store PSW_firststage
@@ -180,14 +185,14 @@ if "`firststage'" != "" {
 if "`reducedform'" != "" {
   // Original
   qui reg `depvar' i.`sgroup'#1.`cutoffvar' ///
-    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
+    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     if `touse' & `bwidth', vce(`vce') noconstant
   estimates title: "Unweighted reduced form"
   estimates store noW_reducedform
 
   // PSW
   qui reg `depvar' i.`sgroup'#1.`cutoffvar' ///
-    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
+    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
   estimates title: "PSW reduced form"
   estimates store PSW_reducedform
@@ -214,21 +219,26 @@ if "`reducedform'" != "" {
 if "`ivreg'" != "" {
   // Original
   qui ivregress 2sls `depvar' ///
-    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar') ///
+    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') ///
     if `touse' & `bwidth', vce(`vce') noconstant
   estimates title: "Unweighted IVREG"
   estimates store noW_ivreg
   
   // PSW
-  *gen assign_cutoff = `assignvar'*`cutoffvar'
-  *local quad c.`assignvar'#c.`assignvar' c.`cutoffvar'#c.`cutoffvar'
     qui ivregress 2sls `depvar' ///
-    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') /// quad = assignvar^2 cutoffvar^2 (c.`assignvar'#`cutoffvar')^2
+    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') /// (exogenous = endogenous)
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
   estimates title: "PSW IVREG"
   estimates store PSW_ivreg
+
+  // Compute difference
+  nlcom Difference: _b[0.`sgroup'#1.`treatment'] - _b[1.`sgroup'#1.`treatment']
+  matrix diff_b = r(b)
+  estadd scalar diff = diff_b[1,1]
+  matrix diff_V = r(V)
+  estadd scalar diff_se = sqrt(diff_V[1,1])
 
   // Output with esttab if installed; if not, default to estimates table 
   capture which estout
@@ -236,9 +246,10 @@ if "`ivreg'" != "" {
     qui estadd local bwidthtab `bwidthtab'
     esttab noW_ivreg PSW_ivreg, ///
       title("IV regression:") nonumbers mtitles("Unweighted" "PSW") ///
-      keep(*`sgroup'#1.`treatment') b(3) label ///
-      se(3) star(* 0.10 ** 0.05 *** 0.01) ///
-      stats(N N_clust rmse bwidthtab, fmt(0 0 3) label(Observations Clusters RMSE Bandwidth))
+      keep(*`sgroup'#1.`treatment')  label ///
+      b(3) se(3) star(* 0.10 ** 0.05 *** 0.01) ///
+      stats(diff diff_se N N_clust rmse bwidthtab, ///
+        fmt(3 3 0 0 3) labels(Difference @hline Observations Clusters RMSE Bandwidth ) layout(@ (@) @ @ @ @))
   }
   else{
     estimates table noW_ivreg PSW_ivreg, ///
