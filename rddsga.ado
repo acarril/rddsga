@@ -259,6 +259,7 @@ if "`ivreg'" != "" {
   }
 }
 
+drop _nl_1
 ereturn clear
 end
 
