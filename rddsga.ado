@@ -1,4 +1,4 @@
-*! 0.6.1 Alvaro Carril 25jul2017
+*! 0.7 Alvaro Carril 25jul2017
 program define rddsga, rclass
 version 11.1
 syntax varlist(min=2 numeric fv) [if] [in] , ///
@@ -141,32 +141,37 @@ label var _nl_1 "Difference"
 
 if "`firststage'" != "" {
   // Original
-  qui reg `treatment' i.`sgroup'#1.`cutoffvar' ///
+  qui reg `treatment' _nl_1 i.`sgroup'#1.`cutoffvar' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     if `touse' & `bwidth', vce(`vce') noconstant
   estimates title: "Unweighted first stage"
-  estimates store noW_firststage
+  estimates store unw_first
+  nlcomhack `sgroup' `cutoffvar'
+  qui estadd local bwidthtab -
+  estimates store unw_first_aux
   
   // PSW
-  qui reg `treatment' i.`sgroup'#1.`cutoffvar' ///
+  qui reg `treatment' _nl_1 i.`sgroup'#1.`cutoffvar' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
   estimates title: "PSW first stage"
-  estimates store PSW_firststage
+  estimates store psw_first
+  nlcomhack `sgroup' `cutoffvar'
+  qui estadd local bwidthtab `bwidthtab'
+  estimates store psw_first_aux
   
   // Output with esttab if installed; if not, default to estimates table 
   capture which estout
   if _rc!=111 {
-    qui estadd local bwidthtab `bwidthtab'
-    esttab noW_firststage PSW_firststage, ///
+    esttab *_first_aux, ///
       title("First stage:") nonumbers mtitles("Unweighted" "PSW") ///
-      keep(*`sgroup'#1.`cutoffvar') b(3) label ///
+      keep(*`sgroup'#1.`cutoffvar' _nl_1) b(3) label ///
       se(3) star(* 0.10 ** 0.05 *** 0.01) ///
       stats(N N_clust rmse bwidthtab, fmt(0 0 3) label(Observations Clusters RMSE Bandwidth))
   }
   else {
-    estimates table noW_firststage PSW_firststage, ///
-      b(%9.3g) se(%9.3g) keep(i.`sgroup'#1.`cutoffvar') ///
+    estimates table *_first_aux, ///
+      b(%9.3g) se(%9.3g) keep(i.`sgroup'#1.`cutoffvar' _nl_1) ///
       stats(N) varlabel title("First stage:") fvlabel
   }
 }
@@ -191,12 +196,12 @@ if "`reducedform'" != "" {
   estimates title: "PSW reduced form"
   estimates store psw_reduced
   nlcomhack `sgroup' `cutoffvar'
+  qui estadd local bwidthtab `bwidthtab'
   estimates store pws_reduced_aux
 
   // Output with esttab if installed; if not, default to estimates table 
   capture which estout
   if _rc!=111 {
-    qui estadd local bwidthtab `bwidthtab'
     esttab *_reduced_aux, ///
       title("Reduced form:") nonumbers mtitles("Unweighted" "PSW") ///
       keep(*`sgroup'#1.`cutoffvar' _nl_1) b(3) label ///
@@ -232,12 +237,12 @@ if "`ivreg'" != "" {
   estimates title: "PSW IVREG"
   estimates store psw_ivreg
   nlcomhack `sgroup' `treatment'
+  qui estadd local bwidthtab `bwidthtab'
   estimates store psw_ivreg_aux
 
   // Output with esttab if installed; if not, default to estimates table 
   capture which estout
   if _rc!=111 {
-    qui estadd local bwidthtab `bwidthtab'
     esttab *_ivreg_aux, ///
       title("IV regression:") nonumbers mtitles("Unweighted" "PSW") ///
       keep(*`sgroup'#1.`treatment' _nl_1) label ///
@@ -253,7 +258,7 @@ if "`ivreg'" != "" {
 }
 
 // Drop auxiliary (nlcomhacked) stored estimates and _nl_1 aux var 
-*estimates drop *_aux
+estimates drop *_aux
 drop _nl_1
 
 // Clear eresults and end
@@ -409,8 +414,11 @@ end
 
 /* 
 CHANGE LOG
+0.7 
+  - First alpha version ready for full usage
+  - Implement nlcom hack to all models, detect diff coef position automatically
 0.6
-  - Implement nlcom hack to show difference as additional coefficient 
+  - Implement nlcom hack to show difference as additional coefficient in ivreg
 0.5
   - Fist working version with IVREG, reduced form and first stage equations
   - Implement output reporting with estimates table and estout
