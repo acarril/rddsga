@@ -103,7 +103,7 @@ return add
 
 // Display balance matrix and global stats
 if "`dibalance'" != "" {
-  matlist oribal, border(rows) format(%9.3g) title("Unweighted balance:")
+  matlist oribal, border(rows) format(%9.5g) title("Unweighted balance:")
   di "Obs. in subgroup 0: " oribal_N_G0
   di "Obs. in subgroup 1: " oribal_N_G1
   di "Mean abs(std_diff): " oribal_avgdiff
@@ -121,7 +121,7 @@ return add
 
 // Display balance matrix and global stats
 if "`dibalance'" != "" {
-  matlist pswbal, border(rows) format(%9.3g) title("Propensity Score Weighting balance:")
+  matlist pswbal, border(rows) format(%9.5g) title("Propensity Score Weighting balance:")
   di "Obs. in subgroup 0: " pswbal_N_G0
   di "Obs. in subgroup 1: " pswbal_N_G1
   di "Mean abs(std_diff): " pswbal_avgdiff
@@ -304,7 +304,7 @@ if "`psw'" != "" { // if psw
   qui gen `psweight' = ///
     `N_G1'/(`N_G1'+`N_G0')/`pscore'*(`sgroup'==1) + ///
     `N_G0'/(`N_G1'+`N_G0')/(1-`pscore')*(`sgroup'==0) ///
-    if `touse' & `bwidth' & `comsup' 
+    if `touse' & `bwidth' & `comsup' & !mi(`sgroup')
 } // end if psw
 
 * Count obs. in each treatment group if not PSW matrix
@@ -336,8 +336,8 @@ foreach var of varlist `balance' {
   local pval`j' = m[4,1] // p-value 
 
   // Standardized mean difference
-  if "`psw'" == "" qui summ `var' if `touse' & `bwidth'
-  else qui summ `var' if `touse' & `bwidth' & `comsup'
+  if "`psw'" == "" qui summ `var' if `touse' & `bwidth' & !mi(`sgroup')
+  else qui summ `var' if `touse' & `bwidth' & `comsup' & !mi(`sgroup')
   local stddiff`j' = (diff`j')/r(sd)
 }
 
