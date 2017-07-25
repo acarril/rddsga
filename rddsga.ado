@@ -38,6 +38,13 @@ else tempvar comsup
 if "`pscore'" != "" confirm new variable `pscore'
 else tempvar pscore
 
+// Issue warning if no covariates and no vars in balance
+if `: list sizeof varlist'<=2 & `: list sizeof balance'==0 {
+  di as error "either {it:indepvars} or {bf:balance()} must be specified"
+  exit 198
+}
+
+
 *-------------------------------------------------------------------------------
 * Process inputs
 *-------------------------------------------------------------------------------
