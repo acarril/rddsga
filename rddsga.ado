@@ -1,4 +1,4 @@
-*! 0.6 Alvaro Carril 25jul2017
+*! 0.6.1 Alvaro Carril 25jul2017
 program define rddsga, rclass
 version 11.1
 syntax varlist(min=2 numeric fv) [if] [in] , ///
@@ -204,6 +204,9 @@ if "`reducedform'" != "" {
       stats(N) varlabel title("Reduced form:") fvlabel
   }
 }
+
+// Drop auxiliary (nlcomhacked) stored estimates
+estimates drop *_aux
 
 * Instrumental variables
 *-------------------------------------------------------------------------------
