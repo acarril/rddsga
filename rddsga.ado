@@ -1,4 +1,4 @@
-*! 0.5 Alvaro Carril 24jul2017
+*! 0.6 Alvaro Carril 25jul2017
 program define rddsga, rclass
 version 11.1 /* todo: check if this is the real minimum */
 syntax varlist(min=2 numeric fv) [if] [in] , ///
@@ -133,6 +133,10 @@ if "`dibalance'" != "" {
 * Model
 *-------------------------------------------------------------------------------
 
+// Create dummy _nl_1 variable for nlcomhack
+gen _nl_1 = 1
+label var _nl_1 "Difference"
+
 // Variable and value labels
 
 label define sgroup 0 "Subgroup 0" 1 "Subgroup 1"
@@ -217,25 +221,21 @@ if "`reducedform'" != "" {
 * Instrumental variables
 *-------------------------------------------------------------------------------
 if "`ivreg'" != "" {
-  gen _nl_1 = 1
-  lab var _nl_1 "Difference"
   // Original
   qui ivregress 2sls `depvar' _nl_1 ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') ///
     if `touse' & `bwidth', vce(`vce') noconstant
   nlcomhack `sgroup' `treatment'
-  estadd beta
   estimates title: "Unweighted IVREG"
   estimates store noW_ivreg
   
   // PSW
-    qui ivregress 2sls `depvar' _nl_1 ///
+  qui ivregress 2sls `depvar' _nl_1 ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') /// (exogenous = endogenous)
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
   nlcomhack `sgroup' `treatment'
-  estadd beta
   estimates title: "PSW IVREG"
   estimates store PSW_ivreg
 
@@ -245,10 +245,10 @@ if "`ivreg'" != "" {
     qui estadd local bwidthtab `bwidthtab'
     esttab noW_ivreg PSW_ivreg, ///
       title("IV regression:") nonumbers mtitles("Unweighted" "PSW") ///
-      keep(*`sgroup'#1.`treatment' _nl_1) ///
+      keep(*`sgroup'#1.`treatment' _nl_1) label ///
       b(3) se(3) star(* 0.10 ** 0.05 *** 0.01) ///
-      stats(diff diff_se N N_clust rmse bwidthtab, ///
-        fmt(3 3 0 0 3) labels(Difference @hline Observations Clusters RMSE Bandwidth ) layout(@ (@) @ @ @ @))
+      stats(N N_clust rmse bwidthtab, ///
+        fmt(0 0 3 0) labels(Observations Clusters RMSE Bandwidth))
   }
   else{
     estimates table noW_ivreg PSW_ivreg, ///
@@ -388,66 +388,26 @@ return scalar `matname'_N_G0 = `N_G0'
 
 end
 
-*-------------------------------------------------------------------------------
-* appendmodels: stack different models' coefficients
-*-------------------------------------------------------------------------------
-*! version 1.0.0  14aug2007  Ben Jann
-program define appendmodels, eclass
-// using first equation of model
-version 8
-syntax namelist
-tempname b V tmp
-foreach name of local namelist {
-    qui est restore `name'
-    mat `tmp' = e(b)
-    local eq1: coleq `tmp'
-    gettoken eq1 : eq1
-    mat `tmp' = `tmp'[1,"`eq1':"]
-    local cons = colnumb(`tmp',"_cons")
-    if `cons'<. & `cons'>1 {
-        mat `tmp' = `tmp'[1,1..`cons'-1]
-    }
-    mat `b' = nullmat(`b') , `tmp'
-    mat `tmp' = e(V)
-    mat `tmp' = `tmp'["`eq1':","`eq1':"]
-    if `cons'<. & `cons'>1 {
-        mat `tmp' = `tmp'[1..`cons'-1,1..`cons'-1]
-    }
-    capt confirm matrix `V'
-    if _rc {
-        mat `V' = `tmp'
-    }
-    else {
-        mat `V' = ///
-        ( `V' , J(rowsof(`V'),colsof(`tmp'),0) ) \ ///
-        ( J(rowsof(`tmp'),colsof(`V'),0) , `tmp' )
-    }
-}
-local names: colfullnames `b'
-mat coln `V' = ``names''
-mat rown `V' = ``names''
-eret post `b' `V'
-eret local cmd "whatever"
-end
-
 
 *-------------------------------------------------------------------------------
-* nlcomhack: stack different models' coefficients
+* nlcomhack: hack b and V matrices to inlude nlcom results
 *-------------------------------------------------------------------------------
 program nlcomhack, eclass
   tempname b V 
   matrix `b' = e(b)
   matrix `V' = e(V)
-  nlcom _b[1.`1'#1.`2'] - _b[0.`1'#1.`2']
-  matrix `b'[1,1] = r(b)
-  matrix `V'[1,1] = r(V)
-  ereturn repost b=`b' V=`V'
+  qui nlcom _b[1.`1'#1.`2'] - _b[0.`1'#1.`2']
+  matrix `b'[1,3] = r(b)
+  matrix `V'[3,3] = r(V)
+  ereturn repost b = `b' V = `V'
 end
 
 ********************************************************************************
 
 /* 
 CHANGE LOG
+0.6
+  - Implement nlcom hack to show difference as additional coefficient 
 0.5
   - Fist working version with IVREG, reduced form and first stage equations
   - Implement output reporting with estimates table and estout
