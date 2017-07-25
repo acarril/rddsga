@@ -166,6 +166,7 @@ if "`firststage'" != "" {
     esttab *_first_aux, ///
       title("First stage:") nonumbers mtitles("Unweighted" "PSW") ///
       keep(*`sgroup'#1.`cutoffvar' _nl_1) b(3) label ///
+      order(*`sgroup'#1.`cutoffvar' _nl_1) ///
       se(3) star(* 0.10 ** 0.05 *** 0.01) ///
       stats(N N_clust rmse bwidthtab, fmt(0 0 3) label(Observations Clusters RMSE Bandwidth))
   }
@@ -205,6 +206,7 @@ if "`reducedform'" != "" {
     esttab *_reduced_aux, ///
       title("Reduced form:") nonumbers mtitles("Unweighted" "PSW") ///
       keep(*`sgroup'#1.`cutoffvar' _nl_1) b(3) label ///
+      order(*`sgroup'#1.`cutoffvar' _nl_1) ///
       se(3) star(* 0.10 ** 0.05 *** 0.01) ///
       stats(N N_clust rmse bwidthtab, fmt(0 0 3) label(Observations Clusters RMSE Bandwidth))
   }
@@ -246,6 +248,8 @@ if "`ivreg'" != "" {
     esttab *_ivreg_aux, ///
       title("IV regression:") nonumbers mtitles("Unweighted" "PSW") ///
       keep(*`sgroup'#1.`treatment' _nl_1) label ///
+      order(*`sgroup'#1.`treatment' _nl_1) ///
+      varlabels(`e(labels)',blist(_nl_1 "{hline @width}{break}")) ///
       b(3) se(3) star(* 0.10 ** 0.05 *** 0.01) ///
       stats(N N_clust rmse bwidthtab, ///
         fmt(0 0 3 0) labels(Observations Clusters RMSE Bandwidth))
