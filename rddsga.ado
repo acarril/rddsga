@@ -103,7 +103,7 @@ return add
 
 // Display balance matrix and global stats
 if "`dibalance'" != "" {
-  matlist oribal, border(rows) format(%9.5g) title("Unweighted balance:")
+  matlist oribal, border(rows) format(%9.3g) title("Unweighted balance:")
   di "Obs. in subgroup 0: " oribal_N_G0
   di "Obs. in subgroup 1: " oribal_N_G1
   di "Mean abs(std_diff): " oribal_avgdiff
@@ -121,7 +121,7 @@ return add
 
 // Display balance matrix and global stats
 if "`dibalance'" != "" {
-  matlist pswbal, border(rows) format(%9.5g) title("Propensity Score Weighting balance:")
+  matlist pswbal, border(rows) format(%9.3g) title("Propensity Score Weighting balance:")
   di "Obs. in subgroup 0: " pswbal_N_G0
   di "Obs. in subgroup 1: " pswbal_N_G1
   di "Mean abs(std_diff): " pswbal_avgdiff
@@ -132,22 +132,9 @@ if "`dibalance'" != "" {
 *-------------------------------------------------------------------------------
 * Model
 *-------------------------------------------------------------------------------
-
 // Create dummy _nl_1 variable for nlcomhack
 gen _nl_1 = 1
 label var _nl_1 "Difference"
-
-// Variable and value labels
-
-label define sgroup 0 "Subgroup 0" 1 "Subgroup 1"
-label values `sgroup' sgroup
-
-label define cutoffvar 0 "Cutoff 0" 1 "Cutoff 1"
-label values `cutoffvar' cutoffvar
-label variable `cutoffvar' "Cutoff"
-
-label define treatment 0 "Control" 1 "Treated"
-label values `treatment' treatment
 
 * First stage
 *-------------------------------------------------------------------------------
