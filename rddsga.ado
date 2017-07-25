@@ -180,13 +180,8 @@ if "`reducedform'" != "" {
     if `touse' & `bwidth', vce(`vce') noconstant
   estimates title: "Unweighted reduced form"
   estimates store unw_reduced
-  matrix V = e(V)
-  matrix V = V[1..5,1..5]
-  matrix list V
   nlcomhack `sgroup' `cutoffvar'
-    matrix V = e(V)
-  matrix V = V[1..5,1..5]
-  matrix list V
+  qui estadd local bwidthtab -
   estimates store unw_reduced_aux
 
   // PSW
@@ -195,7 +190,7 @@ if "`reducedform'" != "" {
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
   estimates title: "PSW reduced form"
   estimates store psw_reduced
-*  nlcomhack `sgroup' `cutoffvar'
+  nlcomhack `sgroup' `cutoffvar'
   estimates store pws_reduced_aux
 
   // Output with esttab if installed; if not, default to estimates table 
@@ -226,6 +221,7 @@ if "`ivreg'" != "" {
   estimates title: "Unweighted IVREG"
   estimates store unw_ivreg
   nlcomhack `sgroup' `treatment'
+  qui estadd local bwidthtab -
   estimates store unw_ivreg_aux
   
   // PSW
