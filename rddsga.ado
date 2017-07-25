@@ -226,24 +226,26 @@ if "`ivreg'" != "" {
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') ///
     if `touse' & `bwidth', vce(`vce') noconstant
-  nlcomhack `sgroup' `treatment'
   estimates title: "Unweighted IVREG"
-  estimates store noW_ivreg
+  estimates store unw_ivreg
+  nlcomhack `sgroup' `treatment'
+  estimates store unw_ivreg_aux
   
   // PSW
   qui ivregress 2sls `depvar' _nl_1 ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') /// (exogenous = endogenous)
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
-  nlcomhack `sgroup' `treatment'
+  estimates store psw_ivreg
   estimates title: "PSW IVREG"
-  estimates store PSW_ivreg
+  nlcomhack `sgroup' `treatment'
+  estimates store psw_ivreg_aux
 
   // Output with esttab if installed; if not, default to estimates table 
   capture which estout
   if _rc!=111 {
     qui estadd local bwidthtab `bwidthtab'
-    esttab noW_ivreg PSW_ivreg, ///
+    esttab *_ivreg_aux, ///
       title("IV regression:") nonumbers mtitles("Unweighted" "PSW") ///
       keep(*`sgroup'#1.`treatment' _nl_1) label ///
       b(3) se(3) star(* 0.10 ** 0.05 *** 0.01) ///
