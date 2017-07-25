@@ -217,33 +217,35 @@ if "`reducedform'" != "" {
 * Instrumental variables
 *-------------------------------------------------------------------------------
 if "`ivreg'" != "" {
+  gen _nl_1 = 1
+  lab var _nl_1 "Difference"
   // Original
-  qui ivregress 2sls `depvar' ///
+  qui ivregress 2sls `depvar' _nl_1 ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') ///
     if `touse' & `bwidth', vce(`vce') noconstant
+  nlcomhack `sgroup' `treatment'
+  estadd beta
   estimates title: "Unweighted IVREG"
   estimates store noW_ivreg
   
   // PSW
-    qui ivregress 2sls `depvar' ///
+    qui ivregress 2sls `depvar' _nl_1 ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') /// (exogenous = endogenous)
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
+  nlcomhack `sgroup' `treatment'
+  estadd beta
   estimates title: "PSW IVREG"
   estimates store PSW_ivreg
-
-  // Compute difference
-  eststo iv_psw_diff: nlcom Difference: _b[0.`sgroup'#1.`treatment'] - _b[1.`sgroup'#1.`treatment']
-  appendmodels PSW_ivreg iv_psw_diff
 
   // Output with esttab if installed; if not, default to estimates table 
   capture which estout
   if _rc!=111 {
     qui estadd local bwidthtab `bwidthtab'
-    esttab noW_ivreg iv_psw, ///
+    esttab noW_ivreg PSW_ivreg, ///
       title("IV regression:") nonumbers mtitles("Unweighted" "PSW") ///
-      keep(*`sgroup'#1.`treatment')  label ///
+      keep(*`sgroup'#1.`treatment' _nl_1) ///
       b(3) se(3) star(* 0.10 ** 0.05 *** 0.01) ///
       stats(diff diff_se N N_clust rmse bwidthtab, ///
         fmt(3 3 0 0 3) labels(Difference @hline Observations Clusters RMSE Bandwidth ) layout(@ (@) @ @ @ @))
@@ -426,6 +428,20 @@ mat coln `V' = ``names''
 mat rown `V' = ``names''
 eret post `b' `V'
 eret local cmd "whatever"
+end
+
+
+*-------------------------------------------------------------------------------
+* nlcomhack: stack different models' coefficients
+*-------------------------------------------------------------------------------
+program nlcomhack, eclass
+  tempname b V 
+  matrix `b' = e(b)
+  matrix `V' = e(V)
+  nlcom _b[1.`1'#1.`2'] - _b[0.`1'#1.`2']
+  matrix `b'[1,1] = r(b)
+  matrix `V'[1,1] = r(V)
+  ereturn repost b=`b' V=`V'
 end
 
 ********************************************************************************
