@@ -1,4 +1,4 @@
-*! 0.6.2 Alvaro Carril 25jul2017
+*! 0.6.1 Alvaro Carril 25jul2017
 program define rddsga, rclass
 version 11.1
 syntax varlist(min=2 numeric fv) [if] [in] , ///
@@ -186,27 +186,26 @@ if "`reducedform'" != "" {
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
   estimates title: "PSW reduced form"
-  estimates store PSW_reducedform
+  estimates store unw_reduced
+*  nlcomhack `sgroup' `cutoffvar'
+  estimates store unw_reduced_aux
 
   // Output with esttab if installed; if not, default to estimates table 
   capture which estout
   if _rc!=111 {
     qui estadd local bwidthtab `bwidthtab'
-    esttab noW_reducedform PSW_reducedform, ///
+    esttab *_reduced_aux, ///
       title("Reduced form:") nonumbers mtitles("Unweighted" "PSW") ///
       keep(*`sgroup'#1.`cutoffvar') b(3) label ///
       se(3) star(* 0.10 ** 0.05 *** 0.01) ///
       stats(N N_clust rmse bwidthtab, fmt(0 0 3) label(Observations Clusters RMSE Bandwidth))
   }
   else {
-    estimates table noW_reducedform PSW_reducedform, ///
+    estimates table *_reduced_aux, ///
       b(%9.3g) se(%9.3g) keep(i.`sgroup'#1.`cutoffvar') ///
       stats(N) varlabel title("Reduced form:") fvlabel
   }
 }
-
-// Drop auxiliary (nlcomhacked) stored estimates
-*estimates drop *_aux
 
 * Instrumental variables
 *-------------------------------------------------------------------------------
@@ -226,8 +225,8 @@ if "`ivreg'" != "" {
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') /// (exogenous = endogenous)
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
-  estimates store psw_ivreg
   estimates title: "PSW IVREG"
+  estimates store psw_ivreg
   nlcomhack `sgroup' `treatment'
   estimates store psw_ivreg_aux
 
@@ -243,13 +242,17 @@ if "`ivreg'" != "" {
         fmt(0 0 3 0) labels(Observations Clusters RMSE Bandwidth))
   }
   else{
-    estimates table noW_ivreg PSW_ivreg, ///
+    estimates table *_ivreg_aux, ///
       b(%9.3g) se(%9.3g) keep(i.`sgroup'#1.`treatment') ///
       stats(N) varlabel title("IV regression:") fvlabel
   }
 }
 
+// Drop auxiliary (nlcomhacked) stored estimates and _nl_1 aux var 
+estimates drop *_aux
 drop _nl_1
+
+// Clear eresults and end
 ereturn clear
 end
 
