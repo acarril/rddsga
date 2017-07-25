@@ -1,8 +1,8 @@
 *! 0.6 Alvaro Carril 25jul2017
 program define rddsga, rclass
-version 11.1 /* todo: check if this is the real minimum */
+version 11.1
 syntax varlist(min=2 numeric fv) [if] [in] , ///
-  SGroup(name) Cutoff(real) BWidth(real) [ Treatment(name) /// important inputs
+  SGroup(name) BWidth(real) [ Treatment(name) Cutoff(real 0) /// important inputs
   	PSWeight(name) PSCore(name) COMsup(name) noCOMsupaux /// newvars
     BALance(varlist numeric) DIBALance probit /// balancepscore opts
     IVreg REDUCEDform FIRSTstage vce(string) QUADratic ] // model opts
