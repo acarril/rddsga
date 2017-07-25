@@ -175,20 +175,28 @@ if "`firststage'" != "" {
 *-------------------------------------------------------------------------------
 if "`reducedform'" != "" {
   // Original
-  qui reg `depvar' i.`sgroup'#1.`cutoffvar' ///
+  qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar'  ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     if `touse' & `bwidth', vce(`vce') noconstant
   estimates title: "Unweighted reduced form"
-  estimates store noW_reducedform
+  estimates store unw_reduced
+  matrix V = e(V)
+  matrix V = V[1..5,1..5]
+  matrix list V
+  nlcomhack `sgroup' `cutoffvar'
+    matrix V = e(V)
+  matrix V = V[1..5,1..5]
+  matrix list V
+  estimates store unw_reduced_aux
 
   // PSW
-  qui reg `depvar' i.`sgroup'#1.`cutoffvar' ///
+  qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar'  ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
   estimates title: "PSW reduced form"
-  estimates store unw_reduced
+  estimates store psw_reduced
 *  nlcomhack `sgroup' `cutoffvar'
-  estimates store unw_reduced_aux
+  estimates store pws_reduced_aux
 
   // Output with esttab if installed; if not, default to estimates table 
   capture which estout
@@ -196,7 +204,7 @@ if "`reducedform'" != "" {
     qui estadd local bwidthtab `bwidthtab'
     esttab *_reduced_aux, ///
       title("Reduced form:") nonumbers mtitles("Unweighted" "PSW") ///
-      keep(*`sgroup'#1.`cutoffvar') b(3) label ///
+      keep(*`sgroup'#1.`cutoffvar' _nl_1) b(3) label ///
       se(3) star(* 0.10 ** 0.05 *** 0.01) ///
       stats(N N_clust rmse bwidthtab, fmt(0 0 3) label(Observations Clusters RMSE Bandwidth))
   }
@@ -249,7 +257,7 @@ if "`ivreg'" != "" {
 }
 
 // Drop auxiliary (nlcomhacked) stored estimates and _nl_1 aux var 
-estimates drop *_aux
+*estimates drop *_aux
 drop _nl_1
 
 // Clear eresults and end
@@ -259,6 +267,23 @@ end
 *===============================================================================
 * Define auxiliary subroutines
 *===============================================================================
+
+*-------------------------------------------------------------------------------
+* nlcomhack: hack b and V matrices to inlude nlcom results
+*-------------------------------------------------------------------------------
+program nlcomhack, eclass
+  tempname b V nlcom_V
+  matrix `b' = e(b)
+  matrix `V' = e(V)
+  local colnames : colnames `b'
+  local i : list posof "_nl_1" in colnames
+  qui nlcom _b[1.`1'#1.`2'] - _b[0.`1'#1.`2']
+  matrix `nlcom_V' = r(V) // for some reason this is necessary
+  matrix `b'[1,`i'] = r(b)
+  matrix `V'[`i',`i'] = `nlcom_V'[1,1] // ...and this
+  ereturn repost b = `b' V = `V'
+end
+
 
 *-------------------------------------------------------------------------------
 * balancematrix: compute balance table matrices and other statistics
@@ -382,20 +407,6 @@ return scalar `matname'_pvalue = `pval_global'
 return scalar `matname'_N_G1 = `N_G1'
 return scalar `matname'_N_G0 = `N_G0'
 
-end
-
-
-*-------------------------------------------------------------------------------
-* nlcomhack: hack b and V matrices to inlude nlcom results
-*-------------------------------------------------------------------------------
-program nlcomhack, eclass
-  tempname b V 
-  matrix `b' = e(b)
-  matrix `V' = e(V)
-  qui nlcom _b[1.`1'#1.`2'] - _b[0.`1'#1.`2']
-  matrix `b'[1,3] = r(b)
-  matrix `V'[3,3] = r(V)
-  ereturn repost b = `b' V = `V'
 end
 
 ********************************************************************************
