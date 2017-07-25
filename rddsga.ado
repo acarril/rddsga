@@ -174,6 +174,7 @@ if "`firststage'" != "" {
       title("First stage:") nonumbers mtitles("Unweighted" "PSW") ///
       keep(*`sgroup'#1.`cutoffvar' _nl_1) b(3) label ///
       order(*`sgroup'#1.`cutoffvar' _nl_1) ///
+      varlabels(`e(labels)',blist(_nl_1 "{hline @width}{break}")) ///
       se(3) star(* 0.10 ** 0.05 *** 0.01) ///
       stats(N N_clust rmse bwidthtab, fmt(0 0 3) label(Observations Clusters RMSE Bandwidth))
   }
@@ -214,6 +215,7 @@ if "`reducedform'" != "" {
       title("Reduced form:") nonumbers mtitles("Unweighted" "PSW") ///
       keep(*`sgroup'#1.`cutoffvar' _nl_1) b(3) label ///
       order(*`sgroup'#1.`cutoffvar' _nl_1) ///
+      varlabels(`e(labels)',blist(_nl_1 "{hline @width}{break}")) ///
       se(3) star(* 0.10 ** 0.05 *** 0.01) ///
       stats(N N_clust rmse bwidthtab, fmt(0 0 3) label(Observations Clusters RMSE Bandwidth))
   }
