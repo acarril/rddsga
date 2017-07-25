@@ -9,7 +9,7 @@
 {title:Syntax}
 
 {p 8 16 2}
-{cmd:rddsga} {depvar} {it:assignvar} {indepvars} {ifin}
+{cmd:rddsga} {depvar} {it:assignvar} [{indepvars}] {ifin}
 {cmd:,} {it:options}
 {p_end}
 
@@ -19,14 +19,14 @@
 {synoptset 22 tabbed}{...}
 {synopthdr}
 {synoptline}
-{p2col 3 4 4 2:* RD design}{p_end}
-{synopt :{opth sg:roup(varname)}}subgroup indicator variable{p_end}
+{syntab :RD design}
+{p2coldent:* {opth sg:roup(varname)}}subgroup indicator variable{p_end}
 {synopt :{opth t:reatment(varname)}}indicator for the assignment variable above the cutoff; if not specified, a sharp RDD is assumed{p_end}
-{synopt :{opt c:utoff(real)}}specifies the cutoff value in {it:assignvar}{p_end}
-{synopt :{opt bw:idth(real)}}specifies the bandwidth around the cutoff{p_end}
+{synopt :{opt c:utoff(real)}}specifies the cutoff value in {it:assignvar}; default is 0{p_end}
+{p2coldent:* {opt bw:idth(real)}}specifies the bandwidth around the cutoff{p_end}
 
 {syntab :Balance}
-{synopt :{opth bal:ance(varlist)}}variables for which the propensity score weighting is calculated; default is {indepvars}{p_end}
+{p2coldent:+ {opth bal:ance(varlist)}}variables for which the propensity score weighting is calculated; default is {indepvars}{p_end}
 {synopt :{opt probit}}predict propensity score using a {manhelp probit R:probit} model; default is {manhelp logit R:logit}{p_end}
 {synopt :{opt nocom:sup}}do not restrict sample to area of common support{p_end}
 
@@ -47,8 +47,8 @@
 {synoptline}
 {p2colreset}{...}
 {p 4 6 2}* These options must be specified.{p_end}
-{p 4 6 2}
-{it:indepvars} may contain factor variables; see {help fvvarlist}.{p_end}
+{p 4 6 2}+ This option must be specified if {it:indepvars} is empty.{p_end}
+{p 4 6 2}{it:indepvars} may contain factor variables; see {help fvvarlist}.{p_end}
 
 
 {marker description}{...}
@@ -82,16 +82,70 @@ Additional details regarding the methodology implemented by {cmd: rddsga} can be
 
 {dlgtab:RD design}
 
+{phang}
+{opt sgroup(varname)} specifies a subgroup indicator variable.
+This variable must be a {it:dummy} (values 0 or 1).
+This option must be specified.
+
+{phang}
+{opt treatment(varname)} specifies an indicator variable for the assignment variable ({it:assignvar}) above the cutoff. If not specified, a sharp RDD is assumed.
+
+{phang}
+{opt cutoff(real)} specifies the cutoff value in {it:assignvar}; default is 0 (assuming normalized {it:assignvar}).
+
+{phang}
+{opt bwidth(real)} specifies a symmetrical the bandwidth around the cutoff.
+This option must be specified.
+
 {dlgtab:Balance}
 
+{phang}
+{opt balance(varlist)} specifies variables for which the propensity score weighting is calculated.
+If not specified, variables in {it:indepvars} are used.
+This option is useful if one wants to balance for a different set of covariates that the ones used as controls in the model.
+This option must be specified if {it:indepvars} is empty.
+
+{phang}
+{opt probit} indicates that the propensity score is computed after a fitting a  {manhelp probit R:probit} model; default is {manhelp logit R:logit}.
+
+{phang}
+{opt nocomsup} indicates that the sample is not to be restricted to the area of common support.
+
+{marker options_model}{...}
 {dlgtab:Model}
+
+{phang}
+{opt firststage} estimates the first stage regression model.
+
+{phang}
+{opt reducedform} estimates the reduced form regression model.
+
+{phang}
+{opt ivreg} estimate the instrumental variables regression model.
+
+{phang}
+{opt vce(vcetype)} specifies the variance estimators options. See {help  vce_option}.
+
+{phang}
+{opt quadratic} indicates that a quadratic spline is to be used for full interaction with subgroup indicators. If not specified, a linear spline is used.
 
 {dlgtab:Reporting}
 
+{phang}
+{opt dibalance} display original balance and propensity score weighting balance tables and statistics.
+This balance is computed for each covariate in {it:indepvars}, unless {opt balance(varlist)} is specified.
 
-{marker examples}{...}
+{phang}
+{opt psweight(newvar)} specifies a name for a new variable with the propensity score weighting. If not specified, no variable will be generated.
+
+{phang}
+{opt comsup(newvar)} specifies a name for a new binary variable indicating common support. If not specified, no variable will be generated.
+
+{phang}
+{opt pscore(newvar)} specifies a name for a new variable with the propensity score. If not specified, no variable will be generated.
+
+{* marker examples}{...}
 {* title:Examples}
-
 
 {marker results}{...}
 {title:Stored results}
@@ -119,16 +173,19 @@ Additional details regarding the methodology implemented by {cmd: rddsga} can be
 {p2colreset}{...}
 
 {pstd}
-Additionally, {cmd:rddsga} stores all estimation results, both for the unweighted and PSW models, using {help estimates store}. The full list can be retrieved using {help estimates dir}:
+Additionally, {cmd:rddsga} stores all estimation results for the specified models ({opt firststage}, {opt firststage} and/or {opt ivregress}; see {help rddsga##options_model:Model options} above).
+Both the unweighted and PSW models are stored using {help estimates store}.
+The list of stored models can be retrieved using {help estimates dir}.
+The full list of estimates that may be stored is described below.
 
 {synoptset 20 tabbed}{...}
 {p2col 5 20 24 2: Estimates}{p_end}
-{synopt:{cmd:noW_firststage}}Unweighted first stage{p_end}
-{synopt:{cmd:PSW_firststage}}PSW first stage{p_end}
-{synopt:{cmd:noW_reducedform}}Unweighted reduced form{p_end}
-{synopt:{cmd:PSW_reducedform}}PSW reduced form{p_end}
-{synopt:{cmd:noW_ivreg}}Unweighted instrumental variables{p_end}
-{synopt:{cmd:PSW_ivreg}}PSW instrumental variables{p_end}
+{synopt:{cmd:unw_first}}Unweighted first stage{p_end}
+{synopt:{cmd:psw_first}}PSW first stage{p_end}
+{synopt:{cmd:unw_reduced}}Unweighted reduced form{p_end}
+{synopt:{cmd:psw_reduced}}PSW reduced form{p_end}
+{synopt:{cmd:unw_ivreg}}Unweighted instrumental variables{p_end}
+{synopt:{cmd:psw_ivreg}}PSW instrumental variables{p_end}
 
 
 {marker authors}{...}
@@ -176,14 +233,3 @@ All remaining errors are our own.
 {phang}Gerardino, Maria Paula, Stephan Litschig, Benjamin Olken, and Dina Pomeranz. 2017.
 "Can Audits Backfire? Evidence from Public Procurement in Chile".
 {it:Working Paper}.
-
-{marker imbens_rubin_2015}{...}
-{phang}Imbens, Guido W. and Donald B. Rubin. 2015.
-{it: Causal Inference in Statistics, Social, and Biomedical Sciences}.
-New York: Cambridge University Press.
-
-{marker imbens_2015}{...}
-{phang}Imbens, Guido W. 2015.
-"Matching Methods in Practice: Three Examples".
-{it:Journal of Human Resources} 50(2): 373-419.
-{p_end}
