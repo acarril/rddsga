@@ -236,8 +236,8 @@ if "`reducedform'" != "" {
 *-------------------------------------------------------------------------------
 if "`ivreg'" != "" {
   // Original
-  qui ivregress 2sls `depvar' _nl_1 ///
-    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
+  qui ivregress 2sls `depvar' ///
+    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') _nl_1 ///
     (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') ///
     if `touse' & `bwidth', vce(`vce') noconstant
   estimates title: "Unweighted IVREG"
@@ -248,8 +248,8 @@ if "`ivreg'" != "" {
   estimates store unw_ivreg_aux
   
   // PSW
-  qui ivregress 2sls `depvar' _nl_1 ///
-    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
+  qui ivregress 2sls `depvar' ///
+    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') _nl_1 ///
     (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') /// (exogenous = endogenous)
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
   estimates title: "PSW IVREG"
@@ -297,8 +297,7 @@ program nlcomhack, eclass
   tempname b V nlcom_V
   matrix `b' = e(b)
   matrix `V' = e(V)
-  local colnames : colnames `b'
-  local i : list posof "_nl_1" in colnames
+  local i = colnumb(`b', "_nl_1")
   qui nlcom _b[1.`1'#1.`2'] - _b[0.`1'#1.`2']
   matrix `nlcom_V' = r(V) // for some reason this is necessary
   matrix `b'[1,`i'] = r(b)
