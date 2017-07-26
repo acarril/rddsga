@@ -74,7 +74,8 @@ Although {cmd:rddsga} can output results without any additional packages, the pr
 In any case, the full estimation results can be retrieved with {help estimates dir}.
 
 {pstd}
-Additional details regarding the methodology implemented by {cmd: rddsga} can be found in {help rddsga##mainpaper: Gerardino, Litschig, Olken and Pomeranz (2017)}.
+Additional details regarding the methodology implemented by {cmd: rddsga} can be found in the project's {browse "https://gitlab.com/acarril/rddsga/wikis/home":repository}.
+An application can be found in {help rddsga##mainpaper: Gerardino, Litschig, Olken and Pomeranz (2017)}.
 
 
 {marker options}{...}
