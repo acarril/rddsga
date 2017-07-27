@@ -145,8 +145,29 @@ This balance is computed for each covariate in {it:indepvars}, unless {opt balan
 {phang}
 {opt pscore(newvar)} specifies a name for a new variable with the propensity score. If not specified, no variable will be generated.
 
-{* marker examples}{...}
-{* title:Examples}
+
+{marker examples}{...}
+{title:Examples}
+
+{pstd}Setup{p_end}
+{phang2}{cmd:. webuse hsng2}{p_end}
+
+{pstd}Fit a regression via 2SLS, requesting small-sample statistics{p_end}
+{phang2}{cmd:. ivregress 2sls rent pcturban (hsngval = faminc i.region), small}{p_end}
+
+{pstd}Fit a regression using the LIML estimator{p_end}
+{phang2}{cmd:. ivregress liml rent pcturban (hsngval = faminc i.region)}{p_end}
+
+{pstd}Fit a regression via GMM using the default heteroskedasticity-robust weight matr
+> ix{p_end}
+{phang2}{cmd:. ivregress gmm rent pcturban (hsngval = faminc i.region)}{p_end}
+
+{pstd}Fit a regression via GMM using a heteroskedasticity-robust weight matrix, requesting nonrobust standard errors{p_end}
+{phang2}{cmd:. ivregress gmm rent pcturban (hsngval = faminc i.region), vce(unadjusted)}{p_end}
+
+{pstd}Fit a regression via 2SLS, with an endogenous factorial interaction{p_end}
+{phang2}{cmd:. ivregress 2sls rent pcturban (c.popgrow##c.popgrow = c.faminc##c.faminci.region)}{p_end}
+
 
 {marker results}{...}
 {title:Stored results}
