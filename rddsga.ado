@@ -1,4 +1,4 @@
-*! 0.7 Alvaro Carril 25jul2017
+*! 0.7.1 Alvaro Carril 25jul2017
 program define rddsga, rclass
 version 11.1
 syntax varlist(min=2 numeric fv) [if] [in] , ///
@@ -156,9 +156,9 @@ if "`firststage'" != "" {
   estimates title: "Unweighted first stage"
   estimates store unw_first
   nlcomhack `sgroup' `cutoffvar'
+  estimates store unw_first_aux
   qui estadd local bwidthtab -
   qui estadd local spline `spline'
-  estimates store unw_first_aux
   
   // PSW
   qui reg `treatment' _nl_1 i.`sgroup'#1.`cutoffvar' ///
@@ -167,9 +167,9 @@ if "`firststage'" != "" {
   estimates title: "PSW first stage"
   estimates store psw_first
   nlcomhack `sgroup' `cutoffvar'
+  estimates store psw_first_aux
   qui estadd local bwidthtab `bwidthtab'
   qui estadd local spline `spline'
-  estimates store psw_first_aux
   
   // Output with esttab if installed; if not, default to estimates table 
   capture which estout
@@ -199,9 +199,9 @@ if "`reducedform'" != "" {
   estimates title: "Unweighted reduced form"
   estimates store unw_reduced
   nlcomhack `sgroup' `cutoffvar'
+  estimates store unw_reduced_aux
   qui estadd local bwidthtab -
   qui estadd local spline `spline'
-  estimates store unw_reduced_aux
 
   // PSW
   qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar'  ///
@@ -210,9 +210,9 @@ if "`reducedform'" != "" {
   estimates title: "PSW reduced form"
   estimates store psw_reduced
   nlcomhack `sgroup' `cutoffvar'
+  estimates store pws_reduced_aux
   qui estadd local bwidthtab `bwidthtab'
   qui estadd local spline `spline'
-  estimates store pws_reduced_aux
 
   // Output with esttab if installed; if not, default to estimates table 
   capture which estout
@@ -243,9 +243,9 @@ if "`ivreg'" != "" {
   estimates title: "Unweighted IVREG"
   estimates store unw_ivreg
   nlcomhack `sgroup' `treatment'
+  estimates store unw_ivreg_aux
   qui estadd local bwidthtab -
   qui estadd local spline `spline'
-  estimates store unw_ivreg_aux
   
   // PSW
   qui ivregress 2sls `depvar' ///
@@ -255,9 +255,9 @@ if "`ivreg'" != "" {
   estimates title: "PSW IVREG"
   estimates store psw_ivreg
   nlcomhack `sgroup' `treatment'
+  estimates store psw_ivreg_aux
   qui estadd local bwidthtab `bwidthtab'
   qui estadd local spline `spline'
-  estimates store psw_ivreg_aux
 
   // Output with esttab if installed; if not, default to estimates table 
   capture which estout
