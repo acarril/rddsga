@@ -1,5 +1,5 @@
 * Generate synthetic dataset
-
+*** Andre
 clear all
 set seed 112
 
