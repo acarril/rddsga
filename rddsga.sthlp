@@ -149,7 +149,7 @@ This balance is computed for each covariate in {it:indepvars}, unless {opt balan
 {marker examples}{...}
 {title:Examples}
 
-{pstd}Setup{p_end}
+{pstd}Setup (click {browse "https://github.com/acarril/rddsga#installation":here} for details on getting ancillary files){p_end}
 {phang2}{cmd:. use rddsga_synth}{p_end}
 
 {pstd}Assess covariate imbalance using one covariate{p_end}

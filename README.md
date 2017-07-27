@@ -9,7 +9,7 @@ net from https://raw.githubusercontent.com/acarril/rddsga/master/
 After setting the location for `net`, use the following commands to describe and install the package and its ancillary files:
 ```stata
 // Describe
-net describe
+net describe rddsga
 // Install ado-files and help files
 net install rddsga
 // Install ancillary files (datasets)
