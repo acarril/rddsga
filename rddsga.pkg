@@ -1,3 +1,4 @@
+v 0.8
 d 'RDDSGA': Subgroup analysis with propensity score weighting in RDD settings
 d
 d  rddsga allows to conduct a binary subgroup analysis in RDD settings
@@ -14,11 +15,11 @@ d KW: Regression Discontinuity
 d
 d Requires: Stata version 11 
 d
-d Distribution-Date: 20172507
+d Distribution-Date: 20170727
 d
 d Author: Alvaro Carril, J-PAL LAC
 d Support: email acarril@fen.uchile.cl
 d
 F rddsga.ado
 F rddsga.sthlp
-F rddsga_synth.dta
+f rddsga_synth.dta
