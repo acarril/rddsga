@@ -168,7 +168,7 @@ if "`firststage'" != "" {
   estimates store psw_first
   nlcomhack `sgroup' `cutoffvar'
   estimates store psw_first_aux
-  qui estadd local bwidthtab `bwidthtab'
+  qui estadd scalar bwidthtab = `bwidthtab'
   qui estadd local spline `spline'
   
   // Output with esttab if installed; if not, default to estimates table 
@@ -180,7 +180,7 @@ if "`firststage'" != "" {
       order(*`sgroup'#1.`cutoffvar' _nl_1) ///
       varlabels(,blist(_nl_1 "{hline @width}{break}")) ///
       se(3) star(* 0.10 ** 0.05 *** 0.01) ///
-      stats(N N_clust rmse bwidthtab spline, fmt(0 0 3) label(Observations Clusters RMSE Bandwidth Spline))
+      stats(N N_clust rmse bwidthtab spline, fmt(0 0 3 3) label(Observations Clusters RMSE Bandwidth Spline))
   }
   else {
     estimates table *_first_aux, ///
@@ -211,7 +211,7 @@ if "`reducedform'" != "" {
   estimates store psw_reduced
   nlcomhack `sgroup' `cutoffvar'
   estimates store pws_reduced_aux
-  qui estadd local bwidthtab `bwidthtab'
+  qui estadd scalar bwidthtab = `bwidthtab'
   qui estadd local spline `spline'
 
   // Output with esttab if installed; if not, default to estimates table 
@@ -223,7 +223,7 @@ if "`reducedform'" != "" {
       order(*`sgroup'#1.`cutoffvar' _nl_1) ///
       varlabels(,blist(_nl_1 "{hline @width}{break}")) ///
       se(3) star(* 0.10 ** 0.05 *** 0.01) ///
-      stats(N N_clust rmse bwidthtab spline, fmt(0 0 3) label(Observations Clusters RMSE Bandwidth Spline))
+      stats(N N_clust rmse bwidthtab spline, fmt(0 0 3 3) label(Observations Clusters RMSE Bandwidth Spline))
   }
   else {
     estimates table *_reduced_aux, ///
@@ -256,7 +256,7 @@ if "`ivreg'" != "" {
   estimates store psw_ivreg
   nlcomhack `sgroup' `treatment'
   estimates store psw_ivreg_aux
-  qui estadd local bwidthtab `bwidthtab'
+  qui estadd scalar bwidthtab = `bwidthtab'
   qui estadd local spline `spline'
 
   // Output with esttab if installed; if not, default to estimates table 
@@ -269,7 +269,7 @@ if "`ivreg'" != "" {
       varlabels(,blist(_nl_1 "{hline @width}{break}")) ///
       b(3) se(3) star(* 0.10 ** 0.05 *** 0.01) ///
       stats(N N_clust rmse bwidthtab spline, ///
-        fmt(0 0 3 0) labels(Observations Clusters RMSE Bandwidth Spline))
+        fmt(0 0 3 3) labels(Observations Clusters RMSE Bandwidth Spline))
   }
   else{
     estimates table *_ivreg_aux, ///
