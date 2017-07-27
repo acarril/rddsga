@@ -3,6 +3,7 @@
 * Alvaro Carril
 *-------------------------------------------------------------------------------
 clear all
+discard
 set seed 112
 * Generate data
 *-------------------------------------------------------------------------------
@@ -30,6 +31,9 @@ replace X2 = rnormal(-1.2, 1.2) if !G
 gen Y = .
 replace Y = 1 + 10*X1 + X2 + .1*Z + rnormal() if G
 replace Y = 0 + 1*X1  + X2 - .1*Z + rnormal() if !G
+// Save synthetic dataset
+compress
+save rddsga_synth, replace
 
 * Estimation
 *-------------------------------------------------------------------------------
