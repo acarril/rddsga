@@ -1,4 +1,4 @@
-*! 0.8 Alvaro Carril 27jul2017
+*! 0.8.1 Alvaro Carril 27jul2017
 program define rddsga, rclass
 version 11.1
 syntax varlist(min=2 numeric fv) [if] [in] , ///
