@@ -15,3 +15,6 @@ set obs `N'
 gen runvar = rnormal()
 qui summ runvar
 replace runvar = 200/(r(max)-r(min))*(runvar-r(max))+100
+
+// Generate subgroup indicator
+gen group = round(runiform())
