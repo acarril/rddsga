@@ -279,8 +279,8 @@ if "`ivreg'" != "" {
 }
 
 // Drop auxiliary (nlcomhacked) stored estimates and _nl_1 aux var 
-estimates drop *_aux
-drop _nl_1
+cap estimates drop *_aux
+cap drop _nl_1
 
 // Clear eresults and end
 ereturn clear
