@@ -75,7 +75,7 @@ In any case, the full estimation results can be retrieved with {help estimates d
 
 {pstd}
 Additional details regarding the methodology implemented by {cmd: rddsga} can be found in the project's {browse "https://gitlab.com/acarril/rddsga/wikis/home":repository}.
-An application can be found in {help rddsga##mainpaper: Gerardino, Litschig, Olken and Pomeranz (2017)}.
+An application can be found in {help rddsga##mainpaper:Gerardino, Litschig, Olken and Pomeranz (2017)}.
 
 
 {marker options}{...}
@@ -150,23 +150,19 @@ This balance is computed for each covariate in {it:indepvars}, unless {opt balan
 {title:Examples}
 
 {pstd}Setup{p_end}
-{phang2}{cmd:. webuse hsng2}{p_end}
+{phang2}{cmd:. use rddsga_synth}{p_end}
 
-{pstd}Fit a regression via 2SLS, requesting small-sample statistics{p_end}
-{phang2}{cmd:. ivregress 2sls rent pcturban (hsngval = faminc i.region), small}{p_end}
+{pstd}Assess covariate imbalance using one covariate{p_end}
+{phang2}{cmd:. rddsga Y runvar, balance(X1) sgroup(G) bwidth(10) dibal}{p_end}
 
-{pstd}Fit a regression using the LIML estimator{p_end}
-{phang2}{cmd:. ivregress liml rent pcturban (hsngval = faminc i.region)}{p_end}
+{pstd}Store computed PSW vector balancing for all covariates{p_end}
+{phang2}{cmd:. rddsga Y runvar, balance(X1 X2) sgroup(G) bwidth(10) psweight()}{p_end}
 
-{pstd}Fit a regression via GMM using the default heteroskedasticity-robust weight matr
-> ix{p_end}
-{phang2}{cmd:. ivregress gmm rent pcturban (hsngval = faminc i.region)}{p_end}
+{pstd}Fit reduced form model{p_end}
+{phang2}{cmd:. rddsga Y runvar, balance(X1 X2) sgroup(G) bwidth(10) reduced}{p_end}
 
-{pstd}Fit a regression via GMM using a heteroskedasticity-robust weight matrix, requesting nonrobust standard errors{p_end}
-{phang2}{cmd:. ivregress gmm rent pcturban (hsngval = faminc i.region), vce(unadjusted)}{p_end}
-
-{pstd}Fit a regression via 2SLS, with an endogenous factorial interaction{p_end}
-{phang2}{cmd:. ivregress 2sls rent pcturban (c.popgrow##c.popgrow = c.faminc##c.faminci.region)}{p_end}
+{pstd}Assess balance and fit reduced form model using minimal-MSE bandwidth ({help rddsga##imbens2012:Imbens and Kalyanaraman, 2012}){p_end}
+{phang2}{cmd:. rddsga Y runvar, balance(X1 X2) sgroup(G) bwidth(6.095) reduced dibal}{p_end}
 
 
 {marker results}{...}
@@ -250,6 +246,9 @@ All remaining errors are our own.
 
 {marker references}{...}
 {title:References}
+
+{marker imbens2012}{...}
+{phang}Imbens, Guido, and Karthik Kalyanaraman. "Optimal Bandwidth Choice for the Regression Discontinuity Estimator." Review of Economic Studies 79, no. 3 (2012): 933–59.
 
 {marker mainpaper}{...}
 {phang}Gerardino, Maria Paula, Stephan Litschig, Benjamin Olken, and Dina Pomeranz. 2017.
