@@ -1,5 +1,7 @@
-* Generate synthetic dataset
-*** Andre
+*-------------------------------------------------------------------------------
+* Generate synthetic dataset for rddsga
+* Alvaro Carril
+*-------------------------------------------------------------------------------
 clear all
 set seed 112
 
@@ -23,15 +25,18 @@ gen Z = (runvar > 0)
 gen G = round(runiform())
 
 // Covariates
-gen X = .
-replace X = rnormal() if G
-replace X = rnormal(.7,0.8) if !G 
+gen X1 = .
+replace X1 = rnormal() if G
+replace X1 = rnormal(.7,0.8) if !G
+
+gen X2 = .
+replace X2 = rnormal(-1, 1.5) if G
+replace X2 = rnormal(-1.2, 1.2) if !G
 
 gen Y = .
-replace Y = 1 + .6*X + 2*Z + rnormal() if G
-replace Y = 0 + .4*X - 2*Z + rnormal() if !G
+replace Y = 1 + 10*X1 + X2 + .1*Z + rnormal() if G
+replace Y = 0 + 1*X1  + X2 - .1*Z + rnormal() if !G
 
 // Estimation
-*reg Y X Z##G
-*rdrobust Y runvar, covs(G)
-rddsga Y runvar, balance(X) sgroup(G) bwidth(10) reduced dibal
+rd Y runvar
+rddsga Y runvar, balance(X1 X2) sgroup(G) bwidth(`e(w)') reduced dibal
