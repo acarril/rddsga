@@ -1,4 +1,4 @@
-*! 0.7.1 Alvaro Carril 25jul2017
+*! 0.8 Alvaro Carril 27jul2017
 program define rddsga, rclass
 version 11.1
 syntax varlist(min=2 numeric fv) [if] [in] , ///
@@ -434,6 +434,8 @@ end
 
 /* 
 CHANGE LOG
+0.8
+  - Add synthetic dataset for examples
 0.7 
   - First alpha version ready for full usage
   - Implement nlcom hack to all models, detect diff coef position automatically
@@ -456,12 +458,6 @@ CHANGE LOG
 	- Modify some option names and internal locals
 
 KNOWN ISSUES/BUGS:
-  - Global stats don't agree with the ones computed by original balancepscore
-    ~ computed mean in differences is same; r(sd) is different, maybe due to
-      differences in treatment groups? check if variable.
-  - Per-covariate stats don't agree with original balancepscore
-    ~ In original balance this was due to different usage of `touse'; original
-      ado includes obs. with missing values in depvar (and balance?)
   - Should we use pweights or iweights? iw don't work with ivregress.
 
 TODOS AND IDEAS:
