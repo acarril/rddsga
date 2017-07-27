@@ -23,11 +23,14 @@ gen Z = (runvar > 0)
 gen G = round(runiform())
 
 // Covariates
-gen X = rnormal()
+gen X = .
+replace X = rnormal() if G
+replace X = rnormal(.5,0.3) if !G 
 gen Y = .
 replace Y = 1 + .6*X + 2*Z + rnormal() if G
 replace Y = 0 + .4*X - 2*Z + rnormal() if !G
 
 // Estimation
-reg Y X T##G
-rdrobust Y runvar, covs(G)
+*reg Y X Z##G
+*rdrobust Y runvar, covs(G)
+rddsga Y runvar, balance(X) sgroup(G) bwidth(10) reduced dibal
