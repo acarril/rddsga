@@ -26,6 +26,7 @@ gen G = round(runiform())
 gen X = .
 replace X = rnormal() if G
 replace X = rnormal(.7,0.8) if !G 
+
 gen Y = .
 replace Y = 1 + .6*X + 2*Z + rnormal() if G
 replace Y = 0 + .4*X - 2*Z + rnormal() if !G
