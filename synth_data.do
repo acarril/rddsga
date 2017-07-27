@@ -41,4 +41,11 @@ save data/rddsga_synth, replace
 // Compute optimal bandwidth
 rd Y runvar
 // Fit unweighted and PSW model
-rddsga Y runvar, balance(X1 X2) sgroup(G) bwidth(`e(w)') reduced dibal
+rddsga Y runvar, balance(X1 X2) sgroup(G) bwidth(10) dibal
+
+// Fit unweighted and PSW model
+rddsga Y runvar, balance(X1 X2) sgroup(G) bwidth(10) psweight(PSW)
+
+rd Y runvar
+rddsga Y runvar, balance(X1 X2) sgroup(G) bwidth(6.095) reduced dibal
+rddsga Y runvar X2, balance(X1 X2) sgroup(G) bwidth(6.095) reduced
