@@ -34,6 +34,7 @@ replace Y = 0 + 1*X1  + X2 - .1*Z + rnormal() if !G
 // Save synthetic dataset
 compress
 save rddsga_synth, replace
+save data/rddsga_synth, replace
 
 * Estimation
 *-------------------------------------------------------------------------------
