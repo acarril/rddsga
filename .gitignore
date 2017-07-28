@@ -6,3 +6,4 @@ data/procurement_test.dta
 data/midRiskRDDdataset.dta
 data/procurement_test2.dta
 data/procurement_test3.dta
+*.gph
