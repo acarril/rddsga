@@ -150,7 +150,7 @@ label var _nl_1 "Difference"
 
 if "`firststage'" != "" {
   // Original
-  qui reg `treatment' _nl_1 i.`sgroup'#1.`cutoffvar' ///
+  qui reg `treatment' _nl_1 i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     if `touse' & `bwidth', vce(`vce') noconstant
   estimates title: "Unweighted first stage"
@@ -161,7 +161,7 @@ if "`firststage'" != "" {
   qui estadd local spline `spline'
   
   // PSW
-  qui reg `treatment' _nl_1 i.`sgroup'#1.`cutoffvar' ///
+  qui reg `treatment' _nl_1 i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
   estimates title: "PSW first stage"
@@ -193,7 +193,7 @@ if "`firststage'" != "" {
 *-------------------------------------------------------------------------------
 if "`reducedform'" != "" {
   // Original
-  qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar'  ///
+  qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     if `touse' & `bwidth', vce(`vce') noconstant
   estimates title: "Unweighted reduced form"
@@ -204,7 +204,7 @@ if "`reducedform'" != "" {
   qui estadd local spline `spline'
 
   // PSW
-  qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar'  ///
+  qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
   estimates title: "PSW reduced form"
@@ -236,7 +236,7 @@ if "`reducedform'" != "" {
 *-------------------------------------------------------------------------------
 if "`ivreg'" != "" {
   // Original
-  qui ivregress 2sls `depvar' ///
+  qui ivregress 2sls `depvar' i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') _nl_1 ///
     (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') ///
     if `touse' & `bwidth', vce(`vce') noconstant
@@ -248,7 +248,7 @@ if "`ivreg'" != "" {
   qui estadd local spline `spline'
   
   // PSW
-  qui ivregress 2sls `depvar' ///
+  qui ivregress 2sls `depvar' i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') _nl_1 ///
     (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') /// (exogenous = endogenous)
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
