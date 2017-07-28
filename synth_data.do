@@ -52,19 +52,16 @@ keep if abs(runvar)<=10
 
 rd Y runvar, bw(10)
 
-
-
 		bysort bin: egen bin_Y = mean(Y) 
 
 		graph twoway  (scatter bin_Y  bin,  msymbol(O) mcolor(gray) msize(medium)) ///
-		(qfit Y runvar if  runvar>=-10 & runvar<=0, range(-10 0) lcolor(green) lpattern(solid)) /// 
-		(qfit Y runvar if  runvar>=0 & runvar<=10, range(0 10) lcolor(green) lpattern(solid)) , ///
+		(qfitci Y runvar if  runvar>=-10 & runvar<=0, range(-10 0) lcolor(black) lpattern(solid)) /// 
+		(qfitci Y runvar if  runvar>=0 & runvar<=10, range(0 10) lcolor(black) lpattern(solid)), ///
 		 graphregion(fcol(white)) bgcolor(white) ylabel(0.5(0.5)1.5) xlabel(-10(2)10) xline(0) plotregion(style(none)) /// title("`t', `Atit'", margin(medium) size(medium)) ///
 		 legend(off) ytitle("Outcome", size(large))  xtitle("Distance to cutoff", size(large))  ///
 		saving(rdplot_all, replace)	
 
-		stop
-
+	
 	* Bin means by group:
 
 		bysort bin G: egen bin_mean_Y = mean(Y) 
@@ -78,7 +75,7 @@ rd Y runvar, bw(10)
 	* Draw plot:
 	sort runvar
 
-		graph twoway  		///(scatter bin_mean_Y  bin if  G,  msymbol(O) mcolor(gray) msize(medium)) ///
+		graph twoway  ///(scatter bin_mean_Y  bin if  G,  msymbol(O) mcolor(gray) msize(medium)) ///
 		(qfit Y runvar if  G & runvar>=-10 & runvar<=0, range(-10 0) lcolor(green) lpattern(solid)) /// 
 		(qfit Y runvar if G & runvar>=0 & runvar<=10, range(0 10) lcolor(green) lpattern(solid))  ///
 		///(scatter bin_mean_Y  bin if  G,  msymbol(O) mcolor(gray) msize(medium)) ///
