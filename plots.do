@@ -18,7 +18,7 @@ rd Y runvar, bw(10)
     graph twoway  (scatter bin_Y  bin,  msymbol(O) mcolor(gray) msize(medium)) ///
     (qfitci Y runvar if  runvar>=-10 & runvar<=0, range(-10 0) lcolor(black) lpattern(solid)) /// 
     (qfitci Y runvar if  runvar>=0 & runvar<=10, range(0 10) lcolor(black) lpattern(solid)), ///
-     ylabel(0.5(0.5)1.5) xlabel(-10(2)10) xline(0) /// title("`t', `Atit'", margin(medium) size(medium)) ///
+     ylabel(0.5(0.5)1.5) xlabel(,grid) xline(0) /// title("`t', `Atit'", margin(medium) size(medium)) ///
      scheme(burd) legend(off) ytitle("Outcome")  xtitle("Distance to cutoff")  ///
     saving(figs/rdplot_unw, replace)
     graph export figs/rdplot_unw.png, replace width(480)
@@ -56,7 +56,7 @@ graph twoway ///
   (qfit Y runvar [pweight = weight] if !G & runvar>=-10 & runvar<= 0, range(-10 0) lwidth(medthick) lcolor(`c4')) /// 
   (qfit Y runvar [pweight = weight] if !G & runvar>=  0 & runvar<=10, range( 0 10) lwidth(medthick) lcolor(`c4')), ///
     scheme(burd) ///
-    ylabel(0.5(0.5)1.5) xlabel(-10(2)10) xline(0) /// title("`t', `Atit'", margin(medium) size(medium)) ///
+    ylabel(0.5(0.5)1.5) xlabel(,grid) xline(0) /// title("`t', `Atit'", margin(medium) size(medium)) ///
     ytitle("Outcome") xtitle("Distance to cutoff")  ///
     legend(on order(5 "Group 1 (unweighted)" 7 "Group 0 (unweighted)" 9 "Group 1 (PSW)" 11 "Group 0 (PSW)" ) position(6)) ///
     saving(figs/rdplot_allw_bygroup, replace)
