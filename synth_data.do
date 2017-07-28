@@ -43,55 +43,5 @@ replace Y = 1  + rnormal() if  (pscore<0.4 & !G) & abs(runvar)<10
 
 rddsga Y runvar, sgroup(G) reduced bw(10) dibalance balance(X1 X2) psweight(weight) quad
 
-gen bin=floor(runvar/2)*2+1
-
-
-keep if abs(runvar)<=10
-
-*** Bin mean (all)
-
-rd Y runvar, bw(10)
-
-		bysort bin: egen bin_Y = mean(Y) 
-
-		graph twoway  (scatter bin_Y  bin,  msymbol(O) mcolor(gray) msize(medium)) ///
-		(qfitci Y runvar if  runvar>=-10 & runvar<=0, range(-10 0) lcolor(black) lpattern(solid)) /// 
-		(qfitci Y runvar if  runvar>=0 & runvar<=10, range(0 10) lcolor(black) lpattern(solid)), ///
-		 graphregion(fcol(white)) bgcolor(white) ylabel(0.5(0.5)1.5) xlabel(-10(2)10) xline(0) plotregion(style(none)) /// title("`t', `Atit'", margin(medium) size(medium)) ///
-		 legend(off) ytitle("Outcome", size(large))  xtitle("Distance to cutoff", size(large))  ///
-		saving(rdplot_all, replace)	
-
-	
-	* Bin means by group:
-
-		bysort bin G: egen bin_mean_Y = mean(Y) 
-
-		*** MEDIA PONDERADA
-	
-	* Bin means:
-
- bysort bin G: egen bin_mean_Yw = wtmean(Y), weight(weight)	
-		
-	* Draw plot:
-	sort runvar
-
-		graph twoway  ///(scatter bin_mean_Y  bin if  G,  msymbol(O) mcolor(gray) msize(medium)) ///
-		(qfit Y runvar if  G & runvar>=-10 & runvar<=0, range(-10 0) lcolor(green) lpattern(solid)) /// 
-		(qfit Y runvar if G & runvar>=0 & runvar<=10, range(0 10) lcolor(green) lpattern(solid))  ///
-		///(scatter bin_mean_Y  bin if  G,  msymbol(O) mcolor(gray) msize(medium)) ///
-		(qfit Y runvar if  G & runvar>=-10 & runvar<=0, range(-10 0) lcolor(green) lpattern(solid)) /// 
-		(qfit Y runvar if G & runvar>=0 & runvar<=10, range(0 10) lcolor(green) lpattern(solid))  ///
-		///(scatter bin_mean_Y  bin if  G==0,  msymbol(O) mcolor(gray) msize(medium)) ///
-		(qfit Y runvar if  G==0 & runvar>=-10 & runvar<=0, range(-10 0) lcolor(blue) lpattern(solid)) /// 
-		(qfit Y runvar if G==0 & runvar>=0 & runvar<=10, range(0 10) lcolor(blue) lpattern(solid)) ///
-		///(scatter bin_mean_Yw  bin if G, msymbol(O) mcolor(gray) msize(medium)) ///
-		(qfit Y  runvar [pweight = weight] if G & runvar>=-10 & runvar<=0, range(-10 0) lcolor(black) lpattern(solid)) /// 
-		(qfit Y  runvar [pweight = weight] if G & runvar>=0 & runvar<=10, range(0 10) lcolor(black) lpattern(solid)) ///
-		///(scatter bin_mean_Yw  bin if G==0, msymbol(O) mcolor(gray) msize(medium)) ///
-		(qfit Y  runvar [pweight = weight] if G==0 & runvar>=-10 & runvar<=0, range(-10 0) lcolor(gray) lpattern(solid)) /// 
-		(qfit Y  runvar [pweight = weight] if G==0 & runvar>=0 & runvar<=10, range(0 10) lcolor(gray) lpattern(solid)), ///
-		 graphregion(fcol(white)) bgcolor(white) ylabel(0.5(0.5)1.5) xlabel(-10(2)10) xline(0) plotregion(style(none)) /// title("`t', `Atit'", margin(medium) size(medium)) ///
-		 legend(off) ytitle("Outcome", size(large))  xtitle("Distance to cutoff", size(large))  ///
-		saving(rdplot_g1_noweigth, replace)	
-
-stop
+saveold data/rddsga_synth, replace version(11)
+saveold rddsga_synth, replace version(11)
