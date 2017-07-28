@@ -1,4 +1,4 @@
-*! 0.7 Alvaro Carril 25jul2017
+*! 0.8.1 Alvaro Carril 27jul2017
 program define rddsga, rclass
 version 11.1
 syntax varlist(min=2 numeric fv) [if] [in] , ///
@@ -150,26 +150,26 @@ label var _nl_1 "Difference"
 
 if "`firststage'" != "" {
   // Original
-  qui reg `treatment' _nl_1 i.`sgroup'#1.`cutoffvar' ///
+  qui reg `treatment' _nl_1 i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     if `touse' & `bwidth', vce(`vce') noconstant
   estimates title: "Unweighted first stage"
   estimates store unw_first
   nlcomhack `sgroup' `cutoffvar'
+  estimates store unw_first_aux
   qui estadd local bwidthtab -
   qui estadd local spline `spline'
-  estimates store unw_first_aux
   
   // PSW
-  qui reg `treatment' _nl_1 i.`sgroup'#1.`cutoffvar' ///
+  qui reg `treatment' _nl_1 i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
   estimates title: "PSW first stage"
   estimates store psw_first
   nlcomhack `sgroup' `cutoffvar'
-  qui estadd local bwidthtab `bwidthtab'
-  qui estadd local spline `spline'
   estimates store psw_first_aux
+  qui estadd scalar bwidthtab = `bwidthtab'
+  qui estadd local spline `spline'
   
   // Output with esttab if installed; if not, default to estimates table 
   capture which estout
@@ -180,7 +180,7 @@ if "`firststage'" != "" {
       order(*`sgroup'#1.`cutoffvar' _nl_1) ///
       varlabels(,blist(_nl_1 "{hline @width}{break}")) ///
       se(3) star(* 0.10 ** 0.05 *** 0.01) ///
-      stats(N N_clust rmse bwidthtab spline, fmt(0 0 3) label(Observations Clusters RMSE Bandwidth Spline))
+      stats(N N_clust rmse bwidthtab spline, fmt(0 0 3 3) label(Observations Clusters RMSE Bandwidth Spline))
   }
   else {
     estimates table *_first_aux, ///
@@ -193,26 +193,26 @@ if "`firststage'" != "" {
 *-------------------------------------------------------------------------------
 if "`reducedform'" != "" {
   // Original
-  qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar'  ///
+  qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     if `touse' & `bwidth', vce(`vce') noconstant
   estimates title: "Unweighted reduced form"
   estimates store unw_reduced
   nlcomhack `sgroup' `cutoffvar'
+  estimates store unw_reduced_aux
   qui estadd local bwidthtab -
   qui estadd local spline `spline'
-  estimates store unw_reduced_aux
 
   // PSW
-  qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar'  ///
+  qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
   estimates title: "PSW reduced form"
   estimates store psw_reduced
   nlcomhack `sgroup' `cutoffvar'
-  qui estadd local bwidthtab `bwidthtab'
-  qui estadd local spline `spline'
   estimates store pws_reduced_aux
+  qui estadd scalar bwidthtab = `bwidthtab'
+  qui estadd local spline `spline'
 
   // Output with esttab if installed; if not, default to estimates table 
   capture which estout
@@ -223,7 +223,7 @@ if "`reducedform'" != "" {
       order(*`sgroup'#1.`cutoffvar' _nl_1) ///
       varlabels(,blist(_nl_1 "{hline @width}{break}")) ///
       se(3) star(* 0.10 ** 0.05 *** 0.01) ///
-      stats(N N_clust rmse bwidthtab spline, fmt(0 0 3) label(Observations Clusters RMSE Bandwidth Spline))
+      stats(N N_clust rmse bwidthtab spline, fmt(0 0 3 3) label(Observations Clusters RMSE Bandwidth Spline))
   }
   else {
     estimates table *_reduced_aux, ///
@@ -236,28 +236,28 @@ if "`reducedform'" != "" {
 *-------------------------------------------------------------------------------
 if "`ivreg'" != "" {
   // Original
-  qui ivregress 2sls `depvar' ///
+  qui ivregress 2sls `depvar' i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') _nl_1 ///
     (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') ///
     if `touse' & `bwidth', vce(`vce') noconstant
   estimates title: "Unweighted IVREG"
   estimates store unw_ivreg
   nlcomhack `sgroup' `treatment'
+  estimates store unw_ivreg_aux
   qui estadd local bwidthtab -
   qui estadd local spline `spline'
-  estimates store unw_ivreg_aux
   
   // PSW
-  qui ivregress 2sls `depvar' ///
+  qui ivregress 2sls `depvar' i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') _nl_1 ///
     (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') /// (exogenous = endogenous)
     [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
   estimates title: "PSW IVREG"
   estimates store psw_ivreg
   nlcomhack `sgroup' `treatment'
-  qui estadd local bwidthtab `bwidthtab'
-  qui estadd local spline `spline'
   estimates store psw_ivreg_aux
+  qui estadd scalar bwidthtab = `bwidthtab'
+  qui estadd local spline `spline'
 
   // Output with esttab if installed; if not, default to estimates table 
   capture which estout
@@ -269,7 +269,7 @@ if "`ivreg'" != "" {
       varlabels(,blist(_nl_1 "{hline @width}{break}")) ///
       b(3) se(3) star(* 0.10 ** 0.05 *** 0.01) ///
       stats(N N_clust rmse bwidthtab spline, ///
-        fmt(0 0 3 0) labels(Observations Clusters RMSE Bandwidth Spline))
+        fmt(0 0 3 3) labels(Observations Clusters RMSE Bandwidth Spline))
   }
   else{
     estimates table *_ivreg_aux, ///
@@ -434,6 +434,8 @@ end
 
 /* 
 CHANGE LOG
+0.8
+  - Add synthetic dataset for examples
 0.7 
   - First alpha version ready for full usage
   - Implement nlcom hack to all models, detect diff coef position automatically
@@ -456,12 +458,6 @@ CHANGE LOG
 	- Modify some option names and internal locals
 
 KNOWN ISSUES/BUGS:
-  - Global stats don't agree with the ones computed by original balancepscore
-    ~ computed mean in differences is same; r(sd) is different, maybe due to
-      differences in treatment groups? check if variable.
-  - Per-covariate stats don't agree with original balancepscore
-    ~ In original balance this was due to different usage of `touse'; original
-      ado includes obs. with missing values in depvar (and balance?)
   - Should we use pweights or iweights? iw don't work with ivregress.
 
 TODOS AND IDEAS:
