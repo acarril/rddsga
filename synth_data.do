@@ -23,14 +23,27 @@ gen Z = (runvar > 0)
 gen G = round(runiform())
 
 // Covariates
-gen X = .
-replace X = rnormal() if G
-replace X = rnormal(.7,0.8) if !G 
+gen X1 = .
+replace X1 = rnormal() if G
+replace X1 = rnormal(.7,0.8) if !G 
+gen X2 = .
+replace X2 = rnormal() if G
+replace X2= rnormal(.7,0.8) if !G 
+
+rd X1 runvar, bw(10) // se cumple para bw=10, balanceado el covariates en ambos lados del cutoff
+rd X2 runvar, bw(10) // tambien se cumple 
+
+logit G X1 X2
+predict pscore 
+
 gen Y = .
-replace Y = 1 + .6*X + 2*Z + rnormal() if G
-replace Y = 0 + .4*X - 2*Z + rnormal() if !G
+replace Y = 1  + 1*Z + rnormal() if G &  (pscore<0.3 & G)   & abs(runvar)<10
+replace Y = 1  + 0.05*Z + rnormal() if G & (pscore>0.3 & G) & abs(runvar)<10
+replace Y = 1  - Z + rnormal() if    !G  & pscore>0.6 & abs(runvar)<10
+replace Y = 1  + rnormal() if  (pscore<0.4 & !G) & abs(runvar)<10
+
 
 // Estimation
 *reg Y X Z##G
 *rdrobust Y runvar, covs(G)
-rddsga Y runvar, balance(X) sgroup(G) bwidth(10) reduced dibal
+rddsga Y runvar, sgroup(G) reduced bw(10) dibalance balance(X1 X2) psweight(weight) quad
