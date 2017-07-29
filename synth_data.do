@@ -2,9 +2,15 @@
 * Generate synthetic dataset for rddsga
 * Alvaro Carril
 *-------------------------------------------------------------------------------
+
+// Set root directory
+if "`c(os)'" == "MacOSX" cd "/Users/alvaro/Library/Application Support/Stata/ado/personal/rddsga/"
+if "`c(os)'" == "Windows" cd "C:\ado\personal\rddsga"
+
 clear all
 discard
 set seed 112
+
 * Generate data
 *-------------------------------------------------------------------------------
 // Define values

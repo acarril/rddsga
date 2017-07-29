@@ -1,3 +1,7 @@
+// Set root directory
+if "`c(os)'" == "MacOSX" cd "/Users/alvaro/Library/Application Support/Stata/ado/personal/rddsga/"
+if "`c(os)'" == "Windows" cd "C:\ado\personal\rddsga"
+
 use rddsga_synth, clear
 
 // Color scheme
