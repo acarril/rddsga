@@ -54,6 +54,7 @@ lab var X1 "Covariate 1"
 lab var X2 "Covariate 2"
 // Test rddsga on data
 rddsga Y Z, sgroup(G) reduced bw(10) dibalance balance(X1 X2) psweight(weight) quad
+drop _est_*
 // Save
 saveold data/rddsga_synth, replace version(11)
 saveold rddsga_synth, replace version(11)
