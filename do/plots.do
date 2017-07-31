@@ -8,20 +8,20 @@ use rddsga_synth, clear
 *ssc install scheme-burd, replace
 set scheme burd
 
-gen bin=floor(runvar/2)*2+1
+gen bin=floor(Z/2)*2+1
 
 
-keep if abs(runvar)<=10
+keep if abs(Z)<=10
 
 *** Bin mean (all)
 
-rd Y runvar, bw(10)
+rd Y Z, bw(10)
 
     bysort bin: egen bin_Y = mean(Y) 
 
     graph twoway  (scatter bin_Y  bin,  msymbol(O) mcolor(gray) msize(medium)) ///
-    (qfitci Y runvar if  runvar>=-10 & runvar<=0, range(-10 0) lcolor(black) lpattern(solid)) /// 
-    (qfitci Y runvar if  runvar>=0 & runvar<=10, range(0 10) lcolor(black) lpattern(solid)), ///
+    (qfitci Y Z if  Z>=-10 & Z<=0, range(-10 0) lcolor(black) lpattern(solid)) /// 
+    (qfitci Y Z if  Z>=0 & Z<=10, range(0 10) lcolor(black) lpattern(solid)), ///
      ylabel(0.5(0.5)1.5) xlabel(,grid) xline(0) /// title("`t', `Atit'", margin(medium) size(medium)) ///
      scheme(burd) legend(off) ytitle("Outcome")  xtitle("Distance to cutoff")  ///
     saving(figs/rdplot_unw, replace)
@@ -37,7 +37,7 @@ rd Y runvar, bw(10)
  bysort bin G: egen bin_mean_Yw = wtmean(Y), weight(weight) 
     
   * Draw plot:
-sort runvar
+sort Z
 
 local c1 eltblue
 local c2 erose
@@ -51,14 +51,14 @@ graph twoway ///
   (scatter bin_mean_Y   bin if !G, mcolor(`c2') `scatter_opts') ///
   (scatter bin_mean_Yw  bin if  G, mcolor(`c3') `scatter_opts') ///
   (scatter bin_mean_Yw  bin if !G, mcolor(`c4') `scatter_opts') ///
-  (qfit Y runvar if  G & runvar>=-10 & runvar<= 0, range(-10 0) lwidth(medthick) lcolor(`c1')) /// 
-  (qfit Y runvar if  G & runvar>=  0 & runvar<=10, range( 0 10) lwidth(medthick) lcolor(`c1'))  ///
-  (qfit Y runvar if !G & runvar>=-10 & runvar<= 0, range(-10 0) lwidth(medthick) lcolor(`c2')) /// 
-  (qfit Y runvar if !G & runvar>=  0 & runvar<=10, range( 0 10) lwidth(medthick) lcolor(`c2')) ///
-  (qfit Y runvar [pweight = weight] if  G & runvar>=-10 & runvar<= 0, range(-10 0) lwidth(medthick) lcolor(`c3')) /// 
-  (qfit Y runvar [pweight = weight] if  G & runvar>=  0 & runvar<=10, range( 0 10) lwidth(medthick) lcolor(`c3')) ///
-  (qfit Y runvar [pweight = weight] if !G & runvar>=-10 & runvar<= 0, range(-10 0) lwidth(medthick) lcolor(`c4')) /// 
-  (qfit Y runvar [pweight = weight] if !G & runvar>=  0 & runvar<=10, range( 0 10) lwidth(medthick) lcolor(`c4')), ///
+  (qfit Y Z if  G & Z>=-10 & Z<= 0, range(-10 0) lwidth(medthick) lcolor(`c1')) /// 
+  (qfit Y Z if  G & Z>=  0 & Z<=10, range( 0 10) lwidth(medthick) lcolor(`c1'))  ///
+  (qfit Y Z if !G & Z>=-10 & Z<= 0, range(-10 0) lwidth(medthick) lcolor(`c2')) /// 
+  (qfit Y Z if !G & Z>=  0 & Z<=10, range( 0 10) lwidth(medthick) lcolor(`c2')) ///
+  (qfit Y Z [pweight = weight] if  G & Z>=-10 & Z<= 0, range(-10 0) lwidth(medthick) lcolor(`c3')) /// 
+  (qfit Y Z [pweight = weight] if  G & Z>=  0 & Z<=10, range( 0 10) lwidth(medthick) lcolor(`c3')) ///
+  (qfit Y Z [pweight = weight] if !G & Z>=-10 & Z<= 0, range(-10 0) lwidth(medthick) lcolor(`c4')) /// 
+  (qfit Y Z [pweight = weight] if !G & Z>=  0 & Z<=10, range( 0 10) lwidth(medthick) lcolor(`c4')), ///
     scheme(burd) ///
     ylabel(0.5(0.5)1.5) xlabel(,grid) xline(0) /// title("`t', `Atit'", margin(medium) size(medium)) ///
     ytitle("Outcome") xtitle("Distance to cutoff")  ///
