@@ -38,10 +38,10 @@ predict pscore
 // Define outcome variable
 local bwidth abs(Z)<=100
 gen Y = .
-replace Y = 1 +    4*T + rnormal() if `bwidth' & pscore<0.3 &  G 
-replace Y = 1 + 0.05*T + rnormal() if `bwidth' & pscore>0.3 &  G 
 replace Y = 1 -  2.5*T + rnormal() if `bwidth' & pscore>0.6 & !G 
 replace Y = 1 +  0.1*T + rnormal() if `bwidth' & pscore<0.6 & !G 
+replace Y = 0 +    4*T + rnormal() if `bwidth' & pscore<0.3 &  G 
+replace Y = 0 + 0.05*T + rnormal() if `bwidth' & pscore>0.3 &  G 
 *rd Y T Z
 // Tidy up and save dataset
 keep Y Z T G X*
@@ -57,3 +57,5 @@ rddsga Y Z, sgroup(G) reduced bw(10) dibalance balance(X1 X2) psweight(weight) q
 // Save
 saveold data/rddsga_synth, replace version(11)
 saveold rddsga_synth, replace version(11)
+// Run plots do-file
+run do/plots
