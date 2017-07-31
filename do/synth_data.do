@@ -36,12 +36,12 @@ rd X2 Z, bw(10) // tambien se cumple
 logit G X1 X2
 predict pscore
 // Define outcome variable
-local bwidth abs(Z)<1000
+local bwidth abs(Z)<=100
 gen Y = .
 replace Y = 1 +    4*T + rnormal() if `bwidth' & pscore<0.3 &  G 
 replace Y = 1 + 0.05*T + rnormal() if `bwidth' & pscore>0.3 &  G 
-replace Y = 1 -    2*T + rnormal() if `bwidth' & pscore>0.6 & !G 
-replace Y = 1          + rnormal() if `bwidth' & pscore<0.4 & !G 
+replace Y = 1 -  2.5*T + rnormal() if `bwidth' & pscore>0.6 & !G 
+replace Y = 1 +  0.1*T + rnormal() if `bwidth' & pscore<0.6 & !G 
 *rd Y T Z
 // Tidy up and save dataset
 keep Y Z T G X*
