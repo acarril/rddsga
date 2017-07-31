@@ -25,7 +25,7 @@ rd Y Z, bw(10)
      xlabel(,grid) xline(0) /// title("`t', `Atit'", margin(medium) size(medium)) ///
      scheme(burd) legend(off) ylabel(-1(1)2) ytitle("Outcome")  xtitle("Distance to cutoff")  ///
     saving(figs/rdplot_unw, replace)
-    graph export figs/rdplot_unw.png, replace width(960)
+    graph export figs/rdplot_unw.png, replace
   * Bin means by group:
 
 
@@ -66,4 +66,4 @@ graph twoway ///
     ytitle("Outcome") xtitle("Distance to cutoff")  ///
     legend(on order(5 "Group 1 (unweighted)" 7 "Group 0 (unweighted)" 9 "Group 1 (PSW)" 11 "Group 0 (PSW)" ) position(6)) ///
     saving(figs/rdplot_allw_bygroup, replace)
-  graph export figs/rdplot_allw_bygroup.png, replace width(960)
+  graph export figs/rdplot_allw_bygroup.png, replace
