@@ -57,7 +57,6 @@ rddsga Y Z, sgroup(G) reduced bw(10) dibalance balance(X1 X2) psweight(weight) q
 
 drop _est_*
 // Save
-saveold data/rddsga_synth, replace 
 saveold rddsga_synth, replace
 // Run plots do-file
 run do/plots
