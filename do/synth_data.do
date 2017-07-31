@@ -16,11 +16,11 @@ local x1 .5
 // Set observations
 set obs `N'
 // Create running variable (noramlized to [-100, 100])
-gen runvar = rnormal()
-qui summ runvar
-replace runvar = 200/(r(max)-r(min))*(runvar-r(max))+100
+gen Z = rnormal()
+qui summ Z
+replace Z = 200/(r(max)-r(min))*(Z-r(max))+100
 // Create treatment indicator from running variable
-gen Z = (runvar > 0)
+gen T = (Z > 0)
 // Generate subgroup indicator
 gen G = round(runiform())
 // Covariates
@@ -30,28 +30,29 @@ replace X1 = rnormal(.7,0.8) if !G
 gen X2 = .
 replace X2 = rnormal() if G
 replace X2= rnormal(.7,0.8) if !G 
-*rd X1 runvar, bw(10) // se cumple para bw=10, balanceado el covariates en ambos lados del cutoff
-*rd X2 runvar, bw(10) // tambien se cumple 
+*rd X1 Z, bw(10) // se cumple para bw=10, balanceado el covariates en ambos lados del cutoff
+rd X2 Z, bw(10) // tambien se cumple 
 // Create pscore
 logit G X1 X2
 predict pscore
 // Define outcome variable
-local bwidth abs(runvar)<10
+local bwidth abs(Z)<1000
 gen Y = .
-replace Y = 1 +    1*Z + rnormal() if  G & (pscore<0.3 & G) & `bwidth'
-replace Y = 1 + 0.05*Z + rnormal() if  G & (pscore>0.3 & G) & `bwidth'
-replace Y = 1 -      Z + rnormal() if !G &       pscore>0.6 & `bwidth'
-replace Y = 1          + rnormal() if  (pscore<0.4 & !G)    & `bwidth'
+replace Y = 1 +    1*T + rnormal() if `bwidth' & pscore<0.3 &  G 
+replace Y = 1 + 0.05*T + rnormal() if `bwidth' & pscore>0.3 &  G 
+replace Y = 1 -      T + rnormal() if `bwidth' & pscore>0.6 & !G 
+replace Y = 1          + rnormal() if `bwidth' & pscore<0.4 & !G 
+*rd Y T Z
 // Tidy up and save dataset
-keep Y runvar Z G X*
-order Y runvar Z G X*
+keep Y Z T G X*
+order Y Z T G X*
 lab var Y "Outcome"
-lab var runvar "Running variable"
-lab var Z "Treatment"
+lab var Z "Running variable"
+lab var T "Treatment"
 lab var G "Subgroup"
 lab var X1 "Covariate 1"
 lab var X2 "Covariate 2"
 saveold data/rddsga_synth, replace version(11)
 saveold rddsga_synth, replace version(11)
 // Test rddsga on data
-rddsga Y runvar, sgroup(G) reduced bw(10) dibalance balance(X1 X2) psweight(weight) quad
+rddsga Y Z, sgroup(G) reduced bw(10) dibalance balance(X1 X2) psweight(weight) quad
