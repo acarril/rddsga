@@ -38,9 +38,9 @@ predict pscore
 // Define outcome variable
 local bwidth abs(Z)<1000
 gen Y = .
-replace Y = 1 +    1*T + rnormal() if `bwidth' & pscore<0.3 &  G 
+replace Y = 1 +    4*T + rnormal() if `bwidth' & pscore<0.3 &  G 
 replace Y = 1 + 0.05*T + rnormal() if `bwidth' & pscore>0.3 &  G 
-replace Y = 1 -      T + rnormal() if `bwidth' & pscore>0.6 & !G 
+replace Y = 1 -    2*T + rnormal() if `bwidth' & pscore>0.6 & !G 
 replace Y = 1          + rnormal() if `bwidth' & pscore<0.4 & !G 
 *rd Y T Z
 // Tidy up and save dataset
