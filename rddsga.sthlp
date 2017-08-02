@@ -222,17 +222,14 @@ ajcazor@uc.cl
 {pstd}
 Maria Paula Gerardino{break}
 Inter-American Development Bank{break}
-mariage@iadb.org
 
 {pstd}
 Stephan Litschig{break}
 National Graduate Institute for Policy Studies{break}
-s-litschig@grips.ac.jp
 
 {pstd}
 Dina Pomeranz{break}
-University of Zurich and NBER{break}
-dina.pomeranz@econ.uzh.ch
+University of Zurich{break}
 
 
 {marker disclaimer}{...}
