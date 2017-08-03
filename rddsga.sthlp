@@ -217,7 +217,6 @@ acarril@fen.uchile.cl
 {pstd}
 Andre Cazor{break}
 J-PAL LAC{break}
-ajcazor@uc.cl
 
 {pstd}
 Maria Paula Gerardino{break}
