@@ -189,6 +189,30 @@ if "`firststage'" != "" {
   }
 }
 
+* Test bootstrap
+local nreps 50
+set seed 1234 // OR YOUR LUCKY NUMBER
+forvalues i=1/`nreps' {
+    preserve
+    bsample  /*sample w/ replacement--default sample size is _N*/
+    display _newline `i' /*display iteration number*/
+    qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
+      i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
+      if `touse' & `bwidth', vce(`vce') noconstant
+    mat this_run = (_se[1.`sgroup'#1.`cutoffvar'], _se[0.`sgroup'#1.`cutoffvar'])
+    mat cumulative = nullmat(cumulative) \ this_run
+    restore
+}
+
+mat U = J(rowsof(cumulative),1,1)
+mat sum = U'*cumulative
+mat SE = sum/rowsof(cumulative)
+
+return matrix cumulative = cumulative
+return matrix SE = SE
+
+* _b[1.`sgroup'#1.`cutoffvar'] - _b[0.`sgroup'#1.`cutoffvar']
+
 * Reduced form
 *-------------------------------------------------------------------------------
 if "`reducedform'" != "" {
