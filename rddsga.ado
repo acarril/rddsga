@@ -192,24 +192,33 @@ if "`firststage'" != "" {
 * Test bootstrap
 local nreps 50
 set seed 1234 // OR YOUR LUCKY NUMBER
+_dots 0, title(Loop running) reps(`nreps')
 forvalues i=1/`nreps' {
     preserve
     bsample  /*sample w/ replacement--default sample size is _N*/
-    display _newline `i' /*display iteration number*/
     qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
       i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
-      if `touse' & `bwidth', vce(`vce') noconstant
-    mat this_run = (_se[1.`sgroup'#1.`cutoffvar'], _se[0.`sgroup'#1.`cutoffvar'])
+      [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
+    mat this_run = (_b[1.`sgroup'#1.`cutoffvar'], _b[0.`sgroup'#1.`cutoffvar'])
     mat cumulative = nullmat(cumulative) \ this_run
     restore
+    _dots `i' 0
 }
 
+// Compute matrix with mean of betas
 mat U = J(rowsof(cumulative),1,1)
 mat sum = U'*cumulative
-mat SE = sum/rowsof(cumulative)
+mat beta_bar = sum/rowsof(cumulative)
+
+// Compute SE estimation
+mat diff2 = cumulative - beta_bar
+
 
 return matrix cumulative = cumulative
-return matrix SE = SE
+return matrix beta_bar = beta_bar
+return matrix diff2 = diff2
+
+
 
 * _b[1.`sgroup'#1.`cutoffvar'] - _b[0.`sgroup'#1.`cutoffvar']
 
