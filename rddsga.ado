@@ -204,7 +204,7 @@ if "`reducedform'" != "" {
   qui estadd local spline `spline'
 
 myboo `sgroup' `cutoffvar'
-matrix list r(V)
+ereturn repost b = r(b), resize
 
   // PSW
   qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
@@ -294,16 +294,29 @@ end
 *===============================================================================
 
 *-------------------------------------------------------------------------------
+* epost: post matrices in e(b) and e(V); leave other ereturn results unchanged
+*-------------------------------------------------------------------------------
+program epost, eclass
+  // Store estimation results
+  local scalars: e(scalars)
+  local macros: e(macros)
+  local matrices: e(matrices)
+  local functions: e(functions)
+end
+
+*-------------------------------------------------------------------------------
 * myboo: compute bootstrapped variance-covariance matrix
 *-------------------------------------------------------------------------------
 program myboo, rclass
-  local nreps 50
+  local nreps 10
+  local matrices: e(matrices)
+  di "mat: `matrices'"
   _dots 0, title(Bootstrap replications) reps(`nreps')
   forvalues i=1/`nreps' {
     preserve
     bsample  // sample w/ replacement; default sample size is _N
     qui `e(cmdline)' // use full regression specification left out by reg
-    mat this_run = (_b[1.`1'#1.`2'], _b[0.`1'#1.`2'])
+    mat this_run = (_b[0.`1'#1.`2'], _b[1.`1'#1.`2'])
     mat cumulative = nullmat(cumulative) \ this_run
     restore
     _dots `i' 0
@@ -313,9 +326,13 @@ program myboo, rclass
   computed with cross() or crossdev() mata functions. */
   mata: cumulative = st_matrix("cumulative")
   mata: st_matrix("V", variance(cumulative)) // see help mf_mean
-  mat rownames V = 1.`1'#1.`2' 0.`1'#1.`2'
-  mat colnames V = 1.`1'#1.`2' 0.`1'#1.`2'
+  mat rownames V = 0.`1'#1.`2' 1.`1'#1.`2'
+  mat colnames V = 0.`1'#1.`2' 1.`1'#1.`2'
+  // Extract b submatrix
+  matrix b = e(b)
+  matrix b = b[1, "0.`1'#1.`2'".."1.`1'#1.`2'"]
   // Return 
+  return matrix b = b
   return matrix V = V
 end
 /*
@@ -477,6 +494,8 @@ end
 
 /* 
 CHANGE LOG
+1.0
+  - Compute bootstrapped variance-covariance matrix
 0.8
   - Add synthetic dataset for examples
 0.7 
