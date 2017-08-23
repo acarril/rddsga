@@ -203,6 +203,9 @@ if "`reducedform'" != "" {
   qui estadd local bwidthtab -
   qui estadd local spline `spline'
 
+myboo `sgroup' `cutoffvar'
+matrix list r(V)
+
   // PSW
   qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
@@ -293,16 +296,14 @@ end
 *-------------------------------------------------------------------------------
 * myboo: compute bootstrapped variance-covariance matrix
 *-------------------------------------------------------------------------------
-program myboo, eclass
+program myboo, rclass
   local nreps 50
   _dots 0, title(Bootstrap replications) reps(`nreps')
   forvalues i=1/`nreps' {
     preserve
-    bsample  // sample w/ replacement--default sample size is _N
-    qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
-      i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
-      [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
-    mat this_run = (_b[1.`sgroup'#1.`cutoffvar'], _b[0.`sgroup'#1.`cutoffvar'])
+    bsample  // sample w/ replacement; default sample size is _N
+    qui `e(cmdline)' // use full regression specification left out by reg
+    mat this_run = (_b[1.`1'#1.`2'], _b[0.`1'#1.`2'])
     mat cumulative = nullmat(cumulative) \ this_run
     restore
     _dots `i' 0
@@ -312,9 +313,10 @@ program myboo, eclass
   computed with cross() or crossdev() mata functions. */
   mata: cumulative = st_matrix("cumulative")
   mata: st_matrix("V", variance(cumulative)) // see help mf_mean
-  mat rownames V = 1.`sgroup'#1.`cutoffvar' 0.`sgroup'#1.`cutoffvar'
-  mat colnames V = 1.`sgroup'#1.`cutoffvar' 0.`sgroup'#1.`cutoffvar'
-  matlist V
+  mat rownames V = 1.`1'#1.`2' 0.`1'#1.`2'
+  mat colnames V = 1.`1'#1.`2' 0.`1'#1.`2'
+  // Return 
+  return matrix V = V
 end
 /*
 // Compute matrix with mean of betas
