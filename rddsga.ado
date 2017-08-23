@@ -190,34 +190,41 @@ if "`firststage'" != "" {
 }
 
 * Test bootstrap
-/*
+
 local nreps 50
 set seed 1234 // OR YOUR LUCKY NUMBER
 _dots 0, title(Loop running) reps(`nreps')
 forvalues i=1/`nreps' {
-    preserve
-    bsample  // sample w/ replacement--default sample size is _N
-    qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
-      i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
-      [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
-    mat this_run = (_b[1.`sgroup'#1.`cutoffvar'], _b[0.`sgroup'#1.`cutoffvar'])
-    mat cumulative = nullmat(cumulative) \ this_run
-    restore
-    _dots `i' 0
+  preserve
+  bsample  // sample w/ replacement--default sample size is _N
+  qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
+    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
+    [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
+  mat this_run = (_b[1.`sgroup'#1.`cutoffvar'], _b[0.`sgroup'#1.`cutoffvar'])
+  mat cumulative = nullmat(cumulative) \ this_run
+  restore
+  _dots `i' 0
 }
 
+// Compute variance-covariance matrix 
+/* This procedure was achieved with the variance mata function, but could be 
+computed with cross() or crossdev() mata functions. */
+mata: theta = st_matrix("cumulative")
+mata: st_matrix("V", variance(theta))
+matlist V
+
+/*
 // Compute matrix with mean of betas
 mat U = J(rowsof(cumulative),1,1)
 mat sum = U'*cumulative
 mat beta_bar = sum/rowsof(cumulative)
 
-// Compute SE estimation
-mat diff2 = cumulative - beta_bar
+// Compute SE estimatio
+nmat diff2 = cumulative - beta_bar
 
 
 return matrix cumulative = cumulative
 return matrix beta_bar = beta_bar
-return matrix diff2 = diff2
 */
 
 *bootstrap _b, reps(50): myreg
