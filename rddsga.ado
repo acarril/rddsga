@@ -190,12 +190,13 @@ if "`firststage'" != "" {
 }
 
 * Test bootstrap
+/*
 local nreps 50
 set seed 1234 // OR YOUR LUCKY NUMBER
 _dots 0, title(Loop running) reps(`nreps')
 forvalues i=1/`nreps' {
     preserve
-    bsample  /*sample w/ replacement--default sample size is _N*/
+    bsample  // sample w/ replacement--default sample size is _N
     qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
       i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
       [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
@@ -217,8 +218,9 @@ mat diff2 = cumulative - beta_bar
 return matrix cumulative = cumulative
 return matrix beta_bar = beta_bar
 return matrix diff2 = diff2
+*/
 
-
+*bootstrap _b, reps(50): myreg
 
 * _b[1.`sgroup'#1.`cutoffvar'] - _b[0.`sgroup'#1.`cutoffvar']
 
@@ -322,6 +324,14 @@ end
 *===============================================================================
 * Define auxiliary subroutines
 *===============================================================================
+
+program myreg, eclass
+  tempname bb
+  quietly regress sh_licitacion dis_cutoff
+  matrix `bb'=e(b)
+  ereturn post `bb'
+  ereturn local cmd="bootstrap"
+end
 
 *-------------------------------------------------------------------------------
 * nlcomhack: hack b and V matrices to inlude nlcom results
