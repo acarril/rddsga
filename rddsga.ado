@@ -5,7 +5,8 @@ syntax varlist(min=2 numeric fv) [if] [in] , ///
   SGroup(name) BWidth(real) [ Treatment(name) Cutoff(real 0) /// important inputs
   	PSWeight(name) PSCore(name) COMsup(name) noCOMsupaux /// newvars
     BALance(varlist numeric) DIBALance probit /// balancepscore opts
-    IVreg REDUCEDform FIRSTstage vce(string) QUADratic ] // model opts
+    IVreg REDUCEDform FIRSTstage vce(string) QUADratic /// model opts
+    nobootstrap bsreps(real 50) ] // bootstrap options
 
 *-------------------------------------------------------------------------------
 * Check inputs
@@ -216,7 +217,7 @@ if "`reducedform'" != "" {
 
   if "`bootstrap'" != "nobootstrap" {
     // Compute bootstrapped variance-covariance matrix and post results
-    myboo `sgroup' `cutoffvar'
+    myboo `sgroup' `cutoffvar' `bsreps'
     // Post results
     ereturn repost b=b V=V, resize
     ereturn list 
@@ -315,7 +316,7 @@ end
 * myboo: compute bootstrapped variance-covariance matrix
 *-------------------------------------------------------------------------------
 program myboo, eclass
-  local nreps 10
+  local nreps `3'
   local matrices: e(matrices)
   // Extract b submatrix
   matrix b = e(b)
