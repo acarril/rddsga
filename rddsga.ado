@@ -270,12 +270,14 @@ ereturn local properties = "b V"
 if "`bootstrap'" != "nobootstrap" {
   ereturn local cmd "bootstrap"
   ereturn local prefix = "bootstrap"
-  
   ereturn local vcetype "Bootstrap"
   ereturn local vce = "bootstrap"
-  
-  
 }
+
+else {
+  ereturn local
+}
+
 ereturn display
 
 nlcom _b[1.`sgroup'#1.`cutoffvar'] - _b[0.`sgroup'#1.`cutoffvar']
