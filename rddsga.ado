@@ -1,5 +1,5 @@
 *! 0.8.1 Alvaro Carril 27jul2017
-program define rddsga, rclass
+program define rddsga, eclass
 version 11.1
 syntax varlist(min=2 numeric fv) [if] [in] , ///
   SGroup(name) BWidth(real) [ Treatment(name) Cutoff(real 0) /// important inputs
@@ -108,7 +108,7 @@ else local spline Linear
 balancematrix, matname(oribal)  ///
   touse(`touse') bwidth(`bwidth') balance(`balance') ///
   sgroup(`sgroup') sgroup0(`sgroup0') n_balance(`n_balance')
-return add
+*return add
 
 // Display balance matrix and global stats
 if "`dibalance'" != "" {
@@ -126,7 +126,7 @@ balancematrix, matname(pswbal)  ///
   psw psweight(`psweight') touse(`touse') bwidth(`bwidth') balance(`balance') ///
   pscore(`pscore') comsup(`comsup') comsupaux(`comsupaux') binarymodel(`binarymodel') ///
 	sgroup(`sgroup') sgroup0(`sgroup0') n_balance(`n_balance') 
-return add
+*return add
 
 // Display balance matrix and global stats
 if "`dibalance'" != "" {
@@ -204,7 +204,8 @@ if "`reducedform'" != "" {
   qui estadd local spline `spline'
 
 myboo `sgroup' `cutoffvar'
-ereturn repost b = r(b), resize
+ereturn repost b = b, resize
+ereturn list
 
   // PSW
   qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
@@ -307,7 +308,7 @@ end
 *-------------------------------------------------------------------------------
 * myboo: compute bootstrapped variance-covariance matrix
 *-------------------------------------------------------------------------------
-program myboo, rclass
+program myboo, eclass
   local nreps 10
   local matrices: e(matrices)
   di "mat: `matrices'"
@@ -332,8 +333,9 @@ program myboo, rclass
   matrix b = e(b)
   matrix b = b[1, "0.`1'#1.`2'".."1.`1'#1.`2'"]
   // Return 
-  return matrix b = b
-  return matrix V = V
+  ereturn post
+*  ereturn repost b = b, resize
+*  ereturn repost V = V, resize
 end
 /*
 // Compute matrix with mean of betas
@@ -344,8 +346,8 @@ mat beta_bar = sum/rowsof(cumulative)
 // Compute SE estimatio
 nmat diff2 = cumulative - beta_bar
 
-return matrix cumulative = cumulative
-return matrix beta_bar = beta_bar
+ereturn matrix cumulative = cumulative
+ereturn matrix beta_bar = beta_bar
 */
 *bootstrap _b, reps(50): myreg
 * _b[1.`sgroup'#1.`cutoffvar'] - _b[0.`sgroup'#1.`cutoffvar']
@@ -369,7 +371,7 @@ end
 *-------------------------------------------------------------------------------
 * balancematrix: compute balance table matrices and other statistics
 *-------------------------------------------------------------------------------
-program define balancematrix, rclass
+program define balancematrix, eclass
 syntax, matname(string) /// important inputs, differ by call
   touse(name) bwidth(string) balance(varlist) /// unchanging inputs
   [psw psweight(name) pscore(name) comsup(name) comsupaux(string) binarymodel(string)] /// only needed for PSW balance
@@ -481,12 +483,12 @@ scalar `matname'_avgdiff = `avgdiff'
 scalar `matname'_Fstat = `Fstat'
 scalar `matname'_pval_global = `pval_global'
 
-return matrix `matname' = `matname', copy
-return scalar `matname'_avgdiff = `avgdiff'
-return scalar `matname'_Fstat = `Fstat'
-return scalar `matname'_pvalue = `pval_global'
-return scalar `matname'_N_G1 = `N_G1'
-return scalar `matname'_N_G0 = `N_G0'
+ereturn matrix `matname' = `matname', copy
+ereturn scalar `matname'_avgdiff = `avgdiff'
+ereturn scalar `matname'_Fstat = `Fstat'
+ereturn scalar `matname'_pvalue = `pval_global'
+ereturn scalar `matname'_N_G1 = `N_G1'
+ereturn scalar `matname'_N_G0 = `N_G0'
 
 end
 
