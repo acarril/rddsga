@@ -313,17 +313,15 @@ program epost, eclass
 end
 
 *-------------------------------------------------------------------------------
-* myboo: compute bootstrapped variance-covariance matrix
+* myboo: compute bootstrapped variance-covariance matrix & adjust ereturn results
 *-------------------------------------------------------------------------------
 program myboo, eclass
-  local nreps `3'
-  local matrices: e(matrices)
-  // Extract b submatrix
+  // Extract b submatrix with subgroup coefficients
   matrix b = e(b)
   matrix b = b[1, "0.`1'#1.`2'".."1.`1'#1.`2'"]
   // Start bootstrap 
   _dots 0, title(Bootstrap replications) reps(`nreps')
-  forvalues i=1/`nreps' {
+  forvalues i=1/`3' {
     preserve
     bsample  // sample w/ replacement; default sample size is _N
     qui `e(cmdline)' // use full regression specification left out by reg
