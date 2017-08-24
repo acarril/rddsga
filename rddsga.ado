@@ -320,7 +320,7 @@ program myboo, eclass
   matrix b = e(b)
   matrix b = b[1, "0.`1'#1.`2'".."1.`1'#1.`2'"]
   // Start bootstrap 
-  _dots 0, title(Bootstrap replications) reps(`nreps')
+  _dots 0, title(Bootstrap replications) reps(`3')
   forvalues i=1/`3' {
     preserve
     bsample  // sample w/ replacement; default sample size is _N
@@ -487,6 +487,7 @@ end
 CHANGE LOG
 1.0
   - Compute bootstrapped variance-covariance matrix
+  - Make program (and subprograms) e-class
 0.8
   - Add synthetic dataset for examples
 0.7 
