@@ -341,23 +341,7 @@ program myboo, eclass
   mat colnames V = 0.`1'#1.`2' 1.`1'#1.`2'
   // Return 
   ereturn post
-*  ereturn repost b = b, resize
-*  ereturn repost V = V, resize
 end
-/*
-// Compute matrix with mean of betas
-mat U = J(rowsof(cumulative),1,1)
-mat sum = U'*cumulative
-mat beta_bar = sum/rowsof(cumulative)
-
-// Compute SE estimatio
-nmat diff2 = cumulative - beta_bar
-
-ereturn matrix cumulative = cumulative
-ereturn matrix beta_bar = beta_bar
-*/
-*bootstrap _b, reps(50): myreg
-* _b[1.`sgroup'#1.`cutoffvar'] - _b[0.`sgroup'#1.`cutoffvar']
 
 *-------------------------------------------------------------------------------
 * nlcomhack: hack b and V matrices to inlude nlcom results
