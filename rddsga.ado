@@ -288,10 +288,20 @@ cap drop _nl_1
 
 // Post results
 if "`bootstrap'" != "nobootstrap" {
+  // Scalars 
+  ereturn scalar N = _N 
   ereturn repost b=b V=V, resize
+  // Macros
+  ereturn local cmd="bootstrap"
+  ereturn local prefix = "bootstrap"
+  ereturn local title = "Linear regression"
+  ereturn local vcetype = "Bootstrap"
+  ereturn local vce = "bootstrap"
+  ereturn local depvar = "`depvar'"
+  ereturn local properties = "b V"
 }
 ereturn display
-*nlcom _b[1.`sgroup'#1.`cutoffvar'] - _b[0.`sgroup'#1.`cutoffvar']
+nlcom _b[1.`sgroup'#1.`cutoffvar'] - _b[0.`sgroup'#1.`cutoffvar'], noheader
 
 end
 
@@ -317,6 +327,7 @@ program myboo, eclass
   // Extract b submatrix with subgroup coefficients
   matrix b = e(b)
   matrix b = b[1, "0.`1'#1.`2'".."1.`1'#1.`2'"]
+  mat colnames b = main:0.`1'#1.`2' main:1.`1'#1.`2'
   // Start bootstrap 
   _dots 0, title(Bootstrap replications) reps(`3')
   forvalues i=1/`3' {
@@ -333,8 +344,8 @@ program myboo, eclass
   computed with cross() or crossdev() mata functions. */
   mata: cumulative = st_matrix("cumulative")
   mata: st_matrix("V", variance(cumulative)) // see help mf_mean
-  mat rownames V = 0.`1'#1.`2' 1.`1'#1.`2'
-  mat colnames V = 0.`1'#1.`2' 1.`1'#1.`2'
+  mat rownames V = main:0.`1'#1.`2' main:1.`1'#1.`2'
+  mat colnames V = main:0.`1'#1.`2' main:1.`1'#1.`2'
   // Return 
   ereturn post
 end
