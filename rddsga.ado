@@ -201,9 +201,11 @@ if "`reducedform'" != "" {
   qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     `weight' if `touse' & `bwidth', vce(`vce') noconstant
+  ereturn list
 
   // Compute bootstrapped variance-covariance matrix and post results
   if "`bootstrap'" != "nobootstrap" myboo `sgroup' `cutoffvar' `bsreps'
+  else epost `sgroup' `cutoffvar'
 }
 
 * Instrumental variables
@@ -256,25 +258,29 @@ if "`ivreg'" != "" {
 cap estimates drop *_aux
 cap drop _nl_1
 
-// Post results
+* Post results
+*-------------------------------------------------------------------------------
+
+ereturn repost b=b V=V, resize // Abridged matrices
+
+ereturn local title = "Linear regression"
+ereturn local depvar = "`depvar'"
+ereturn local properties = "b V"
+
 if "`bootstrap'" != "nobootstrap" {
-  // Scalars 
-  ereturn scalar N = _N 
-  ereturn repost b=b V=V, resize
-  // Macros
   ereturn local cmd "bootstrap"
   ereturn local prefix = "bootstrap"
-  ereturn local title = "Linear regression"
+  
   ereturn local vcetype "Bootstrap"
   ereturn local vce = "bootstrap"
-  ereturn local depvar = "`depvar'"
-  ereturn local properties = "b V"
+  
+  
 }
 ereturn display
 
-qui nlcom _b[1.`sgroup'#1.`cutoffvar'] - _b[0.`sgroup'#1.`cutoffvar'], post
-nlcompost
-ereturn display
+nlcom _b[1.`sgroup'#1.`cutoffvar'] - _b[0.`sgroup'#1.`cutoffvar']
+*nlcompost
+*ereturn display
 
 end
 
@@ -294,6 +300,9 @@ end
 program epost, eclass
   matrix b = e(b)
   matrix V = e(V)
+  matrix b = b[1, "0.`1'#1.`2'".."1.`1'#1.`2'"]
+  matrix V = V["0.`1'#1.`2'".."1.`1'#1.`2'", "0.`1'#1.`2'".."1.`1'#1.`2'"]
+  ereturn post
 end
 
 *-------------------------------------------------------------------------------
