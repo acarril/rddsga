@@ -301,7 +301,6 @@ if "`bootstrap'" != "nobootstrap" {
   ereturn local properties = "b V"
 }
 ereturn display
-nlcom _b[1.`sgroup'#1.`cutoffvar'] - _b[0.`sgroup'#1.`cutoffvar'], noheader
 
 end
 
@@ -313,11 +312,8 @@ end
 * epost: post matrices in e(b) and e(V); leave other ereturn results unchanged
 *-------------------------------------------------------------------------------
 program epost, eclass
-  // Store estimation results
-  local scalars: e(scalars)
-  local macros: e(macros)
-  local matrices: e(matrices)
-  local functions: e(functions)
+  matrix b = e(b)
+  matrix V = e(V)
 end
 
 *-------------------------------------------------------------------------------
@@ -327,7 +323,7 @@ program myboo, eclass
   // Extract b submatrix with subgroup coefficients
   matrix b = e(b)
   matrix b = b[1, "0.`1'#1.`2'".."1.`1'#1.`2'"]
-  mat colnames b = main:0.`1'#1.`2' main:1.`1'#1.`2'
+  mat colnames b = 0.`1'#1.`2' 1.`1'#1.`2'
   // Start bootstrap 
   _dots 0, title(Bootstrap replications) reps(`3')
   forvalues i=1/`3' {
@@ -344,8 +340,8 @@ program myboo, eclass
   computed with cross() or crossdev() mata functions. */
   mata: cumulative = st_matrix("cumulative")
   mata: st_matrix("V", variance(cumulative)) // see help mf_mean
-  mat rownames V = main:0.`1'#1.`2' main:1.`1'#1.`2'
-  mat colnames V = main:0.`1'#1.`2' main:1.`1'#1.`2'
+  mat rownames V = 0.`1'#1.`2' 1.`1'#1.`2'
+  mat colnames V = 0.`1'#1.`2' 1.`1'#1.`2'
   // Return 
   ereturn post
 end
