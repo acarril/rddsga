@@ -3,10 +3,10 @@ program define rddsga, eclass
 version 11.1
 syntax varlist(min=2 numeric fv) [if] [in] , ///
   SGroup(name) BWidth(real) [ Treatment(name) Cutoff(real 0) /// important inputs
-  	PSWeight(name) PSCore(name) COMsup(name) noCOMsupaux /// newvars
+  	psweight(name) PSCore(name) COMsup(name) noCOMsupaux /// newvars
     BALance(varlist numeric) DIBALance probit /// balancepscore opts
     IVreg REDUCEDform FIRSTstage vce(string) QUADratic /// model opts
-    nobootstrap bsreps(real 50) ] // bootstrap options
+    nobootstrap bsreps(real 50) nopsw ] // bootstrap options
 
 *-------------------------------------------------------------------------------
 * Check inputs
@@ -99,6 +99,10 @@ if "`quadratic'" != "" {
   local quad c.`assignvar'#c.`assignvar' c.`assignXcutoff'#c.`assignXcutoff'
 }
 else local spline Linear
+
+// Create weight local for regression
+if "`psw'" == "nopsw" local weight = ""
+else local weight "[pw=`psweight']"
 
 *-------------------------------------------------------------------------------
 * Compute balance table matrices
@@ -193,47 +197,13 @@ if "`firststage'" != "" {
 * Reduced form
 *-------------------------------------------------------------------------------
 if "`reducedform'" != "" {
-  // Unweighted
+  // Regression
   qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
-    if `touse' & `bwidth', vce(`vce') noconstant
-  estimates title: "Unweighted reduced form"
-  estimates store unw_reduced
-  nlcomhack `sgroup' `cutoffvar'
-  estimates store unw_reduced_aux
-  qui estadd local bwidthtab -
-  qui estadd local spline `spline'
-
-  // PSW
-  qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
-    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
-    [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
-  estimates title: "PSW reduced form"
-  estimates store psw_reduced
-  nlcomhack `sgroup' `cutoffvar'
-  estimates store pws_reduced_aux
-  qui estadd scalar bwidthtab = `bwidthtab'
-  qui estadd local spline `spline'
+    `weight' if `touse' & `bwidth', vce(`vce') noconstant
 
   // Compute bootstrapped variance-covariance matrix and post results
   if "`bootstrap'" != "nobootstrap" myboo `sgroup' `cutoffvar' `bsreps'
-
-  // Output with esttab if installed; if not, default to estimates table 
-  capture which estout
-  if _rc!=111 {
-    esttab *_reduced_aux, ///
-      title("Reduced form:") nonumbers mtitles("Unweighted" "PSW") ///
-      keep(*`sgroup'#1.`cutoffvar' _nl_1) b(3) label abbrev wrap ///
-      order(*`sgroup'#1.`cutoffvar' _nl_1) ///
-      varlabels(,blist(_nl_1 "{hline @width}{break}")) ///
-      se(3) star(* 0.10 ** 0.05 *** 0.01) ///
-      stats(N N_clust rmse bwidthtab spline, fmt(0 0 3 3) label(Observations Clusters RMSE Bandwidth Spline))
-  }
-  else {
-    estimates table *_reduced_aux, ///
-      b(%9.3g) se(%9.3g) keep(i.`sgroup'#1.`cutoffvar') ///
-      stats(N) varlabel title("Reduced form:") fvlabel
-  }
 }
 
 * Instrumental variables
@@ -345,6 +315,7 @@ program myboo, eclass
     restore
     _dots `i' 0
   }
+  di _newline
   // Compute variance-covariance matrix 
   /* This procedure was achieved with the variance mata function, but could be 
   computed with cross() or crossdev() mata functions. */
