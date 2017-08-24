@@ -292,14 +292,18 @@ if "`bootstrap'" != "nobootstrap" {
   ereturn scalar N = _N 
   ereturn repost b=b V=V, resize
   // Macros
-  ereturn local cmd="bootstrap"
+  ereturn local cmd "bootstrap"
   ereturn local prefix = "bootstrap"
   ereturn local title = "Linear regression"
-  ereturn local vcetype = "Bootstrap"
+  ereturn local vcetype "Bootstrap"
   ereturn local vce = "bootstrap"
   ereturn local depvar = "`depvar'"
   ereturn local properties = "b V"
 }
+ereturn display
+
+qui nlcom _b[1.`sgroup'#1.`cutoffvar'] - _b[0.`sgroup'#1.`cutoffvar'], post
+nlcompost
 ereturn display
 
 end
@@ -307,6 +311,12 @@ end
 *===============================================================================
 * Define auxiliary subroutines
 *===============================================================================
+
+program nlcompost, eclass
+  matrix b = e(b)
+  matrix colnames b = Difference 
+  ereturn repost b = b, rename // renames V matrix as well
+end
 
 *-------------------------------------------------------------------------------
 * epost: post matrices in e(b) and e(V); leave other ereturn results unchanged
