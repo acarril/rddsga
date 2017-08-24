@@ -215,15 +215,8 @@ if "`reducedform'" != "" {
   qui estadd scalar bwidthtab = `bwidthtab'
   qui estadd local spline `spline'
 
-  if "`bootstrap'" != "nobootstrap" {
-    // Compute bootstrapped variance-covariance matrix and post results
-    myboo `sgroup' `cutoffvar' `bsreps'
-    // Post results
-    ereturn repost b=b V=V, resize
-    ereturn list 
-    matrix list e(b)
-    matrix list e(V)
-  }
+  // Compute bootstrapped variance-covariance matrix and post results
+  if "`bootstrap'" != "nobootstrap" myboo `sgroup' `cutoffvar' `bsreps'
 
   // Output with esttab if installed; if not, default to estimates table 
   capture which estout
@@ -246,7 +239,7 @@ if "`reducedform'" != "" {
 * Instrumental variables
 *-------------------------------------------------------------------------------
 if "`ivreg'" != "" {
-  // Original
+  // Unweighted
   qui ivregress 2sls `depvar' i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') _nl_1 ///
     (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') ///
@@ -293,8 +286,13 @@ if "`ivreg'" != "" {
 cap estimates drop *_aux
 cap drop _nl_1
 
-// Clear eresults and end
-ereturn clear
+// Post results
+if "`bootstrap'" != "nobootstrap" {
+  ereturn repost b=b V=V, resize
+}
+ereturn display
+*nlcom _b[1.`sgroup'#1.`cutoffvar'] - _b[0.`sgroup'#1.`cutoffvar']
+
 end
 
 *===============================================================================
