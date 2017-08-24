@@ -192,7 +192,7 @@ if "`firststage'" != "" {
 * Reduced form
 *-------------------------------------------------------------------------------
 if "`reducedform'" != "" {
-  // Original
+  // Unweighted
   qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
     if `touse' & `bwidth', vce(`vce') noconstant
@@ -202,10 +202,6 @@ if "`reducedform'" != "" {
   estimates store unw_reduced_aux
   qui estadd local bwidthtab -
   qui estadd local spline `spline'
-
-myboo `sgroup' `cutoffvar'
-ereturn repost b = b, resize
-ereturn list
 
   // PSW
   qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
@@ -217,6 +213,16 @@ ereturn list
   estimates store pws_reduced_aux
   qui estadd scalar bwidthtab = `bwidthtab'
   qui estadd local spline `spline'
+
+  if "`bootstrap'" != "nobootstrap" {
+    // Compute bootstrapped variance-covariance matrix and post results
+    myboo `sgroup' `cutoffvar'
+    // Post results
+    ereturn repost b=b V=V, resize
+    ereturn list 
+    matrix list e(b)
+    matrix list e(V)
+  }
 
   // Output with esttab if installed; if not, default to estimates table 
   capture which estout
@@ -311,7 +317,10 @@ end
 program myboo, eclass
   local nreps 10
   local matrices: e(matrices)
-  di "mat: `matrices'"
+  // Extract b submatrix
+  matrix b = e(b)
+  matrix b = b[1, "0.`1'#1.`2'".."1.`1'#1.`2'"]
+  // Start bootstrap 
   _dots 0, title(Bootstrap replications) reps(`nreps')
   forvalues i=1/`nreps' {
     preserve
@@ -329,9 +338,6 @@ program myboo, eclass
   mata: st_matrix("V", variance(cumulative)) // see help mf_mean
   mat rownames V = 0.`1'#1.`2' 1.`1'#1.`2'
   mat colnames V = 0.`1'#1.`2' 1.`1'#1.`2'
-  // Extract b submatrix
-  matrix b = e(b)
-  matrix b = b[1, "0.`1'#1.`2'".."1.`1'#1.`2'"]
   // Return 
   ereturn post
 *  ereturn repost b = b, resize
