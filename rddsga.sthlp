@@ -3,7 +3,7 @@
 {title:Title}
 
 {pstd}
-{hi:rddsga} {hline 2} Subgroup analysis with propensity score weighting in RDD settings
+{hi:rddsga} {hline 2} subgroup analysis for regression discontinuity designs using inverse propensity score weighting
 
 
 {title:Syntax}
@@ -14,36 +14,40 @@
 {p_end}
 
 {phang}
-{it:assignvar} is the assignment variable for which there is a known cutoff at which the conditional mean of the treatment variable changes abruptly.{p_end}
+{it:depvar} is the outcome variable, {it:assignvar} is the assignment variable for which there is a known cutoff and {it:indepvars} are a set of control variables.
+{p_end}
 
 {synoptset 22 tabbed}{...}
 {synopthdr}
 {synoptline}
-{syntab :RD design}
+{syntab :Subgroup and RDD}
 {p2coldent:* {opth sg:roup(varname)}}subgroup indicator variable{p_end}
-{synopt :{opth t:reatment(varname)}}indicator for the assignment variable above the cutoff; if not specified, a sharp RDD is assumed{p_end}
+{synopt :{opth t:reatment(varname)}}indicator for actual treatment status; if not specified, a sharp RDD is assumed{p_end}
 {synopt :{opt c:utoff(real)}}specifies the cutoff value in {it:assignvar}; default is 0{p_end}
 {p2coldent:* {opt bw:idth(real)}}specifies the bandwidth around the cutoff{p_end}
 
 {syntab :Balance}
-{p2coldent:+ {opth bal:ance(varlist)}}variables for which the propensity score weighting is calculated; default is {indepvars}{p_end}
+{p2coldent:+ {opth bal:ance(varlist)}}variables that enter the propensity score estimation; default is {indepvars}{p_end}
 {synopt :{opt probit}}predict propensity score using a {manhelp probit R:probit} model; default is {manhelp logit R:logit}{p_end}
-{synopt :{opt nocom:sup}}do not restrict sample to area of common support{p_end}
+{synopt :{opt nocom:sup}}do not restrict sample to area of common propensity score support{p_end}
 
 {syntab :Model}
-{synopt :{opt first:stage}}estimate the first stage regression model{p_end}
-{synopt :{opt reduced:form}}estimate the reduced form regression model{p_end}
-{synopt :{opt iv:reg}}estimate the instrumental variables regression model{p_end}
+{synopt :{opt first:stage}}estimate the discontinuity in the treatment probability using OLS{p_end}
+{synopt :{opt reduced:form}}estimate the reduced form effect using OLS{p_end}
+{synopt :{opt iv:reg}}estimate the treatment effect using instrumental variable regression; requires that a treatment variable is specified in {opt treatment(varname)}{p_end}
+{synopt :{opt quad:ratic}}use quadratic spline; default is linear{p_end}
 {synopt :{opth vce(vcetype)}}{it:vcetype} may be {opt un:adjusted},
    {opt r:obust}, {opt cl:uster} {it:clustvar}, {opt boot:strap},
-   {opt jack:knife}, or {opt hac} {help ivregress##kernel:{it:kernel}}{p_end}
-{synopt :{opt quad:ratic}}use quadratic spline; default is linear{p_end}
+   {opt jack:knife}, or {opt hac} {help ivregress##kernel:{it:kernel}}; default is {opt bootstrap}{p_end}
+{synopt :{opt noboot:strap}}do not compute bootstrap standard errors for RD estimates{p_end}
+{synopt :{opt r:eps(#)}}perform # bootstrap replications; default is {opt reps(50)}{p_end}
+{synopt :{opt noipsw}}do not use inverse propensity score weighting{p_end}
 
 {syntab :Reporting/Output}
-{synopt :{opt dibal:ance}}display original balance and propensity score weighting balance tables and statistics{p_end}
-{synopt :{opth psw:eight(newvar)}}name of new variable with propensity score weighting; if not specified, no variable will be generated{p_end}
+{synopt :{opt dibal:ance}}display original balance and propensity score-weighted balance tables and statistics{p_end}
+{synopt :{opth ipsw:eight(newvar)}}name of new variable for the inverse propensity score weight for each observation; if not specified, no variable will be generated{p_end}
 {synopt :{opth com:sup(newvar)}}name of new binary variable indicating common support; if not specified, no variable will be generated{p_end}
-{synopt :{opth psc:ore(newvar)}}name of new variable with propensity score; if not specified, no variable will be generated{p_end}
+{synopt :{opth psc:ore(newvar)}}name of new variable for the estimated propensity score; if not specified, no variable will be generated{p_end}
 {synoptline}
 {p2colreset}{...}
 {p 4 6 2}* These options must be specified.{p_end}
@@ -55,23 +59,22 @@
 {title:Description}
 
 {pstd}
-{cmd:rddsga} allows to conduct a binary subgroup analysis in RDD settings based on propensity score weighting (PSW).
+{cmd:rddsga} allows to conduct a binary subgroup analysis in RDD settings based on inverse propensity score weights (IPSW).
 Observations in each subgroup are weighted by the inverse of their conditional probabilities to belong to that subgroup, given a set of covariates.
-Performing RDD analysis separately within each weighted subgroup eliminates potential confounding differences due to other observable factors that may vary systematically across (uneweighted) subgroups.
+Analyzing the differential treatment effect in the reweighted sample helps isolating the difference due to the subgroup characteristic of interest from other observable dimensions.
 
 {pstd}
-The program computes the PSW vector for the covariates in {it:indepvars}, which are also used as control variables in the model.
-A separate set of variables for which the PSW balance is computed may be optionally specified with {opt balance(varlist)}.
-The computed vector may be stored as a new variable using {opt psweight(newvar)}.
-In order to assess the statistical significance of the difference in means for each covariate, {cmd:rddsga} uses a t-test on the equality of means and reports the resulting p-value, as well as the (weighted) standardized mean difference.
+{cmd:rddsga} computes IPSW based on the vector of covariates in {it:indepvars}, which are also used as control variables in the model.
+A separate set of variables to compute IPSW may be optionally specified with {opt balance(varlist)}.
+A new variable with IPSW may be generated using {opt psweight(newvar)}.
+In order to assess the statistical significance of the difference in means for each covariate, {cmd:rddsga} uses a {it:t}-test on the equality of means and reports the resulting {it:p}-value, as well as the (weighted) standardized mean difference.
+Joint significance is assessed using an {it:F}-test.
 The resulting balance tables are stored as matrices (see {help rddsga##results:stored results} below), and may also be displayed using {opt dibalance}.
 
 {pstd}
-Options {opt firststage}, {opt reducedform} and {opt ivreg} may be used to estimate the first stage, reduced form and instrumental variables regression models.
-Standard variance estimator options may be passed onto the models with {opt vce(vcetype)}.
-The estimated coefficients for the interaction of indicator variables for each subgroup and a treatment indicator are reported, along with (robust) standard errors.
-Although {cmd:rddsga} can output results without any additional packages, the presence of {browse "http://repec.sowi.unibe.ch/stata/estout/":estout} is automatically detected and used to produce better-looking output.
-In any case, the full estimation results can be retrieved with {help estimates dir}.
+Options {opt firststage}, {opt reducedform} and {opt ivreg} may be used to estimate the first stage, reduced form and treatment effects using OLS and IV methods, respectively.
+Standard variance estimator options may be used for these estimators with {opt vce(vcetype)}.
+The estimated coefficients for the interaction of indicator variables for each subgroup and a treatment indicator are reported, along with bootstrap standard errors (unless other {it:vcetype} is specified).
 
 {pstd}
 Additional details regarding the methodology implemented by {cmd: rddsga} can be found in the project's {browse "https://gitlab.com/acarril/rddsga/wikis/home":repository}.
@@ -89,7 +92,8 @@ This variable must be a {it:dummy} (values 0 or 1).
 This option must be specified.
 
 {phang}
-{opt treatment(varname)} specifies an indicator variable for the assignment variable ({it:assignvar}) above the cutoff. If not specified, a sharp RDD is assumed.
+{opt treatment(varname)} specifies an indicator variable for actual treatment status.
+If not specified, a sharp RDD is assumed.
 
 {phang}
 {opt cutoff(real)} specifies the cutoff value in {it:assignvar}; default is 0 (assuming normalized {it:assignvar}).
