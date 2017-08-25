@@ -1,5 +1,6 @@
 v 0.9
-d 'RDDSGA': Subgroup analysis for regression discontinuity designs using inverse propensity score weighting
+d 'RDDSGA': Subgroup analysis for regression discontinuity designs using inverse 
+d  propensity score weighting
 d
 d  rddsga allows to conduct a binary subgroup analysis in RDD settings
 d  based on propensity score weighting (PSW). Observations in each subgroup 
@@ -11,16 +12,17 @@ d  across (uneweighted) subgroups.
 d  
 d KW: RDD
 d KW: Regression Discontinuity
-d
+d KW: Subgroup analysis
+d 
 d Requires: Stata version 11 
 d
 d Distribution-Date: 20170825
 d
-d Authors: Alvaro Carril, J-PAL LAC, acarril@fen.uchile.cl
-d          Andre Cazor, J-PAL LAC, ajcazor@uc.cl
-d          Maria Paula Gerardino, Inter-American Development Bank, mariage@iadb.org
-d          Stephan Litschig, National Graduate Institute for Policy Studies, s-litschig@grips.ac.jp
-d          Dina Pomeranz, University of Zurich and NBER, dina.pomeranz@econ.uzh.ch
+d Authors: Alvaro Carril, J-PAL LAC
+d          Andre Cazor, J-PAL LAC
+d          Maria Paula Gerardino, Inter-American Development Bank
+d          Stephan Litschig, National Graduate Institute for Policy Studies
+d          Dina Pomeranz, University of Zurich
 d
 d Support: email acarril@fen.uchile.cl
 d
