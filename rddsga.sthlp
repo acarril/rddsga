@@ -1,9 +1,9 @@
 {smcl}
-{* *! version 0.8.1 Jul 2017}{...}
+{* *! version 0.9 Aug 2017}{...}
 {title:Title}
 
 {pstd}
-{hi:rddsga} {hline 2} subgroup analysis for regression discontinuity designs using inverse propensity score weighting
+{hi:rddsga} {hline 2} Subgroup analysis for regression discontinuity designs using inverse propensity score weighting
 
 
 {title:Syntax}
