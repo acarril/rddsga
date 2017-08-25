@@ -204,8 +204,7 @@ if "`reducedform'" != "" {
   // Compute bootstrapped variance-covariance matrix and post results
   if "`bootstrap'" != "nobootstrap" myboo `sgroup' `cutoffvar' `bsreps'
   // If no bootstrap, trim b and V to show only RD estimates
-  else epost `sgroup' `cutoffvar'
-  ereturn list
+  else epost `sgroup' `cutoffvar' 
 }
 
 * Instrumental variables
@@ -262,19 +261,6 @@ cap drop _nl_1
 *-------------------------------------------------------------------------------
 
 ereturn repost b=b V=V, resize // Abridged matrices
-
-ereturn local title = "Linear regression"
-ereturn local depvar = "`depvar'"
-ereturn local properties = "b V"
-
-if "`bootstrap'" != "nobootstrap" {
-  ereturn local cmd "bootstrap"
-  ereturn local prefix = "bootstrap"
-  ereturn local vcetype "Bootstrap"
-  ereturn local vce = "bootstrap"
-}
-
-*else 
 
 
 // Display estimates by subgroup
