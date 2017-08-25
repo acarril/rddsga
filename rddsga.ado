@@ -365,6 +365,8 @@ program myboo, eclass
   foreach macro of local macros {
     ereturn local `macro' ``macro''
   }
+  ereturn local vcetype "Bootstrap"
+  ereturn local vce "bootstrap"
 end
 
 *-------------------------------------------------------------------------------
