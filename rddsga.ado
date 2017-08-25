@@ -258,7 +258,7 @@ if "`ivreg'" != "" {
 cap estimates drop *_aux
 cap drop _nl_1
 
-* Post results
+* Post and display results
 *-------------------------------------------------------------------------------
 
 ereturn repost b=b V=V, resize // Abridged matrices
@@ -274,15 +274,17 @@ if "`bootstrap'" != "nobootstrap" {
   ereturn local vce = "bootstrap"
 }
 
-else {
-  ereturn local
-}
+*else 
 
+
+// Display estimates by subgroup
+di as result "Estimates by subgroup"
 ereturn display
 
-nlcom _b[1.`sgroup'#1.`cutoffvar'] - _b[0.`sgroup'#1.`cutoffvar']
-*nlcompost
-*ereturn display
+// Display difference of subgroup estimates 
+di _newline as result "Difference of estimates by subgroup"
+di as text "_nl_1 = _b[1.`sgroup'#1.`cutoffvar'] - _b[0.`sgroup'#1.`cutoffvar']" _continue
+nlcom _b[1.`sgroup'#1.`cutoffvar'] - _b[0.`sgroup'#1.`cutoffvar'], noheader
 
 end
 
