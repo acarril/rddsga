@@ -260,8 +260,8 @@ cap drop _nl_1
 * Post and display results
 *-------------------------------------------------------------------------------
 
-ereturn repost b=b V=V, resize // Abridged matrices
-
+// Post abridged b and V matrices
+ereturn repost b=b V=V, resize
 
 // Display estimates by subgroup
 di as result "Estimates by subgroup"
@@ -361,12 +361,16 @@ program myboo, eclass
   foreach scalar of local scalars {
     ereturn scalar `scalar' = ``scalar''
   }
+  ereturn scalar N_reps = `3'
+  ereturn scalar level = 95
   // Post results: macros
   foreach macro of local macros {
     ereturn local `macro' ``macro''
   }
   ereturn local vcetype "Bootstrap"
   ereturn local vce "bootstrap"
+  ereturn local prefix "bootstrap"
+
 end
 
 *-------------------------------------------------------------------------------
