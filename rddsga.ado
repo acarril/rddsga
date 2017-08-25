@@ -152,46 +152,15 @@ label var _nl_1 "Difference"
 
 * First stage
 *-------------------------------------------------------------------------------
-
 if "`firststage'" != "" {
-  // Original
-  qui reg `treatment' _nl_1 i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
+  // Regression
+  qui reg `treatment' i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
-    if `touse' & `bwidth', vce(`vce') noconstant
-  estimates title: "Unweighted first stage"
-  estimates store unw_first
-  nlcomhack `sgroup' `cutoffvar'
-  estimates store unw_first_aux
-  qui estadd local bwidthtab -
-  qui estadd local spline `spline'
-  
-  // PSW
-  qui reg `treatment' _nl_1 i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
-    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
-    [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
-  estimates title: "PSW first stage"
-  estimates store psw_first
-  nlcomhack `sgroup' `cutoffvar'
-  estimates store psw_first_aux
-  qui estadd scalar bwidthtab = `bwidthtab'
-  qui estadd local spline `spline'
-  
-  // Output with esttab if installed; if not, default to estimates table 
-  capture which estout
-  if _rc!=111 {
-    esttab *_first_aux, ///
-      title("First stage:") nonumbers mtitles("Unweighted" "PSW") ///
-      keep(*`sgroup'#1.`cutoffvar' _nl_1) b(3) label abbrev wrap  ///
-      order(*`sgroup'#1.`cutoffvar' _nl_1) ///
-      varlabels(,blist(_nl_1 "{hline @width}{break}")) ///
-      se(3) star(* 0.10 ** 0.05 *** 0.01) ///
-      stats(N N_clust rmse bwidthtab spline, fmt(0 0 3 3) label(Observations Clusters RMSE Bandwidth Spline))
-  }
-  else {
-    estimates table *_first_aux, ///
-      b(%9.3g) se(%9.3g) keep(i.`sgroup'#1.`cutoffvar' _nl_1) ///
-      stats(N) varlabel title("First stage:") fvlabel
-  }
+    `weight' if `touse' & `bwidth', vce(`vce')
+  // Compute bootstrapped variance-covariance matrix and post results
+  if "`bootstrap'" != "nobootstrap" myboo `sgroup' `cutoffvar' `bsreps'
+  // If no bootstrap, trim b and V to show only RD estimates
+  else epost `sgroup' `cutoffvar' 
 }
 
 * Reduced form
