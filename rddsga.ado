@@ -198,14 +198,14 @@ if "`firststage'" != "" {
 *-------------------------------------------------------------------------------
 if "`reducedform'" != "" {
   // Regression
-  qui reg `depvar' _nl_1 i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
+  qui reg `depvar' i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
-    `weight' if `touse' & `bwidth', vce(`vce') noconstant
-  ereturn list
-
+    `weight' if `touse' & `bwidth', vce(`vce')
   // Compute bootstrapped variance-covariance matrix and post results
   if "`bootstrap'" != "nobootstrap" myboo `sgroup' `cutoffvar' `bsreps'
+  // If no bootstrap, trim b and V to show only RD estimates
   else epost `sgroup' `cutoffvar'
+  ereturn list
 }
 
 * Instrumental variables
@@ -292,21 +292,38 @@ end
 * Define auxiliary subroutines
 *===============================================================================
 
-program nlcompost, eclass
-  matrix b = e(b)
-  matrix colnames b = Difference 
-  ereturn repost b = b, rename // renames V matrix as well
-end
-
 *-------------------------------------------------------------------------------
 * epost: post matrices in e(b) and e(V); leave other ereturn results unchanged
 *-------------------------------------------------------------------------------
 program epost, eclass
+  // Store results: scalars
+  local scalars: e(scalars)
+  foreach scalar of local scalars {
+    local `scalar' = e(`scalar')
+  }
+  // Store results: macros
+  local macros: e(macros)
+  foreach macro of local macros {
+    local `macro' = e(`macro')
+  }
+  // Store results: matrices (drop V_modelbased; b and V are computed below)
+  local matrices: e(matrices)
+  // Store results: functions (need to find a way to store it)
+  local functions: e(functions)
+  // b and V matrices
   matrix b = e(b)
   matrix V = e(V)
   matrix b = b[1, "0.`1'#1.`2'".."1.`1'#1.`2'"]
   matrix V = V["0.`1'#1.`2'".."1.`1'#1.`2'", "0.`1'#1.`2'".."1.`1'#1.`2'"]
   ereturn post
+  // Post results: scalars
+  foreach scalar of local scalars {
+    ereturn scalar `scalar' = ``scalar''
+  }
+  // Post results: macros
+  foreach macro of local macros {
+    ereturn local `macro' ``macro''
+  }
 end
 
 *-------------------------------------------------------------------------------
@@ -338,6 +355,15 @@ program myboo, eclass
   mat colnames V = 0.`1'#1.`2' 1.`1'#1.`2'
   // Return 
   ereturn post
+end
+
+*-------------------------------------------------------------------------------
+* nlcompost: modify b matrix after nlcom
+*-------------------------------------------------------------------------------
+program nlcompost, eclass
+  matrix b = e(b)
+  matrix colnames b = Difference 
+  ereturn repost b = b, rename // renames V matrix as well
 end
 
 *-------------------------------------------------------------------------------
