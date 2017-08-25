@@ -317,6 +317,21 @@ end
 * myboo: compute bootstrapped variance-covariance matrix & adjust ereturn results
 *-------------------------------------------------------------------------------
 program myboo, eclass
+  // Store results: scalars
+  local scalars: e(scalars)
+  foreach scalar of local scalars {
+    local `scalar' = e(`scalar')
+  }
+  // Store results: macros
+  local macros: e(macros)
+  foreach macro of local macros {
+    local `macro' = e(`macro')
+  }
+  // Store results: matrices (drop V_modelbased; b and V are computed below)
+  local matrices: e(matrices)
+  // Store results: functions
+  tempvar esample
+  gen `esample' = e(sample)
   // Extract b submatrix with subgroup coefficients
   matrix b = e(b)
   matrix b = b[1, "0.`1'#1.`2'".."1.`1'#1.`2'"]
@@ -341,7 +356,15 @@ program myboo, eclass
   mat rownames V = 0.`1'#1.`2' 1.`1'#1.`2'
   mat colnames V = 0.`1'#1.`2' 1.`1'#1.`2'
   // Return 
-  ereturn post
+  ereturn post, esample(`esample')
+  // Post results: scalars
+  foreach scalar of local scalars {
+    ereturn scalar `scalar' = ``scalar''
+  }
+  // Post results: macros
+  foreach macro of local macros {
+    ereturn local `macro' ``macro''
+  }
 end
 
 *-------------------------------------------------------------------------------
