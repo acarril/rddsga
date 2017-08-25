@@ -308,14 +308,15 @@ program epost, eclass
   }
   // Store results: matrices (drop V_modelbased; b and V are computed below)
   local matrices: e(matrices)
-  // Store results: functions (need to find a way to store it)
-  local functions: e(functions)
+  // Store results: functions
+  tempvar esample
+  gen `esample' = e(sample)
   // b and V matrices
   matrix b = e(b)
   matrix V = e(V)
   matrix b = b[1, "0.`1'#1.`2'".."1.`1'#1.`2'"]
   matrix V = V["0.`1'#1.`2'".."1.`1'#1.`2'", "0.`1'#1.`2'".."1.`1'#1.`2'"]
-  ereturn post
+  ereturn post, esample(`esample')
   // Post results: scalars
   foreach scalar of local scalars {
     ereturn scalar `scalar' = ``scalar''
