@@ -87,15 +87,16 @@ local bwidthtab `bwidth'
 local bwidth abs(`assignvar') < `bwidth'
 
 // Create indicator cutoff variable
-tempvar cutoffvar
-gen `cutoffvar' = (`assignvar'>`cutoff')
-lab var `cutoffvar' "Treatment"
+*tempvar cutoffvar
+*gen _cutoff = (`assignvar'>`cutoff')
+*lab var _cutoff "Treatment"
+gen _cutoff = (`assignvar'>`cutoff')
 
 // Compute spline options
 if "`quadratic'" != "" {
   local spline Quadratic
   tempvar assignXcutoff
-  gen `assignXcutoff' = `assignvar'*`cutoffvar'
+  gen `assignXcutoff' = `assignvar'*_cutoff
   local quad c.`assignvar'#c.`assignvar' c.`assignXcutoff'#c.`assignXcutoff'
 }
 else local spline Linear
@@ -154,72 +155,40 @@ label var _nl_1 "Difference"
 *-------------------------------------------------------------------------------
 if "`firststage'" != "" {
   // Regression
-  qui reg `treatment' i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
-    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
+  qui reg `treatment' i.`sgroup'#1._cutoff i.`sgroup' ///
+    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff `quad') ///
     `weight' if `touse' & `bwidth', vce(`vce')
   // Compute bootstrapped variance-covariance matrix and post results
-  if "`bootstrap'" != "nobootstrap" myboo `sgroup' `cutoffvar' `bsreps'
+  if "`bootstrap'" != "nobootstrap" myboo `sgroup' _cutoff `bsreps'
   // If no bootstrap, trim b and V to show only RD estimates
-  else epost `sgroup' `cutoffvar' 
+  else epost `sgroup' _cutoff 
 }
 
 * Reduced form
 *-------------------------------------------------------------------------------
 if "`reducedform'" != "" {
   // Regression
-  qui reg `depvar' i.`sgroup'#1.`cutoffvar' i.`sgroup' ///
-    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') ///
+  qui reg `depvar' i.`sgroup'#1._cutoff i.`sgroup' ///
+    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff `quad') ///
     `weight' if `touse' & `bwidth', vce(`vce')
   // Compute bootstrapped variance-covariance matrix and post results
-  if "`bootstrap'" != "nobootstrap" myboo `sgroup' `cutoffvar' `bsreps'
+  if "`bootstrap'" != "nobootstrap" myboo `sgroup' _cutoff `bsreps'
   // If no bootstrap, trim b and V to show only RD estimates
-  else epost `sgroup' `cutoffvar' 
+  else epost `sgroup' _cutoff 
 }
 
 * Instrumental variables
 *-------------------------------------------------------------------------------
 if "`ivreg'" != "" {
-  // Unweighted
+  // Regression
   qui ivregress 2sls `depvar' i.`sgroup' ///
-    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') _nl_1 ///
-    (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') ///
-    if `touse' & `bwidth', vce(`vce') noconstant
-  estimates title: "Unweighted IVREG"
-  estimates store unw_ivreg
-  nlcomhack `sgroup' `treatment'
-  estimates store unw_ivreg_aux
-  qui estadd local bwidthtab -
-  qui estadd local spline `spline'
-  
-  // PSW
-  qui ivregress 2sls `depvar' i.`sgroup' ///
-    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#`cutoffvar' `quad') _nl_1 ///
-    (i.`sgroup'#1.`treatment' = i.`sgroup'#`cutoffvar') /// (exogenous = endogenous)
-    [pw=`psweight'] if `touse' & `bwidth', vce(`vce') noconstant
-  estimates title: "PSW IVREG"
-  estimates store psw_ivreg
-  nlcomhack `sgroup' `treatment'
-  estimates store psw_ivreg_aux
-  qui estadd scalar bwidthtab = `bwidthtab'
-  qui estadd local spline `spline'
-
-  // Output with esttab if installed; if not, default to estimates table 
-  capture which estout
-  if _rc!=111 {
-    esttab *_ivreg_aux, ///
-      title("IV regression:") nonumbers mtitles("Unweighted" "PSW") ///
-      keep(*`sgroup'#1.`treatment' _nl_1) label abbrev wrap ///
-      order(*`sgroup'#1.`treatment' _nl_1) ///
-      varlabels(,blist(_nl_1 "{hline @width}{break}")) ///
-      b(3) se(3) star(* 0.10 ** 0.05 *** 0.01) ///
-      stats(N N_clust rmse bwidthtab spline, ///
-        fmt(0 0 3 3) labels(Observations Clusters RMSE Bandwidth Spline))
-  }
-  else{
-    estimates table *_ivreg_aux, ///
-      b(%9.3g) se(%9.3g) keep(i.`sgroup'#1.`treatment') ///
-      stats(N) varlabel title("IV regression:") fvlabel
-  }
+    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff `quad') ///
+    (i.`sgroup'#1.`treatment' = i.`sgroup'#_cutoff) ///
+    `weight' if `touse' & `bwidth', vce(`vce')
+  // Compute bootstrapped variance-covariance matrix and post results
+  if "`bootstrap'" != "nobootstrap" myboo `sgroup' `treatment' `bsreps'
+  // If no bootstrap, trim b and V to show only RD estimates
+  else epost `sgroup' `treatment'
 }
 
 // Drop auxiliary (nlcomhacked) stored estimates and _nl_1 aux var 
@@ -238,8 +207,9 @@ ereturn display
 
 // Display difference of subgroup estimates 
 di _newline as result "Difference of estimates by subgroup"
-di as text "_nl_1 = _b[1.`sgroup'#1.`cutoffvar'] - _b[0.`sgroup'#1.`cutoffvar']" _continue
-nlcom _b[1.`sgroup'#1.`cutoffvar'] - _b[0.`sgroup'#1.`cutoffvar'], noheader
+di as text "_nl_1 = _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff]" _continue
+if "`ivreg'" == "" nlcom _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff], noheader
+else nlcom _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment'], noheader
 
 end
 
