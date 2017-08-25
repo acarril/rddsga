@@ -90,6 +90,7 @@ local bwidth abs(`assignvar') < `bwidth'
 *tempvar cutoffvar
 *gen _cutoff = (`assignvar'>`cutoff')
 *lab var _cutoff "Treatment"
+confirm new variable _cutoff
 gen _cutoff = (`assignvar'>`cutoff')
 
 // Compute spline options

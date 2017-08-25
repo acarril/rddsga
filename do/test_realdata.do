@@ -16,7 +16,6 @@ discard
 
 // Load dataset
 use data/procurement_test3, clear
-
 // Obtain bandwidths
 *qui rd sh_licitacion high_direct dis_cutoff2
 *local w50 = e(w50)
@@ -32,5 +31,5 @@ p1 p2 p3 sh_licitacionPRE2 sh_directoPRE1 sh_licitacionPRE1 sh_directoPRE2 size_
   psweight(peso) pscore(ps_flexmodel4) comsup(comsup) ///
   balance(p1 p2 p3 size_PRE1 size_PRE2 audited dTR1-dTR3 Year2 Year1 Zone1-Zone3) ///
   bwidth(10) sgroup(high_direct) cutoff(0) treatment(I_CURaudit) vce(cluster gpaoXuceXrk) ///
-  bsreps(10) nopsw
+  bsreps(20)
  
