@@ -334,6 +334,7 @@ program myboo, eclass
   ereturn scalar level = 95
   // Post results: macros
   foreach macro of local macros {
+    if "`macro'" == "clustvar" continue // skip this macro as it doesn't apply
     ereturn local `macro' ``macro''
   }
   ereturn local vcetype "Bootstrap"
