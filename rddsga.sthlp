@@ -179,8 +179,8 @@ This balance is computed for each covariate in {it:indepvars}, unless {opt balan
 {pstd}Fit reduced form model{p_end}
 {phang2}{cmd:. rddsga Y runvar, balance(X1 X2) sgroup(G) bwidth(10) reduced}{p_end}
 
-{pstd}Assess balance and fit reduced form model using minimal-MSE bandwidth ({help rddsga##imbens2012:Imbens and Kalyanaraman, 2012}){p_end}
-{phang2}{cmd:. rddsga Y runvar, balance(X1 X2) sgroup(G) bwidth(6.095) reduced dibal}{p_end}
+{pstd}Estimate treatment effect using instrumental variables regression and 200 bootstrap replications{p_end}
+{phang2}{cmd:. rddsga Y runvar, balance(X1 X2) sgroup(G) bwidth(6) ivregress reps(200)}{p_end}
 
 
 {marker results}{...}
@@ -252,9 +252,6 @@ All remaining errors are our own.
 
 {marker references}{...}
 {title:References}
-
-{marker imbens2012}{...}
-{phang}Imbens, Guido, and Karthik Kalyanaraman. "Optimal Bandwidth Choice for the Regression Discontinuity Estimator." Review of Economic Studies 79, no. 3 (2012): 933–59.
 
 {marker mainpaper}{...}
 {phang}Gerardino, Maria Paula, Stephan Litschig, Benjamin Olken, and Dina Pomeranz. 2017.
