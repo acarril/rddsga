@@ -34,7 +34,7 @@
 {syntab :Model}
 {synopt :{opt first:stage}}estimate the discontinuity in the treatment probability using OLS{p_end}
 {synopt :{opt reduced:form}}estimate the reduced form effect using OLS{p_end}
-{synopt :{opt iv:reg}}estimate the treatment effect using instrumental variable regression; requires that a treatment variable is specified in {opt treatment(varname)}{p_end}
+{synopt :{opt iv:regress}}estimate the treatment effect using instrumental variable regression; requires that a treatment variable is specified in {opt treatment(varname)}{p_end}
 {synopt :{opt quad:ratic}}use quadratic spline; default is linear{p_end}
 {synopt :{opth vce(vcetype)}}{it:vcetype} may be {opt un:adjusted},
    {opt r:obust}, {opt cl:uster} {it:clustvar}, {opt boot:strap},
@@ -43,7 +43,7 @@
 {synopt :{opt r:eps(#)}}perform # bootstrap replications; default is {opt reps(50)}{p_end}
 {synopt :{opt noipsw}}do not use inverse propensity score weighting{p_end}
 
-{syntab :Reporting/Output}
+{syntab :Reporting and Output}
 {synopt :{opt dibal:ance}}display original balance and propensity score-weighted balance tables and statistics{p_end}
 {synopt :{opth ipsw:eight(newvar)}}name of new variable for the inverse propensity score weight for each observation; if not specified, no variable will be generated{p_end}
 {synopt :{opth com:sup(newvar)}}name of new binary variable indicating common support; if not specified, no variable will be generated{p_end}
@@ -67,12 +67,12 @@ Analyzing the differential treatment effect in the reweighted sample helps isola
 {cmd:rddsga} computes IPSW based on the vector of covariates in {it:indepvars}, which are also used as control variables in the model.
 A separate set of variables to compute IPSW may be optionally specified with {opt balance(varlist)}.
 A new variable with IPSW may be generated using {opt psweight(newvar)}.
-In order to assess the statistical significance of the difference in means for each covariate, {cmd:rddsga} uses a {it:t}-test on the equality of means and reports the resulting {it:p}-value, as well as the (weighted) standardized mean difference.
-Joint significance is assessed using an {it:F}-test.
+In order to assess the statistical significance of the difference in means for each covariate, {cmd:rddsga} uses a t-test on the equality of means and reports the resulting p-value, as well as the (weighted) standardized mean difference.
+Joint significance is assessed using an F-test.
 The resulting balance tables are stored as matrices (see {help rddsga##results:stored results} below), and may also be displayed using {opt dibalance}.
 
 {pstd}
-Options {opt firststage}, {opt reducedform} and {opt ivreg} may be used to estimate the first stage, reduced form and treatment effects using OLS and IV methods, respectively.
+Options {opt firststage}, {opt reducedform} and {opt ivregress} may be used to estimate the first stage, reduced form and treatment effects using OLS and IV methods, respectively.
 Standard variance estimator options may be used for these estimators with {opt vce(vcetype)}.
 The estimated coefficients for the interaction of indicator variables for each subgroup and a treatment indicator are reported, along with bootstrap standard errors (unless other {it:vcetype} is specified).
 
@@ -126,8 +126,9 @@ This option must be specified if {it:indepvars} is empty.
 {opt reducedform} estimates the reduced form effect using OLS.
 
 {phang}
-{opt ivreg} estimates the treatment effect using instrumental variable regression.
+{opt ivregress} estimates the treatment effect using instrumental variable regression.
 If specified, it requires that a treatment variable is also specified in {opt treatment(varname)}.
+See {help ivregress} for additional information.
 
 {phang}
 {opt quadratic} indicates that a quadratic spline is to be used for full interaction with subgroup indicators. If not specified, a linear spline is used.
@@ -203,7 +204,7 @@ This balance is computed for each covariate in {it:indepvars}, unless {opt balan
 {synopt:{cmd:e(unw_avgdiff)}}Average of absolute values of standardized differences (unweighted){p_end}
 
 {p2col 5 15 19 2: Matrices}{p_end}
-{synopt:{cmd:e(b)}}coefficient vector{p_end}
+{synopt:{cmd:e(b)}}subgroup estimators coefficient vector{p_end}
 {synopt:{cmd:e(V)}}variance-covariance matrix of the estimators{p_end}
 
 {synopt:{cmd:e(ipsw)}}balance table matrix (IPSW){p_end}
