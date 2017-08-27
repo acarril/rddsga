@@ -186,41 +186,33 @@ This balance is computed for each covariate in {it:indepvars}, unless {opt balan
 {title:Stored results}
 
 {pstd}
-{cmd:rddsga} stores the following in {cmd:r()}:
+{cmd:rddsga} stores the following in {cmd:e()}:
 
 {synoptset 20 tabbed}{...}
 {p2col 5 20 24 2: Scalars}{p_end}
-{synopt:{cmd:r(oribal_N_G0)}}number of observations in subgroup 0 (original balance){p_end}
-{synopt:{cmd:r(oribal_N_G1)}}number of observations in subgroup 1 (original balance){p_end}
-{synopt:{cmd:r(oribal_Fstat)}}F-statistic (original balance){p_end}
-{synopt:{cmd:r(oribal_pvalue)}}F-statistic p-value (original balance){p_end}
-{synopt:{cmd:r(oribal_avgdiff)}}Average of absolute values of standardized differences (original balance){p_end}
+{synopt:{cmd:e(ipsw_N_G0)}}number of observations in subgroup 0 (IPSW){p_end}
+{synopt:{cmd:e(ipsw_N_G1)}}number of observations in subgroup 1 (IPSW){p_end}
+{synopt:{cmd:e(ipsw_Fstat)}}F-statistic (IPSW){p_end}
+{synopt:{cmd:e(ipsw_pvalue)}}F-statistic p-value (IPSW){p_end}
+{synopt:{cmd:e(ipsw_avgdiff)}}Average of absolute values of standardized differences (IPSW){p_end}
 
-{synopt:{cmd:r(pswbal_N_G0)}}number of observations in subgroup 0 (PSW balance){p_end}
-{synopt:{cmd:r(pswbal_N_G1)}}number of observations in subgroup 1 (PSW balance){p_end}
-{synopt:{cmd:r(pswbal_Fstat)}}F-statistic (PSW balance){p_end}
-{synopt:{cmd:r(pswbal_pvalue)}}F-statistic p-value (PSW balance){p_end}
-{synopt:{cmd:r(pswbal_avgdiff)}}Average of absolute values of standardized differences (PSW balance){p_end}
+{synopt:{cmd:e(unw_N_G0)}}number of observations in subgroup 0 (unweighted){p_end}
+{synopt:{cmd:e(unw_N_G1)}}number of observations in subgroup 1 (unweighted){p_end}
+{synopt:{cmd:e(unw_Fstat)}}F-statistic (unweighted){p_end}
+{synopt:{cmd:e(unw_pvalue)}}F-statistic p-value (unweighted){p_end}
+{synopt:{cmd:e(unw_avgdiff)}}Average of absolute values of standardized differences (unweighted){p_end}
 
 {p2col 5 15 19 2: Matrices}{p_end}
-{synopt:{cmd:r(pswbal)}}balance table matrix (original balance){p_end}
-{synopt:{cmd:r(oribal)}}balance table matrix (PSW balance){p_end}
+{synopt:{cmd:e(b)}}coefficient vector{p_end}
+{synopt:{cmd:e(V)}}variance-covariance matrix of the estimators{p_end}
+
+{synopt:{cmd:e(ipsw)}}balance table matrix (IPSW){p_end}
+{synopt:{cmd:e(unw)}}balance table matrix (unweighted){p_end}
 {p2colreset}{...}
 
 {pstd}
-Additionally, {cmd:rddsga} stores all estimation results for the specified models ({opt firststage}, {opt firststage} and/or {opt ivregress}; see {help rddsga##options_model:Model options} above).
-Both the unweighted and PSW models are stored using {help estimates store}.
-The list of stored models can be retrieved using {help estimates dir}.
-The full list of estimates that may be stored is described below.
-
-{synoptset 20 tabbed}{...}
-{p2col 5 20 24 2: Estimates}{p_end}
-{synopt:{cmd:unw_first}}Unweighted first stage{p_end}
-{synopt:{cmd:psw_first}}PSW first stage{p_end}
-{synopt:{cmd:unw_reduced}}Unweighted reduced form{p_end}
-{synopt:{cmd:psw_reduced}}PSW reduced form{p_end}
-{synopt:{cmd:unw_ivreg}}Unweighted instrumental variables{p_end}
-{synopt:{cmd:psw_ivreg}}PSW instrumental variables{p_end}
+Additionally, {cmd:rddsga} stores all macros and scalars of the estimated model ({opt firststage}, {opt firststage} or {opt ivregress}; see {help rddsga##options_model:Model options} above).
+Refer to the {help regress##results:Stored Results} section of {manhelp regress R:regress} for the full list of macros and scalars additionally stored in {cmd:e()}.
 
 
 {marker authors}{...}
