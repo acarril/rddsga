@@ -1,5 +1,5 @@
 # rddsga
-Subgroup analysis with propensity score weighting in RDD settings
+Subgroup analysis for regression discontinuity designs using inverse propensity score weighting
 
 # Installation
 The package can be fetched directly from this repository by setting the location with `net`:
