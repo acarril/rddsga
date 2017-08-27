@@ -3,10 +3,10 @@ program define rddsga, eclass
 version 11.1
 syntax varlist(min=2 numeric fv) [if] [in] , ///
   SGroup(name) BWidth(real) [ Treatment(name) Cutoff(real 0) /// important inputs
-  	psweight(name) PSCore(name) COMsup(name) noCOMsupaux /// newvars
+  	ipsweight(name) PSCore(name) COMsup(name) noCOMsupaux /// newvars
     BALance(varlist numeric) DIBALance probit /// balancepscore opts
-    IVreg REDUCEDform FIRSTstage vce(string) QUADratic /// model opts
-    nobootstrap bsreps(real 50) nopsw ] // bootstrap options
+    IVregress REDUCEDform FIRSTstage vce(string) QUADratic /// model opts
+    nobootstrap bsreps(real 50) noipsw ] // bootstrap options
 
 *-------------------------------------------------------------------------------
 * Check inputs
@@ -27,9 +27,9 @@ if `fvops' {
   }
 }
 
-// psweight(): define new propensity score weighting variable or use a tempvar
-if "`psweight'" != "" confirm new variable `psweight'
-else tempvar psweight
+// ipsweight(): define new propensity score weighting variable or use a tempvar
+if "`ipsweight'" != "" confirm new variable `ipsweight'
+else tempvar ipsweight
 
 // comsup(): define new common support variable or use a tempvar
 if "`comsup'" != "" confirm new variable `comsup'
@@ -103,8 +103,8 @@ if "`quadratic'" != "" {
 else local spline Linear
 
 // Create weight local for regression
-if "`psw'" == "nopsw" local weight = ""
-else local weight "[pw=`psweight']"
+if "`ipsw'" == "noipsw" local weight = ""
+else local weight "[pw=`ipsweight']"
 
 *-------------------------------------------------------------------------------
 * Compute balance table matrices
@@ -137,7 +137,7 @@ if "`dibalance'" != "" {
 *-------------------------------------------------------------------------------
 // Compute balanace matrix 
 balancematrix, matname(ipsw)  ///
-  psw psweight(`psweight') touse(`touse') bwidth(`bwidth') balance(`balance') ///
+  psw ipsweight(`ipsweight') touse(`touse') bwidth(`bwidth') balance(`balance') ///
   pscore(`pscore') comsup(`comsup') comsupaux(`comsupaux') binarymodel(`binarymodel') ///
 	sgroup(`sgroup') sgroup0(`sgroup0') n_balance(`n_balance') 
 // Store balance matrix and computed balance stats
@@ -357,7 +357,7 @@ end
 program define balancematrix, eclass
 syntax, matname(string) /// important inputs, differ by call
   touse(name) bwidth(string) balance(varlist) /// unchanging inputs
-  [psw psweight(name) pscore(name) comsup(name) comsupaux(string) binarymodel(string)] /// only needed for PSW balance
+  [psw ipsweight(name) pscore(name) comsup(name) comsupaux(string) binarymodel(string)] /// only needed for PSW balance
   sgroup(name) sgroup0(name) n_balance(int) // todo: eliminate these? can be computed by subroutine at low cost
 
 * Create variables specific to PSW matrix
@@ -387,8 +387,8 @@ if "`psw'" != "" { // if psw
   local N_G1 = `r(N)'
 
   // Compute propensity score weighting vector
-  cap drop `psweight'
-  qui gen `psweight' = ///
+  cap drop `ipsweight'
+  qui gen `ipsweight' = ///
     `N_G1'/(`N_G1'+`N_G0')/`pscore'*(`sgroup'==1) + ///
     `N_G0'/(`N_G1'+`N_G0')/(1-`pscore')*(`sgroup'==0) ///
     if `touse' & `bwidth' & `comsup' & !mi(`sgroup')
@@ -411,13 +411,13 @@ foreach var of varlist `balance' {
 
   // Compute and store conditional expectations
   if "`psw'" == "" qui reg `var' `sgroup0' `sgroup' if `touse' & `bwidth', noconstant /* */
-  else qui reg `var' `sgroup0' `sgroup' [iw=`psweight'] if `touse' & `bwidth' & `comsup', noconstant
+  else qui reg `var' `sgroup0' `sgroup' [iw=`ipsweight'] if `touse' & `bwidth' & `comsup', noconstant
   local coef`j'_G0 = _b[`sgroup0']
   local coef`j'_G1 = _b[`sgroup']
 
   // Compute and store mean differences and their p-values
   if "`psw'" == "" qui reg `var' `sgroup0' if `touse' & `bwidth'
-  else qui reg `var' `sgroup0' [iw=`psweight'] if `touse' & `bwidth' & `comsup'
+  else qui reg `var' `sgroup0' [iw=`ipsweight'] if `touse' & `bwidth' & `comsup'
   matrix m = r(table)
   scalar diff`j'=m[1,1] // mean difference
   local pval`j' = m[4,1] // p-value 
@@ -440,7 +440,7 @@ local avgdiff = `avgdiff'/`n_balance' // compute mean
 
 // F-statistic and global p-value
 if "`psw'" == "" qui reg `sgroup' `balance' if `touse' & `bwidth'
-else qui reg `sgroup' `balance' [iw=`psweight'] if `touse' & `bwidth' & `comsup' 
+else qui reg `sgroup' `balance' [iw=`ipsweight'] if `touse' & `bwidth' & `comsup' 
 local Fstat = e(F)
 local pval_global = 1-F(e(df_m),e(df_r),e(F))
 
