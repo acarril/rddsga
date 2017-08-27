@@ -201,10 +201,6 @@ if "`ivreg'" != "" {
   else epost `sgroup' `treatment'
 }
 
-// Drop auxiliary (nlcomhacked) stored estimates and _nl_1 aux var 
-cap estimates drop *_aux
-cap drop _nl_1
-
 * Post and display results
 *-------------------------------------------------------------------------------
 // Post global balance stats
