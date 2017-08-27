@@ -105,9 +105,9 @@ This option must be specified.
 {dlgtab:Balance}
 
 {phang}
-{opt balance(varlist)} specifies variables for which the propensity score weighting is calculated.
+{opt balance(varlist)} specifies the variables that enter the propensity score estimation.
 If not specified, variables in {it:indepvars} are used.
-This option is useful if one wants to balance for a different set of covariates that the ones used as controls in the model.
+This option is useful if one wants to balance a different set of covariates than the ones used as controls in the model.
 This option must be specified if {it:indepvars} is empty.
 
 {phang}
@@ -120,20 +120,33 @@ This option must be specified if {it:indepvars} is empty.
 {dlgtab:Model}
 
 {phang}
-{opt firststage} estimates the first stage regression model.
+{opt firststage} estimates the discontinuity in the treatment probability using OLS.
 
 {phang}
-{opt reducedform} estimates the reduced form regression model.
+{opt reducedform} estimates the reduced form effect using OLS.
 
 {phang}
-{opt ivreg} estimate the instrumental variables regression model.
-
-{phang}
-{opt vce(vcetype)} specifies the variance estimators options. See {help  vce_option}.
+{opt ivreg} estimates the treatment effect using instrumental variable regression.
+If specified, it requires that a treatment variable is also specified in {opt treatment(varname)}.
 
 {phang}
 {opt quadratic} indicates that a quadratic spline is to be used for full interaction with subgroup indicators. If not specified, a linear spline is used.
 
+{phang}
+{opt vce(vcetype)} specifies the variance estimators options.
+{it:vcetype} may be unadjusted, robust, cluster clustvar, bootstrap, jackknife, or hac kernel (see {help  vce_option}).
+Bootstrap is used by default, unless {opt nobootstrap} is used (see below), or a different {it:vcetype} is specified.
+
+{phang}
+{opt nobootstrap} prevents computing bootstrap standard errors, which is the default.
+
+{phang}
+{opt reps(#)} perform # bootstrap replications; default is {opt reps(50)}.
+
+{phang}
+{opt noipsw} prevents employing inverse propensity score weighting for the estimations.
+
+{marker options_reporting}{...}
 {dlgtab:Reporting}
 
 {phang}
@@ -159,8 +172,8 @@ This balance is computed for each covariate in {it:indepvars}, unless {opt balan
 {pstd}Assess covariate imbalance using one covariate{p_end}
 {phang2}{cmd:. rddsga Y runvar, balance(X1) sgroup(G) bwidth(10) dibal}{p_end}
 
-{pstd}Store computed PSW vector balancing for all covariates{p_end}
-{phang2}{cmd:. rddsga Y runvar, balance(X1 X2) sgroup(G) bwidth(10) psweight()}{p_end}
+{pstd}Store computed IPSW based on X1 and X2{p_end}
+{phang2}{cmd:. rddsga Y runvar, balance(X1 X2) sgroup(G) bwidth(10) ipsweight(ipsw)}{p_end}
 
 {pstd}Fit reduced form model{p_end}
 {phang2}{cmd:. rddsga Y runvar, balance(X1 X2) sgroup(G) bwidth(10) reduced}{p_end}
