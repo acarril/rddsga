@@ -204,11 +204,11 @@ cap drop _nl_1
 ereturn repost b=b V=V, resize
 
 // Display estimates by subgroup
-di as result "Estimates by subgroup"
+di as result "Subgroup estimates"
 ereturn display
 
 // Display difference of subgroup estimates 
-di _newline as result "Difference of estimates by subgroup"
+di _newline as result "Difference"
 di as text "_nl_1 = _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff]" _continue
 if "`ivreg'" == "" nlcom _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff], noheader
 else nlcom _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment'], noheader
