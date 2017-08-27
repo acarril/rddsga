@@ -119,7 +119,9 @@ balancematrix, matname(oribal)  ///
 
 // Display balance matrix and global stats
 if "`dibalance'" != "" {
-  matlist oribal, border(rows) format(%9.3g) title("Unweighted balance:")
+  di _newline as result "Unweighted"
+  matlist oribal, ///
+    border(rows) format(%9.3g) noblank
   di "Obs. in subgroup 0: " oribal_N_G0
   di "Obs. in subgroup 1: " oribal_N_G1
   di "Mean abs(std_diff): " oribal_avgdiff
@@ -137,7 +139,9 @@ balancematrix, matname(pswbal)  ///
 
 // Display balance matrix and global stats
 if "`dibalance'" != "" {
-  matlist pswbal, border(rows) format(%9.3g) title("Propensity Score Weighting balance:")
+  di _newline as result "Inverse Propensity Score Weighting"
+  matlist pswbal, ///
+  border(rows) format(%9.3g) noblank
   di "Obs. in subgroup 0: " pswbal_N_G0
   di "Obs. in subgroup 1: " pswbal_N_G1
   di "Mean abs(std_diff): " pswbal_avgdiff
