@@ -277,6 +277,7 @@ program myboo, eclass
   matrix b = b[1, "0.`1'#1.`2'".."1.`1'#1.`2'"]
   mat colnames b = 0.`1'#1.`2' 1.`1'#1.`2'
   // Start bootstrap 
+  di ""
   _dots 0, title(Bootstrap replications) reps(`3')
   forvalues i=1/`3' {
     preserve
