@@ -112,41 +112,49 @@ else local weight "[pw=`psweight']"
 
 * Original balance
 *-------------------------------------------------------------------------------
-balancematrix, matname(oribal)  ///
+// Compute balanace matrix 
+balancematrix, matname(unw)  ///
   touse(`touse') bwidth(`bwidth') balance(`balance') ///
   sgroup(`sgroup') sgroup0(`sgroup0') n_balance(`n_balance')
-*return add
-
-// Display balance matrix and global stats
+// Store balance matrix and computed balance stats
+matrix unw = e(unw)
+foreach s in unw_N_G0 unw_N_G1 unw_pvalue unw_Fstat unw_avgdiff {
+  scalar `s' = e(`s')
+}
+// Display balance matrix and balance stats
 if "`dibalance'" != "" {
   di _newline as result "Unweighted"
-  matlist oribal, ///
+  matlist unw, ///
     border(rows) format(%9.3g) noblank
-  di "Obs. in subgroup 0: " oribal_N_G0
-  di "Obs. in subgroup 1: " oribal_N_G1
-  di "Mean abs(std_diff): " oribal_avgdiff
-  di "F-statistic: " oribal_Fstat
-  di "Global p-value: " oribal_pval_global
+  di "Obs. in subgroup 0: " unw_N_G0
+  di "Obs. in subgroup 1: " unw_N_G1
+  di "Mean abs(std_diff): " unw_avgdiff
+  di "F-statistic: " unw_Fstat
+  di "Global p-value: " unw_pval_global
 }
 
 * Propensity Score Weighting balance
 *-------------------------------------------------------------------------------
-balancematrix, matname(pswbal)  ///
+// Compute balanace matrix 
+balancematrix, matname(ipsw)  ///
   psw psweight(`psweight') touse(`touse') bwidth(`bwidth') balance(`balance') ///
   pscore(`pscore') comsup(`comsup') comsupaux(`comsupaux') binarymodel(`binarymodel') ///
 	sgroup(`sgroup') sgroup0(`sgroup0') n_balance(`n_balance') 
-*return add
-
-// Display balance matrix and global stats
+// Store balance matrix and computed balance stats
+matrix ipsw = e(ipsw)
+foreach s in ipsw_N_G0 ipswN_G1 ipsw_pvalue ipsw_Fstat ipsw_avgdiff {
+  scalar `s' = e(`s')
+}
+// Display balance matrix and balance stats
 if "`dibalance'" != "" {
   di _newline as result "Inverse Propensity Score Weighting"
-  matlist pswbal, ///
+  matlist ipsw, ///
   border(rows) format(%9.3g) noblank
-  di "Obs. in subgroup 0: " pswbal_N_G0
-  di "Obs. in subgroup 1: " pswbal_N_G1
-  di "Mean abs(std_diff): " pswbal_avgdiff
-  di "F-statistic: " pswbal_Fstat
-  di "Global p-value: " pswbal_pval_global
+  di "Obs. in subgroup 0: " ipsw_N_G0
+  di "Obs. in subgroup 1: " ipsw_N_G1
+  di "Mean abs(std_diff): " ipsw_avgdiff
+  di "F-statistic: " ipsw_Fstat
+  di "Global p-value: " ipsw_pval_global
 }
 
 *-------------------------------------------------------------------------------
@@ -199,14 +207,20 @@ cap drop _nl_1
 
 * Post and display results
 *-------------------------------------------------------------------------------
-
+// Post global balance stats
+foreach w in unw ipsw {
+  foreach s in N_G0 N_G1 pvalue Fstat avgdiff {
+    ereturn scalar `w'_`s' = `w'_`s'
+  }
+}
+// Post balance matrices
+ereturn matrix ipsw ipsw
+ereturn matrix unw unw
 // Post abridged b and V matrices
 ereturn repost b=b V=V, resize
-
 // Display estimates by subgroup
 di as result "Subgroup estimates"
 ereturn display
-
 // Display difference of subgroup estimates 
 di _newline as result "Difference"
 di as text "_nl_1 = _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff]" _continue
