@@ -22,5 +22,5 @@ use rddsga_synth, clear
 rddsga Y Z, balance(X1) sgroup(G) bwidth(10) dibal
 rddsga Y Z, balance(X1 X2) sgroup(G) bwidth(10) ipsweight(ipsw)
 rddsga Y Z, balance(X1 X2) sgroup(G) bwidth(10) reduced
-rddsga Y Z X1 X2, sgroup(G) bwidth(6) ivreg bsreps(200) treatment(T) noipsw
-rddsga Y Z X1 X2, sgroup(G) bwidth(6) ivreg bsreps(200) treatment(T)
+rddsga Y Z X1 X2, sgroup(G) bwidth(6) ivreg bsreps(100) treatment(T) noipsw
+rddsga Y Z X1 X2, sgroup(G) bwidth(6) ivreg bsreps(100) treatment(T)
