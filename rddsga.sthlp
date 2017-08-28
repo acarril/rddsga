@@ -171,16 +171,16 @@ This balance is computed for each covariate in {it:indepvars}, unless {opt balan
 {phang2}{cmd:. use rddsga_synth}{p_end}
 
 {pstd}Assess covariate imbalance using one covariate{p_end}
-{phang2}{cmd:. rddsga Y runvar, balance(X1) sgroup(G) bwidth(10) dibal}{p_end}
+{phang2}{cmd:. rddsga Y Z, balance(X1) sgroup(G) bwidth(10) dibal}{p_end}
 
-{pstd}Store computed IPSW based on X1 and X2{p_end}
-{phang2}{cmd:. rddsga Y runvar, balance(X1 X2) sgroup(G) bwidth(10) ipsweight(ipsw)}{p_end}
+{pstd}Silently store computed IPSW based on X1 and X2{p_end}
+{phang2}{cmd:. rddsga Y Z, balance(X1 X2) sgroup(G) bwidth(10) ipsweight(ipsw)}{p_end}
 
 {pstd}Fit reduced form model{p_end}
-{phang2}{cmd:. rddsga Y runvar, balance(X1 X2) sgroup(G) bwidth(10) reduced}{p_end}
+{phang2}{cmd:. rddsga Y Z, balance(X1 X2) sgroup(G) bwidth(10) reduced}{p_end}
 
 {pstd}Estimate treatment effect using instrumental variables regression and 200 bootstrap replications{p_end}
-{phang2}{cmd:. rddsga Y runvar, balance(X1 X2) sgroup(G) bwidth(6) ivregress reps(200)}{p_end}
+{phang2}{cmd:. rddsga Y Z X1 X2, sgroup(G) bwidth(6) ivreg bsreps(200)}{p_end}
 
 
 {marker results}{...}
