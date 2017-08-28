@@ -189,7 +189,7 @@ if "`reducedform'" != "" {
 
 * Instrumental variables
 *-------------------------------------------------------------------------------
-if "`ivreg'" != "" {
+if "`ivregress'" != "" {
   // Regression
   qui ivregress 2sls `depvar' i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff `quad') ///
@@ -215,7 +215,7 @@ ereturn matrix unw unw
 
 * Post and display estimation results
 *-------------------------------------------------------------------------------
-if "`ivreg'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
+if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
   // Post abridged b and V matrices
   mat list b
   ereturn repost b=b V=V, resize
@@ -225,7 +225,7 @@ if "`ivreg'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
   // Display difference of subgroup estimates 
   di _newline as result "Difference"
   di as text "_nl_1 = _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff]" _continue
-  if "`ivreg'" == "" nlcom _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff], noheader
+  if "`ivregress'" == "" nlcom _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff], noheader
   else nlcom _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment'], noheader
 }
 
