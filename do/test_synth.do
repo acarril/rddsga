@@ -18,9 +18,7 @@ discard
 use rddsga_synth, clear
 
 // Examples
-rddsga Y Z, balance(X1) sgroup(G) bwidth(10) dibal
-
-
-
-// Test rddsga on data
-*rddsga Y Z, sgroup(G) reduced bw(10) dibalance balance(X1 X2) psweight(weight) quad
+*rddsga Y Z, balance(X1) sgroup(G) bwidth(10) dibal
+*rddsga Y Z, balance(X1 X2) sgroup(G) bwidth(10) ipsweight(ipsw)
+*rddsga Y Z, balance(X1 X2) sgroup(G) bwidth(10) reduced
+rddsga Y Z X1 X2, sgroup(G) bwidth(6) ivreg bsreps(200)
