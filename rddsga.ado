@@ -201,7 +201,7 @@ if "`ivreg'" != "" {
   else epost `sgroup' `treatment'
 }
 
-* Post and display results
+* Post and display balance results
 *-------------------------------------------------------------------------------
 // Post global balance stats
 foreach w in unw ipsw {
@@ -212,16 +212,22 @@ foreach w in unw ipsw {
 // Post balance matrices
 ereturn matrix ipsw ipsw
 ereturn matrix unw unw
-// Post abridged b and V matrices
-ereturn repost b=b V=V, resize
-// Display estimates by subgroup
-di as result "Subgroup estimates"
-ereturn display
-// Display difference of subgroup estimates 
-di _newline as result "Difference"
-di as text "_nl_1 = _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff]" _continue
-if "`ivreg'" == "" nlcom _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff], noheader
-else nlcom _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment'], noheader
+
+* Post and display estimation results
+*-------------------------------------------------------------------------------
+if "`ivreg'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
+  // Post abridged b and V matrices
+  mat list b
+  ereturn repost b=b V=V, resize
+  // Display estimates by subgroup
+  di as result "Subgroup estimates"
+  ereturn display
+  // Display difference of subgroup estimates 
+  di _newline as result "Difference"
+  di as text "_nl_1 = _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff]" _continue
+  if "`ivreg'" == "" nlcom _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff], noheader
+  else nlcom _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment'], noheader
+}
 
 end
 
@@ -479,9 +485,10 @@ end
 
 /* 
 CHANGE LOG
-1.0
+0.9
   - Compute bootstrapped variance-covariance matrix
   - Make program (and subprograms) e-class
+  - Allow issuing no model
 0.8
   - Add synthetic dataset for examples
 0.7 
