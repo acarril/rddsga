@@ -27,6 +27,12 @@ if `fvops' {
   }
 }
 
+// Check that treatment() is specified if ivregress is specified
+if "`ivregress'" != "" & "`treatment'" == "" {
+  di as error "treatment() must be specified with ivregress"
+  exit 198
+}
+
 // ipsweight(): define new propensity score weighting variable or use a tempvar
 if "`ipsweight'" != "" confirm new variable `ipsweight'
 else tempvar ipsweight
