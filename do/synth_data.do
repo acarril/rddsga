@@ -20,7 +20,7 @@ gen Z = rnormal()
 qui summ Z
 replace Z = 200/(r(max)-r(min))*(Z-r(max))+100
 // Create treatment indicator from running variable
-gen T = (Z > 0)
+gen T = (Z + runiform(-1,1) > 0)
 // Generate subgroup indicator
 gen G = round(runiform())
 // Covariates
@@ -53,10 +53,10 @@ lab var G "Subgroup"
 lab var X1 "Covariate 1"
 lab var X2 "Covariate 2"
 // Test rddsga on data
-rddsga Y Z, sgroup(G) reduced bw(10) dibalance balance(X1 X2) psweight(weight) quad
+*rddsga Y Z, sgroup(G) reduced bw(10) dibalance balance(X1 X2) psweight(weight) quad
 
-drop _est_*
+*drop _est_*
 // Save
 saveold rddsga_synth, replace
 // Run plots do-file
-run do/plots
+*run do/plots
