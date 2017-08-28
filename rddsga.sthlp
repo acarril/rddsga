@@ -179,8 +179,9 @@ This balance is computed for each covariate in {it:indepvars}, unless {opt balan
 {pstd}Fit reduced form model{p_end}
 {phang2}{cmd:. rddsga Y Z, balance(X1 X2) sgroup(G) bwidth(10) reduced}{p_end}
 
-{pstd}Estimate treatment effect using instrumental variables regression and 200 bootstrap replications{p_end}
-{phang2}{cmd:. rddsga Y Z X1 X2, sgroup(G) bwidth(6) ivreg bsreps(200)}{p_end}
+{pstd}Estimate treatment effect in fuzzy RDD using instrumental variables regression and 200 bootstrap replications, comparing output without and with IPSW{p_end}
+{phang2}{cmd:. rddsga Y Z X1 X2, sgroup(G) bwidth(6) ivreg bsreps(100) treatment(T) noipsw}{p_end}
+{phang2}{cmd:. rddsga Y Z X1 X2, sgroup(G) bwidth(6) ivreg bsreps(100) treatment(T)}{p_end}
 
 
 {marker results}{...}
