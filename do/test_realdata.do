@@ -27,9 +27,9 @@ rddsga ///
 sh_licitacion dis_cutoff /// outcome a-nd assignvar
 p1 p2 p3 sh_licitacionPRE2 sh_directoPRE1 sh_licitacionPRE1 sh_directoPRE2 size_PRE1 size_PRE2 I_PREaudit i.gpaoXuceXr /// covariates
  , ///
-  reduced  ///
+  ivreg  ///
   ipsweight(peso) pscore(ps_flexmodel4) comsup(comsup) ///
   balance(p1 p2 p3 size_PRE1 size_PRE2 audited dTR1-dTR3 Year2 Year1 Zone1-Zone3) ///
   bwidth(10) sgroup(high_direct) cutoff(0) treatment(I_CURaudit) ///
-  bsreps(50) noipsw
+  bsreps(200)
  
