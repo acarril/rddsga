@@ -1,4 +1,4 @@
-*! 0.9.1 Alvaro Carril 25aug2017
+*! 0.9.1 Alvaro Carril 30aug2017
 program define rddsga, eclass
 version 11.1
 syntax varlist(min=2 numeric fv) [if] [in] , ///
@@ -325,10 +325,8 @@ program myboo, eclass
 *  mata: cumulative = st_matrix("cumulative")
 *  mata: st_matrix("V", variance(cumulative)) // see help mf_mean
   // New computation
-  mat list cumulative
   mata: cumulative = st_matrix("cumulative")
   mata: st_matrix("means", mean(cumulative))
-  mat list means
   matrix means = means'
   matrix U = J(1,`3',1)
   matrix means = means * U 
