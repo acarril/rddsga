@@ -206,6 +206,8 @@ if "`ivregress'" != "" {
   if "`bootstrap'" != "nobootstrap" myboo `sgroup' `treatment' `bsreps'
   // If no bootstrap, trim b and V to show only RD estimates
   else epost `sgroup' `treatment'
+*  mat cumulative = e(cumulative)
+*  ereturn matrix cumulative = cumulative
 }
 
 * Post and display balance results
@@ -310,7 +312,7 @@ program myboo, eclass
   _dots 0, title(Bootstrap replications) reps(`3')
   forvalues i=1/`3' {
     preserve
-    bsample  // sample w/ replacement; default sample size is _N
+    bsample , cluster(gpaoXuceXrk) // sample w/ replacement; default sample size is _N
     qui `e(cmdline)' // use full regression specification left out by reg
     mat this_run = (_b[0.`1'#1.`2'], _b[1.`1'#1.`2'])
     mat cumulative = nullmat(cumulative) \ this_run
@@ -318,12 +320,12 @@ program myboo, eclass
     _dots `i' 0
   }
   di _newline
-
   // Compute variance-covariance matrix 
   /* This procedure was achieved with the variance mata function, but could be 
   computed with cross() or crossdev() mata functions. */
-*  mata: cumulative = st_matrix("cumulative")
-*  mata: st_matrix("V", variance(cumulative)) // see help mf_mean
+  mata: cumulative = st_matrix("cumulative")
+  mata: st_matrix("V", variance(cumulative)) // see help mf_mean
+  /*
   // New computation
   mata: cumulative = st_matrix("cumulative")
   mata: st_matrix("means", mean(cumulative))
@@ -334,6 +336,7 @@ program myboo, eclass
   matrix V = cumulative - means
   matrix V = V*V'
   matrix V = V/`=`3'-1'
+  */
   // Add names
   mat rownames V = 0.`1'#1.`2' 1.`1'#1.`2'
   mat colnames V = 0.`1'#1.`2' 1.`1'#1.`2'
@@ -353,8 +356,11 @@ program myboo, eclass
   ereturn local vcetype "Bootstrap"
   ereturn local vce "bootstrap"
   ereturn local prefix "bootstrap"
+*  ereturn matrix cumulative = cumulative
   // Drop auxiliary matrices 
-  mat drop cumulative means U
+*  cap mat drop cumulative
+*  cap mat drop  means
+*  cap mat drop U 
 end
 
 *-------------------------------------------------------------------------------
