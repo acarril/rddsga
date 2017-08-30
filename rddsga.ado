@@ -1,4 +1,4 @@
-*! 0.9 Alvaro Carril 25aug2017
+*! 0.9.1 Alvaro Carril 25aug2017
 program define rddsga, eclass
 version 11.1
 syntax varlist(min=2 numeric fv) [if] [in] , ///
@@ -318,11 +318,25 @@ program myboo, eclass
     _dots `i' 0
   }
   di _newline
+
   // Compute variance-covariance matrix 
   /* This procedure was achieved with the variance mata function, but could be 
   computed with cross() or crossdev() mata functions. */
+*  mata: cumulative = st_matrix("cumulative")
+*  mata: st_matrix("V", variance(cumulative)) // see help mf_mean
+  // New computation
+  mat list cumulative
   mata: cumulative = st_matrix("cumulative")
-  mata: st_matrix("V", variance(cumulative)) // see help mf_mean
+  mata: st_matrix("means", mean(cumulative))
+  mat list means
+  matrix means = means'
+  matrix U = J(1,`3',1)
+  matrix means = means * U 
+  matrix cumulative = cumulative'
+  matrix V = cumulative - means
+  matrix V = V*V'
+  matrix V = V/`=`3'-1'
+  // Add names
   mat rownames V = 0.`1'#1.`2' 1.`1'#1.`2'
   mat colnames V = 0.`1'#1.`2' 1.`1'#1.`2'
   // Return 
@@ -341,7 +355,8 @@ program myboo, eclass
   ereturn local vcetype "Bootstrap"
   ereturn local vce "bootstrap"
   ereturn local prefix "bootstrap"
-
+  // Drop auxiliary matrices 
+  mat drop cumulative means U
 end
 
 *-------------------------------------------------------------------------------
