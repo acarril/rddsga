@@ -312,7 +312,7 @@ program myboo, eclass
   _dots 0, title(Bootstrap replications) reps(`3')
   forvalues i=1/`3' {
     preserve
-    bsample , cluster(gpaoXuceXrk) // sample w/ replacement; default sample size is _N
+    bsample // sample w/ replacement; default sample size is _N
     qui `e(cmdline)' // use full regression specification left out by reg
     mat this_run = (_b[0.`1'#1.`2'], _b[1.`1'#1.`2'])
     mat cumulative = nullmat(cumulative) \ this_run
