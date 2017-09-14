@@ -231,7 +231,7 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
   di as result "Subgroup estimates"
   ereturn display
   // Display difference of subgroup estimates 
-  di _newline as result "Difference"
+  di _newline as result "Difference estimate"
   if "`ivregress'" == "" {
     di as text "_nl_1 = _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff]" _continue
     nlcom _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff], noheader
@@ -242,7 +242,7 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
     } 
 }
 
-cap drop _cutoff
+*cap drop _cutoff
 end
 
 *===============================================================================
