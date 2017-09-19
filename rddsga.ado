@@ -243,6 +243,18 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
     } 
 }
 
+
+di as text "{hline 13}{c TT}{hline 64}"
+di as text abbrev("`depvar'",12) " {c |} " ///
+  _col(37) "Mean Std. Dev. Min Max"
+di as text "{hline 13}{c +}{hline 64}"
+display as text %12s abbrev("Subgroup 0",12) " {c |}" /*
+*/ as result "   " /*
+*/ %8.0g _b[0.`sgroup'#1._cutoff] " " /*
+*/ %9.0g `mean' " " %9.0g `sd' " " /*
+*/ %9.0g `min' " " %9.0g `max'
+di as text "{hline 13}{c BT}{hline 64}"
+
 cap drop _cutoff
 end
 
