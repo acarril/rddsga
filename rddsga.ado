@@ -242,7 +242,7 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
     } 
 }
 
-*cap drop _cutoff
+cap drop _cutoff
 end
 
 *===============================================================================
