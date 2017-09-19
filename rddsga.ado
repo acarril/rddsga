@@ -1,12 +1,12 @@
-*! 0.9.1 Alvaro Carril 30aug2017
+*! 0.9.2 Alvaro Carril 19sep2017
 program define rddsga, eclass
 version 11.1
 syntax varlist(min=2 numeric fv) [if] [in] , ///
   SGroup(name) BWidth(real) [ Treatment(name) Cutoff(real 0) /// important inputs
-  	ipsweight(name) PSCore(name) COMsup(name) noCOMsupaux /// newvars
+  	IPSWeight(name) PSCore(name) COMsup(name) noCOMsupaux /// newvars
     BALance(varlist numeric) DIBALance probit /// balancepscore opts
     IVregress REDUCEDform FIRSTstage vce(string) QUADratic /// model opts
-    nobootstrap bsreps(real 50) noipsw ] // bootstrap options
+    noBOOTstrap bsreps(real 50) noipsw ] // bootstrap options
 
 *-------------------------------------------------------------------------------
 * Check inputs
@@ -224,6 +224,7 @@ ereturn matrix unw unw
 
 * Post and display estimation results
 *-------------------------------------------------------------------------------
+
 if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
   // Post abridged b and V matrices
   ereturn repost b=b V=V, resize

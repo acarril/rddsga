@@ -39,8 +39,8 @@
 {synopt :{opth vce(vcetype)}}{it:vcetype} may be {opt un:adjusted},
    {opt r:obust}, {opt cl:uster} {it:clustvar}, {opt boot:strap},
    {opt jack:knife}, or {opt hac} {help ivregress##kernel:{it:kernel}}; default is {opt bootstrap}{p_end}
+{synopt :{opt bsr:eps(#)}}perform # bootstrap replications; default is {opt bsreps(50)}{p_end}
 {synopt :{opt noboot:strap}}do not compute bootstrap standard errors for RD estimates{p_end}
-{synopt :{opt r:eps(#)}}perform # bootstrap replications; default is {opt reps(50)}{p_end}
 {synopt :{opt noipsw}}do not use inverse propensity score weighting{p_end}
 
 {syntab :Reporting and Output}
@@ -142,7 +142,7 @@ Bootstrap is used by default, unless {opt nobootstrap} is used (see below), or a
 {opt nobootstrap} prevents computing bootstrap standard errors, which is the default.
 
 {phang}
-{opt reps(#)} perform # bootstrap replications; default is {opt reps(50)}.
+{opt bsreps(#)} perform # bootstrap replications; default is {opt bsreps(50)}.
 
 {phang}
 {opt noipsw} prevents employing inverse propensity score weighting for the estimations.
