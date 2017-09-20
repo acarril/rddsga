@@ -232,35 +232,19 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
   // Post abridged b and V matrices
   ereturn repost b=b V=V, resize
   // Display estimates by subgroup
-  di as result "Subgroup estimates"
-  ereturn display
+*  di as result "Subgroup estimates"
+*  ereturn display
   // Display difference of subgroup estimates 
-  di _newline as result "Difference estimate"
+*  di _newline as result "Difference estimate"
   if "`ivregress'" == "" {
-    di as text "_nl_1 = _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff]" _continue
-    nlcom _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff], noheader
+*    di as text "_nl_1 = _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff]" _continue
+    qui nlcom _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff], noheader
   }
   else {
-    di as text "_nl_1 = _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment']" _continue
-    nlcom _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment'], noheader
+*    di as text "_nl_1 = _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment']" _continue
+    qui nlcom _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment'], noheader
     } 
 }
-
-* Compute and store difference estimates 
-*-------------------------------------------------------------------------------
-// Coefficient
-matrix diff_b = r(b)
-scalar diff = diff_b[1,1]
-// Standard error
-matrix diff_V = r(V)
-scalar diff_se = sqrt(diff_V[1,1])
-// t-stat 
-scalar t = diff/diff_se
-// P>|t|
-scalar P_t = ttail(r(df_r), abs(t))*2
-// Confidence interval
-scalar ci_ub = diff + invttail(r(df_r), 0.025)*diff_se
-scalar ci_lb = diff + invttail(r(df_r), 0.975)*diff_se
 
 * Compute and store subgroup estimates 
 *-------------------------------------------------------------------------------
@@ -279,6 +263,22 @@ forvalues g=0/1 {
   scalar ci_ub`g' = b`g' + invttail(e(df_r), 0.025)*se`g'
   scalar ci_lb`g' = b`g' + invttail(e(df_r), 0.975)*se`g'
 }
+
+* Compute and store difference estimates 
+*-------------------------------------------------------------------------------
+// Coefficient
+matrix diff_b = r(b)
+scalar diff = diff_b[1,1]
+// Standard error
+matrix diff_V = r(V)
+scalar diff_se = sqrt(diff_V[1,1])
+// t-stat 
+scalar t = diff/diff_se
+// P>|t|
+scalar P_t = ttail(r(df_r), abs(t))*2
+// Confidence interval
+scalar ci_ub = diff + invttail(r(df_r), 0.025)*diff_se
+scalar ci_lb = diff + invttail(r(df_r), 0.975)*diff_se
 
 * Display estimation results (manual table)
 *-------------------------------------------------------------------------------
