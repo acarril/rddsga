@@ -224,7 +224,6 @@ ereturn matrix unw unw
 
 * Post and display estimation results
 *-------------------------------------------------------------------------------
-
 if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
   // Post abridged b and V matrices
   ereturn repost b=b V=V, resize
@@ -243,21 +242,46 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
     } 
 }
 
+// Store estimates
+matrix diff_b = r(b)
+scalar diff = diff_b[1,1]
+matrix diff_V = r(V)
+
+* Display estimation results (manual table)
+*-------------------------------------------------------------------------------
 di as text "{hline 13}{c TT}{hline 64}"
-di as text abbrev("`depvar'",12) " {c |}" ///
+di as text %12s abbrev("`depvar'",12) " {c |}" ///
   _col(15) "{ralign 11:Coef.}" ///
   _col(26) "{ralign 12:Std. Err.}" ///
   _col(38) "{ralign 8:t }" ///
-  _col(46) "{ralign 8: P>|t|}" ///
-  _col(54) "{ralign 25: [95% Conf. Interval]}" 
+  _col(46) "{ralign 8:P>|t|}" ///
+  _col(54) "{ralign 25:[95% Conf. Interval]}" 
 di as text "{hline 13}{c +}{hline 64}"
-display as text %12s abbrev("Subgroup 0",12) " {c |}" /*
-*/ as result "   " /*
-*/ %8.0g _b[0.`sgroup'#1._cutoff] " " /*
-*/ %9.0g `mean' " " %9.0g `sd' " " /*
-*/ %9.0g `min' " " %9.0g `max'
+di as text "Subgroup" _col(14) "{c |}"
+forvalues g = 0/1 {
+  display as text %12s abbrev("`g'",12) " {c |}" ///
+    as result ///
+    "  " %9.0g _b[`g'.`sgroup'#1._cutoff] ///
+    "  " %9.0g .0331039 ///
+    "    " %3.2f -2.57 ///
+    "   " %4.3f 0.944 ///
+    "    " %9.0g -.0626609 ///
+    "   " %9.0g .067295
+}
+di as text "{hline 13}{c +}{hline 64}"
+display as text "        diff {c |}" ///
+  as result ///
+  "  " %9.0g diff ///
+  "  " %9.0g .0331039 ///
+  "    " %3.2f -2.57 ///
+  "   " %4.3f 0.944 ///
+  "    " %9.0g -.0626609 ///
+  "   " %9.0g .067295
+
 di as text "{hline 13}{c BT}{hline 64}"
 
+* End
+*-------------------------------------------------------------------------------
 cap drop _cutoff
 end
 
