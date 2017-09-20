@@ -222,6 +222,10 @@ foreach w in unw ipsw {
 ereturn matrix ipsw ipsw
 ereturn matrix unw unw
 
+*-------------------------------------------------------------------------------
+* Results
+*-------------------------------------------------------------------------------
+
 * Post and display estimation results
 *-------------------------------------------------------------------------------
 if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
@@ -242,10 +246,40 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
     } 
 }
 
-// Store estimates
+* Compute and store difference estimates 
+*-------------------------------------------------------------------------------
+// Coefficient
 matrix diff_b = r(b)
 scalar diff = diff_b[1,1]
+// Standard error
 matrix diff_V = r(V)
+scalar diff_se = sqrt(diff_V[1,1])
+// t-stat 
+scalar t = diff/diff_se
+// P>|t|
+scalar P_t = ttail(r(df_r), abs(t))*2
+// Confidence interval
+scalar ci_ub = diff + invttail(r(df_r), 0.025)*diff_se
+scalar ci_lb = diff + invttail(r(df_r), 0.975)*diff_se
+
+* Compute and store subgroup estimates 
+*-------------------------------------------------------------------------------
+forvalues g=0/1 {
+  // Coefficient
+  matrix e_b = e(b)
+  scalar b`g' = e_b[1,`=`g'+1']
+  // Standard error
+  matrix e_V = e(V)
+  scalar se`g' = sqrt(e_V[`=`g'+1',`=`g'+1'])
+  // t-stat 
+  scalar t`g' = b`g'/se`g'
+  // P>|t|
+  scalar P_t`g' = ttail(e(df_r), abs(t`g'))*2
+  // Confidence interval
+  scalar ci_ub`g' = b`g' + invttail(e(df_r), 0.025)*se`g'
+  scalar ci_lb`g' = b`g' + invttail(e(df_r), 0.975)*se`g'
+}
+
 
 * Display estimation results (manual table)
 *-------------------------------------------------------------------------------
@@ -261,22 +295,22 @@ di as text "Subgroup" _col(14) "{c |}"
 forvalues g = 0/1 {
   display as text %12s abbrev("`g'",12) " {c |}" ///
     as result ///
-    "  " %9.0g _b[`g'.`sgroup'#1._cutoff] ///
-    "  " %9.0g .0331039 ///
-    "    " %3.2f -2.57 ///
-    "   " %4.3f 0.944 ///
-    "    " %9.0g -.0626609 ///
-    "   " %9.0g .067295
+    "  " %9.0g b`g' ///
+    "  " %9.0g se`g' ///
+    "    " %5.2f t`g' ///
+    "   " %5.3f P_t`g' ///
+    "    " %9.0g ci_lb`g' ///
+    "   " %9.0g ci_ub`g'
 }
 di as text "{hline 13}{c +}{hline 64}"
 display as text "        diff {c |}" ///
   as result ///
   "  " %9.0g diff ///
-  "  " %9.0g .0331039 ///
-  "    " %3.2f -2.57 ///
-  "   " %4.3f 0.944 ///
-  "    " %9.0g -.0626609 ///
-  "   " %9.0g .067295
+  "  " %9.0g diff_se ///
+  "    " %5.2f t ///
+  "   " %5.3f P_t ///
+  "    " %9.0g ci_lb ///
+  "   " %9.0g ci_ub
 
 di as text "{hline 13}{c BT}{hline 64}"
 
