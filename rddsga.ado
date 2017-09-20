@@ -280,14 +280,13 @@ forvalues g=0/1 {
   scalar ci_lb`g' = b`g' + invttail(e(df_r), 0.975)*se`g'
 }
 
-
 * Display estimation results (manual table)
 *-------------------------------------------------------------------------------
 di as text "{hline 13}{c TT}{hline 64}"
 di as text %12s abbrev("`depvar'",12) " {c |}" ///
   _col(15) "{ralign 11:Coef.}" ///
   _col(26) "{ralign 12:Std. Err.}" ///
-  _col(38) "{ralign 8:t }" ///
+  _col(38) "{ralign 8:t }" /// notice extra space
   _col(46) "{ralign 8:P>|t|}" ///
   _col(54) "{ralign 25:[95% Conf. Interval]}" 
 di as text "{hline 13}{c +}{hline 64}"
@@ -303,7 +302,7 @@ forvalues g = 0/1 {
     "   " %9.0g ci_ub`g'
 }
 di as text "{hline 13}{c +}{hline 64}"
-display as text "        diff {c |}" ///
+display as text "Difference   {c |}" ///
   as result ///
   "  " %9.0g diff ///
   "  " %9.0g diff_se ///
@@ -311,7 +310,6 @@ display as text "        diff {c |}" ///
   "   " %5.3f P_t ///
   "    " %9.0g ci_lb ///
   "   " %9.0g ci_ub
-
 di as text "{hline 13}{c BT}{hline 64}"
 
 * End
