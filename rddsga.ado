@@ -243,10 +243,13 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
     } 
 }
 
-
 di as text "{hline 13}{c TT}{hline 64}"
-di as text abbrev("`depvar'",12) " {c |} " ///
-  _col(37) "Mean Std. Dev. Min Max"
+di as text abbrev("`depvar'",12) " {c |}" ///
+  _col(15) "{ralign 11:Coef.}" ///
+  _col(26) "{ralign 12:Std. Err.}" ///
+  _col(38) "{ralign 8:t }" ///
+  _col(46) "{ralign 8: P>|t|}" ///
+  _col(54) "{ralign 25: [95% Conf. Interval]}" 
 di as text "{hline 13}{c +}{hline 64}"
 display as text %12s abbrev("Subgroup 0",12) " {c |}" /*
 */ as result "   " /*
