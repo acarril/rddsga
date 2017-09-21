@@ -52,6 +52,11 @@ if `: list sizeof varlist'<=2 & `: list sizeof balance'==0 {
   exit 198
 }
 
+// Issue warning if options bsreps and normal are specified along with nobootstrap
+if "`bootstrap'" == "nobootstrap" & (`bsreps' != 50 | "`normal'" != "") {
+  di as text "Warning: options " as result "bsreps" as text " and " as result "normal" ///
+    as text " are irrelevant if " as result "nobootstrap" as text " is specified"
+}
 
 *-------------------------------------------------------------------------------
 * Process inputs
