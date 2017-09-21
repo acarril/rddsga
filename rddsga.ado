@@ -237,12 +237,12 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
   // Display difference of subgroup estimates 
 *  di _newline as result "Difference estimate"
   if "`ivregress'" == "" {
-*    di as text "_nl_1 = _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff]" _continue
-    nlcom _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff], noheader
+*   di as text "_nl_1 = _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff]" _continue
+    qui nlcom _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff], noheader
   }
   else {
-*    di as text "_nl_1 = _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment']" _continue
-    nlcom _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment'], noheader
+*   di as text "_nl_1 = _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment']" _continue
+    qui nlcom _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment'], noheader
     } 
 
   * Compute and store subgroup estimates 
