@@ -40,6 +40,7 @@
    {opt r:obust}, {opt cl:uster} {it:clustvar}, {opt boot:strap},
    {opt jack:knife}, or {opt hac} {help ivregress##kernel:{it:kernel}}; default is {opt bootstrap}{p_end}
 {synopt :{opt bsr:eps(#)}}perform # bootstrap replications; default is {opt bsreps(50)}{p_end}
+{synopt :{opt norm:al}}compute and report normal approximation p-values and CIs; default is percentile{p_end}
 {synopt :{opt noboot:strap}}do not compute bootstrap standard errors for RD estimates{p_end}
 {synopt :{opt noipsw}}do not use inverse propensity score weighting{p_end}
 
@@ -138,11 +139,28 @@ See {help ivregress} for additional information.
 {it:vcetype} may be unadjusted, robust, cluster clustvar, bootstrap, jackknife, or hac kernel (see {help  vce_option}).
 Bootstrap is used by default, unless {opt nobootstrap} is used (see below), or a different {it:vcetype} is specified.
 
-{phang}
-{opt nobootstrap} prevents computing bootstrap standard errors, which is the default.
+{pmore}
+{cmd:rddsga} computes the bootstrap estimate of the variance-covariance matrix by taking a random sample (with replacement) of size {it:N} from the observations and computing the estimate as usual.
+This process is repeated the number of times specied in {opt bsreps(#)} (see below), which yields a bootstrap distribution of estimates.
+See {it:Methods and formulas} in {manlink R bootstrap} for further details.
+
+{pmore}
+Confidence intervals and p-values are estimated using the percentile method by default. See the {opt normal} option below for further details and other options.
 
 {phang}
 {opt bsreps(#)} perform # bootstrap replications; default is {opt bsreps(50)}.
+
+{phang}
+{opt normal} computes and report normal-based p-values and confidence intervals.
+By default {cmd:rddsga} uses the so-called percentile method, which means we compute the empirical p-value, i.e. the proportion of bootstrap estimates further in the tails than the (absolute value of the) original estimate.
+The percentile method yields nonparametric confidence intervals that correspond to the {it:p}th quantile of the bootstrap distribution.
+See {it:Methods and formulas} in {manlink R bootstrap} for further details.
+
+{pmore}
+If {opt normal} is specified, p-values are obtained using the normality assumption, which yields confidence intervals that correspond to the {it:p}th quantile of the standard normal distribution.
+
+{phang}
+{opt nobootstrap} prevents computing bootstrap standard errors, which is the default.
 
 {phang}
 {opt noipsw} prevents employing inverse propensity score weighting for the estimations.
