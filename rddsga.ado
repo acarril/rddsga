@@ -6,7 +6,7 @@ syntax varlist(min=2 numeric fv) [if] [in] , ///
   	IPSWeight(name) PSCore(name) COMsup(name) noCOMsupaux /// newvars
     BALance(varlist numeric) DIBALance probit /// balancepscore opts
     IVregress REDUCEDform FIRSTstage vce(string) QUADratic /// model opts
-    noBOOTstrap bsreps(real 50) noipsw ] // bootstrap options
+    noBOOTstrap bsreps(real 50) NORMal noipsw  ] // bootstrap options
 
 *-------------------------------------------------------------------------------
 * Check inputs
