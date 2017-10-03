@@ -263,9 +263,11 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
     matrix e_V = e(V)
     scalar se`g' = sqrt(e_V[`=`g'+1',`=`g'+1'])
     // t-stat 
-    scalar t`g' = b`g'/se`g'
+*    scalar t`g' = b`g'/se`g'
+    scalar t`g' = 0
     // P>|t|
-    scalar P_t`g' = ttail(df, abs(t`g'))*2
+*    scalar P_t`g' = ttail(df, abs(t`g'))*2
+    scalar pval`g' = e(pval`g')
     // Confidence interval
     scalar ci_ub`g' = b`g' + invttail(df, 0.025)*se`g'
     scalar ci_lb`g' = b`g' + invttail(df, 0.975)*se`g'
@@ -282,7 +284,7 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
   // t-stat 
   scalar t = diff/diff_se
   // P>|t|
-  scalar P_t = ttail(r(df_r), abs(t))*2
+  scalar pval_diff = ttail(r(df_r), abs(t))*2
   // Confidence interval
   scalar ci_ub = diff + invttail(r(df_r), 0.025)*diff_se
   scalar ci_lb = diff + invttail(r(df_r), 0.975)*diff_se
@@ -294,7 +296,7 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
     _col(15) "{ralign 11:Coef.}" ///
     _col(26) "{ralign 12:Std. Err.}" ///
     _col(38) "{ralign 8:t }" /// notice extra space
-    _col(46) "{ralign 8:P>|t|}" ///
+    _col(46) "{ralign 8:P}" ///
     _col(54) "{ralign 25:[95% Conf. Interval]}" 
   di as text "{hline 13}{c +}{hline 64}"
   di as text "Subgroup" _col(14) "{c |}"
@@ -304,7 +306,7 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
       "  " %9.0g b`g' ///
       "  " %9.0g se`g' ///
       "    " %5.2f t`g' ///
-      "   " %5.3f P_t`g' ///
+      "   " %5.3f pval`g' ///
       "    " %9.0g ci_lb`g' ///
       "   " %9.0g ci_ub`g'
   }
@@ -314,7 +316,7 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
     "  " %9.0g diff ///
     "  " %9.0g diff_se ///
     "    " %5.2f t ///
-    "   " %5.3f P_t ///
+    "   " %5.3f pval_diff ///
     "    " %9.0g ci_lb ///
     "   " %9.0g ci_ub
   di as text "{hline 13}{c BT}{hline 64}"
