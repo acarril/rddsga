@@ -1,0 +1,24 @@
+\documentclass{article}
+
+\begin{document}
+\subsubsection*{Bootstrap estimate of standard errors}
+
+We use nonparametric bootstrap to estimate standard errors for subgroup estimates. Let $W_1,\ldots, W_n$ be the observed values in the data. We take a random sample of size $n$ from this data, with replacement. Denote this bootstrap sample by $W_{b1},\ldots, W_{bn}$. We now compute our estimates using the bootstrap sample:
+\begin{equation}
+  \hat \theta_b^* = g(w_{b1},\ldots, w_{bn}),
+\end{equation}
+where $b=1,\ldots,B$ denotes the bootstrap samples and $\hat\theta_b^*$ is the $b$th set of parameters for each subgroup.
+This leads to a collection of $B$ bootstrap estimates, $\hat\theta_{1}^*,\ldots,\hat\theta_{B}^*$. The bootstrap covariance matrix is
+\begin{equation}
+S_B = \frac{\sum_b (\hat\theta_b^* - \hat{\bar\theta}^*) (\hat\theta_b^* - \hat{\bar\theta}^*)'}{B-1},
+\end{equation}
+where $\hat{\bar\theta}^* = \sum_b \hat\theta_b^*/n$. $S_B$ is the bootstrap estimate of $Cov(\hat\theta)$, the covariance matrix of $\hat\theta$.
+
+Confidence intervals and p-values are obtained by using the so-called percentile method, which is a nonparametric.
+Reported p-values are based on the empirical distribution of bootstrap estimates, that is, the proportion of estimates that lie further in the tails than the actual estimate. This method yields the confidence interval
+\begin{equation}
+[\theta^*_{\alpha/2}, \theta^*_{1-\alpha/2}],
+\end{equation}
+where $\theta^*_p$ it the $p$th quantile (i.e. the 100$p$th percentile) of the bootstrap distribution $(\hat\theta_{1}^*,\ldots,\hat\theta_{B}^*)$.
+
+\end{document}
