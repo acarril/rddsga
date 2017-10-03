@@ -429,8 +429,6 @@ program myboo, eclass
   ereturn scalar N_reps = `3'
   ereturn scalar level = 95
   //pvalue 
-  mat list cumulative
-  mat list b 
   forvalues g = 0/1 {
     local count = 0
     forvalues i = 1/`= rowsof(cumulative)' {
