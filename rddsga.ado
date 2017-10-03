@@ -441,6 +441,17 @@ program myboo, eclass
     ereturn scalar pval`g' = pval`g'
   }
 
+  // confidence intervals
+  svmat cumulative, names(_subgroup)
+  forvalues g = 0/1 {
+    qui centile _subgroup`=`g'+1', centile(2.5 97.5)
+    drop _subgroup`=`g'+1'
+    scalar lb_g`g' = r(c_1)
+    ereturn scalar lb_g`g' = lb_g`g'
+    scalar ub_g`g' = r(c_2)
+    ereturn scalar ub_g`g' = ub_g`g'
+  }
+  
   // Post results: macros
   foreach macro of local macros {
     if "`macro'" == "clustvar" continue // skip this macro as it doesn't apply
