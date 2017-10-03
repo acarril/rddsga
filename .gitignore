@@ -7,3 +7,10 @@ data/midRiskRDDdataset.dta
 data/procurement_test2.dta
 data/procurement_test3.dta
 *.gph
+
+## Latex shit
+*.log
+*.aux
+*.fdb_latexmk
+*.fls 
+*.synctex.gz
