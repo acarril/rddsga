@@ -208,7 +208,7 @@ if "`ivregress'" != "" {
     (i.`sgroup'#1.`treatment' = i.`sgroup'#1._cutoff) ///
     `weight' if `touse' & `bwidth', vce(`vce')
   // Compute bootstrapped variance-covariance matrix and post results
-  if "`bootstrap'" != "nobootstrap" myboo `sgroup' `treatment' `bsreps'
+  if "`bootstrap'" != "nobootstrap" myboo `sgroup' `treatment' `bsreps' 
   // If no bootstrap, trim b and V to show only RD estimates
   else epost `sgroup' `treatment'
 *  mat cumulative = e(cumulative)
@@ -428,6 +428,19 @@ program myboo, eclass
   }
   ereturn scalar N_reps = `3'
   ereturn scalar level = 95
+  //pvalue 
+  mat list cumulative
+  mat list b 
+  forvalues g = 0/1 {
+    local count = 0
+    forvalues i = 1/`= rowsof(cumulative)' {
+      scalar bscoef = cumulative[`i',`=`g'+1']
+      if abs(bscoef) >= abs(b[1,`=`g'+1']) local count = `count'+1
+    }
+    scalar pval`g' = (1+`count') / (`3' + 1)
+    ereturn scalar pval`g' = pval`g'
+  }
+
   // Post results: macros
   foreach macro of local macros {
     if "`macro'" == "clustvar" continue // skip this macro as it doesn't apply
