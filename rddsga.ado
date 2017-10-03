@@ -269,8 +269,10 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
 *    scalar P_t`g' = ttail(df, abs(t`g'))*2
     scalar pval`g' = e(pval`g')
     // Confidence interval
-    scalar ci_ub`g' = b`g' + invttail(df, 0.025)*se`g'
-    scalar ci_lb`g' = b`g' + invttail(df, 0.975)*se`g'
+    *scalar ci_ub`g' = b`g' + invttail(df, 0.025)*se`g'
+    *scalar ci_lb`g' = b`g' + invttail(df, 0.975)*se`g'
+    scalar ci_ub`g' = e(ub_g`g')
+    scalar ci_lb`g' = e(lb_g`g')
   }
 
   * Compute and store difference estimates 
