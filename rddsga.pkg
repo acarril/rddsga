@@ -1,4 +1,4 @@
-v 0.9.1
+v 0.9.3
 d 'RDDSGA': Subgroup analysis for regression discontinuity designs using inverse 
 d  propensity score weighting
 d
@@ -16,7 +16,7 @@ d KW: Subgroup analysis
 d 
 d Requires: Stata version 11 
 d
-d Distribution-Date: 20170825
+d Distribution-Date: 20171019
 d
 d Authors: Alvaro Carril, J-PAL LAC
 d          Andre Cazor, J-PAL LAC

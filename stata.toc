@@ -1,3 +1,3 @@
-v 0.9.1
+v 0.9.3
 d Alvaro Carril, J-PAL LAC
 p rddsga Subgroup analysis for regression discontinuity designs using inverse propensity score weighting
