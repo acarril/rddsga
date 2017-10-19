@@ -19,5 +19,6 @@ net get rddsga
 If you have installed the program and want to update it, be sure to `net install` and `net get` using options `replace force`.
 
 # Help
+
 Refer to the included help file for details regarding usage.
 For additional details regarding the methodology refer to the [project wiki](https://gitlab.com/acarril/rddsga/wikis/home).
