@@ -390,16 +390,17 @@ program myboo, eclass
   // Extract b submatrix with subgroup coefficients
   matrix b = e(b)
   matrix b = b[1, "0.`1'#1.`2'".."1.`1'#1.`2'"]
-  mat colnames b = 0.`1'#1.`2' 1.`1'#1.`2'
+  matrix colnames b = 0.`1'#1.`2' 1.`1'#1.`2'
   // Start bootstrap 
-  di ""
+  di "" // empty line on purpose
   _dots 0, title(Bootstrap replications) reps(`3')
   forvalues i=1/`3' {
     preserve
     bsample // sample w/ replacement; default sample size is _N
     qui `e(cmdline)' // use full regression specification left out by reg
-    mat this_run = (_b[0.`1'#1.`2'], _b[1.`1'#1.`2'])
-    mat cumulative = nullmat(cumulative) \ this_run
+    tempname this_run
+    mat `this_run' = (_b[0.`1'#1.`2'], _b[1.`1'#1.`2'])
+    mat cumulative = nullmat(cumulative) \ `this_run'
     restore
     _dots `i' 0
   }
