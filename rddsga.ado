@@ -394,6 +394,7 @@ program myboo, eclass
   // Start bootstrap 
   di "" // empty line on purpose
   _dots 0, title(Bootstrap replications) reps(`3')
+  cap mat drop cumulative // more elegant solution?
   forvalues i=1/`3' {
     preserve
     bsample // sample w/ replacement; default sample size is _N
@@ -408,6 +409,7 @@ program myboo, eclass
   // Compute variance-covariance matrix 
   /* This procedure was achieved with the variance mata function, but could be 
   computed with cross() or crossdev() mata functions. */
+  cap mat drop V
   mata: cumulative = st_matrix("cumulative")
   mata: st_matrix("V", variance(cumulative)) // see help mf_mean
   /*
@@ -434,13 +436,17 @@ program myboo, eclass
   ereturn scalar N_reps = `3'
   ereturn scalar level = 95
   //pvalue 
+  cap scalar drop bscoef
+*  mat list cumulative
+*  mat list b
   forvalues g = 0/1 {
     local count = 0
-    forvalues i = 1/`= rowsof(cumulative)' {
+    forvalues i = 1/`3' {
       scalar bscoef = cumulative[`i',`=`g'+1']
       if abs(bscoef) >= abs(b[1,`=`g'+1']) local count = `count'+1
     }
     scalar pval`g' = (1+`count') / (`3' + 1)
+    di "pval`g' = (1+`count') / (`3' + 1)"
     ereturn scalar pval`g' = pval`g'
   }
 

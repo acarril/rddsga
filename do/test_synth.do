@@ -19,9 +19,9 @@ discard
 use rddsga_synth, clear
 
 // Examples
-/*
+
 rddsga Y X, balance(W1) sgroup(G) bwidth(10) dibal
 rddsga Y X, balance(W1 W2) sgroup(G) bwidth(10) ipsweight(ipsw)
 rddsga Y X, balance(W1 W2) sgroup(G) bwidth(10) reduced
-rddsga Y X W1 W2, sgroup(G) bwidth(6) ivreg bsreps(100) treatment(D) noipsw */
+rddsga Y X W1 W2, sgroup(G) bwidth(6) ivreg bsreps(100) treatment(D) noipsw
 rddsga Y X W1 W2, sgroup(G) bwidth(6) ivreg bsreps(100) treatment(D)
