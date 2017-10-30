@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 0.9.3 Oct 2017}{...}
+{* *! version 1.0.0 Oct 2017}{...}
 {title:Title}
 
 {pstd}
