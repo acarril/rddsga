@@ -273,6 +273,5 @@ All remaining errors are our own.
 {title:References}
 
 {marker mainpaper}{...}
-{phang}Gerardino, Maria Paula, Stephan Litschig, Benjamin Olken, and Dina Pomeranz. 2017.
-"Can Audits Backfire? Evidence from Public Procurement in Chile".
-{it:Working Paper}.
+{phang}Gerardino, Maria Paula, Stephan Litschig, and Dina Pomeranz. "Can Audits Backfire? Evidence from Public Procurement in Chile." Working Paper. National Bureau of Economic Research, October 2017. {browse "http://www.nber.org/papers/w23978"}.
+
