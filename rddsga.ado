@@ -307,7 +307,6 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
       as result ///
       "  " %9.0g b`g' ///
       "  " %9.0g se`g' ///
-*      "       .  " /// t`g'
       "    " %5.2f t`g' ///
       "   " %5.3f pval`g' ///
       "    " %9.0g ci_lb`g' ///
