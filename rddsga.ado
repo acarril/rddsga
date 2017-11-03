@@ -243,11 +243,11 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
 *  di _newline as result "Difference estimate"
   if "`ivregress'" == "" {
 *   di as text "_nl_1 = _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff]" _continue
-    qui nlcom _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff], noheader
+    qui nlcom _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff]
   }
   else {
 *   di as text "_nl_1 = _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment']" _continue
-    qui nlcom _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment'], noheader
+    qui nlcom _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment']
   } 
 
   * Compute and store subgroup estimates 
@@ -265,12 +265,12 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
     scalar se`g' = sqrt(e_V[`=`g'+1',`=`g'+1'])
     // t-stat 
     scalar t`g' = b`g'/se`g'
-    // P>|t|
-*    scalar P_t`g' = ttail(df, abs(t`g'))*2
+    // P-value
+    scalar norm_pval`g' = ttail(df, abs(t`g'))*2
     scalar pval`g' = e(pval`g')
     // Confidence interval
-    *scalar ci_ub`g' = b`g' + invttail(df, 0.025)*se`g'
-    *scalar ci_lb`g' = b`g' + invttail(df, 0.975)*se`g'
+    scalar norm_ci_ub`g' = b`g' + invttail(df, 0.025)*se`g'
+    scalar norm_ci_lb`g' = b`g' + invttail(df, 0.975)*se`g'
     scalar ci_ub`g' = e(ub_g`g')
     scalar ci_lb`g' = e(lb_g`g')
   }
@@ -291,37 +291,74 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
   scalar ci_ub = diff + invttail(r(df_r), 0.025)*diff_se
   scalar ci_lb = diff + invttail(r(df_r), 0.975)*diff_se
 
-  * Display estimation results (manual table)
+  * Display estimation results
   *-------------------------------------------------------------------------------
-  di as text "{hline 13}{c TT}{hline 64}"
-  di as text %12s abbrev("`depvar'",12) " {c |}" ///
-    _col(15) "{ralign 11:Coef.}" ///
-    _col(26) "{ralign 12:Std. Err.}" ///
-    _col(38) "{ralign 8:t }" /// notice extra space
-    _col(46) "{ralign 8:P}" ///
-    _col(54) "{ralign 25:[95% Conf. Interval]}" 
-  di as text "{hline 13}{c +}{hline 64}"
-  di as text "Subgroup" _col(14) "{c |}"
-  forvalues g = 0/1 {
-    display as text %12s abbrev("`g'",12) " {c |}" ///
+  // Normal based
+  if "`normal'" != "" {
+    di "NORMAL"
+    di as text "{hline 13}{c TT}{hline 64}"
+    di as text %12s abbrev("`depvar'",12) " {c |}" ///
+      _col(15) "{ralign 11:Coef.}" ///
+      _col(26) "{ralign 12:Std. Err.}" ///
+      _col(38) "{ralign 8:t }" /// notice extra space
+      _col(46) "{ralign 8:P}" ///
+      _col(54) "{ralign 25:[95% Conf. Interval]}" 
+    di as text "{hline 13}{c +}{hline 64}"
+    di as text "Subgroup" _col(14) "{c |}"
+    forvalues g = 0/1 {
+      display as text %12s abbrev("`g'",12) " {c |}" ///
+        as result ///
+        "  " %9.0g b`g' ///
+        "  " %9.0g se`g' ///
+        "    " %5.2f t`g' ///
+        "   " %5.3f norm_pval`g' ///
+        "    " %9.0g norm_ci_lb`g' ///
+        "   " %9.0g norm_ci_ub`g'
+    }
+    di as text "{hline 13}{c +}{hline 64}"
+    display as text "Difference   {c |}" ///
       as result ///
-      "  " %9.0g b`g' ///
-      "  " %9.0g se`g' ///
-      "    " %5.2f t`g' ///
-      "   " %5.3f pval`g' ///
-      "    " %9.0g ci_lb`g' ///
-      "   " %9.0g ci_ub`g'
+      "  " %9.0g diff ///
+      "  " %9.0g diff_se ///
+      "    " %5.2f t ///
+      "   " %5.3f pval_diff ///
+      "    " %9.0g ci_lb ///
+      "   " %9.0g ci_ub
+    di as text "{hline 13}{c BT}{hline 64}"
   }
-  di as text "{hline 13}{c +}{hline 64}"
-  display as text "Difference   {c |}" ///
-    as result ///
-    "  " %9.0g diff ///
-    "  " %9.0g diff_se ///
-    "    " %5.2f t ///
-    "   " %5.3f pval_diff ///
-    "    " %9.0g ci_lb ///
-    "   " %9.0g ci_ub
-  di as text "{hline 13}{c BT}{hline 64}"
+  // Empirical 
+*  else {
+    di "EMPIRICAL"
+    di as text "{hline 13}{c TT}{hline 64}"
+    di as text %12s abbrev("`depvar'",12) " {c |}" ///
+      _col(15) "{ralign 11:Coef.}" ///
+      _col(26) "{ralign 12:Std. Err.}" ///
+      _col(38) "{ralign 8:t }" /// notice extra space
+      _col(46) "{ralign 8:P}" ///
+      _col(54) "{ralign 25:[95% Conf. Interval]}" 
+    di as text "{hline 13}{c +}{hline 64}"
+    di as text "Subgroup" _col(14) "{c |}"
+    forvalues g = 0/1 {
+      display as text %12s abbrev("`g'",12) " {c |}" ///
+        as result ///
+        "  " %9.0g b`g' ///
+        "  " %9.0g se`g' ///
+        "    " %5.2f t`g' ///
+        "   " %5.3f pval`g' ///
+        "    " %9.0g ci_lb`g' ///
+        "   " %9.0g ci_ub`g'
+    }
+    di as text "{hline 13}{c +}{hline 64}"
+    display as text "Difference   {c |}" ///
+      as result ///
+      "  " %9.0g diff ///
+      "  " %9.0g diff_se ///
+      "    " %5.2f t ///
+      "   " %5.3f pval_diff ///
+      "    " %9.0g ci_lb ///
+      "   " %9.0g ci_ub
+    di as text "{hline 13}{c BT}{hline 64}"
+*  }
 }
 
 * End
@@ -424,7 +461,7 @@ program myboo, eclass
   matrix V = V*V'
   matrix V = V/`=`3'-1'
   */
-  // Add names
+  // Add names to rows and columns of V 
   mat rownames V = 0.`1'#1.`2' 1.`1'#1.`2'
   mat colnames V = 0.`1'#1.`2' 1.`1'#1.`2'
   // Return 
@@ -435,22 +472,19 @@ program myboo, eclass
   }
   ereturn scalar N_reps = `3'
   ereturn scalar level = 95
-  //pvalue 
+  // Empirical p-values 
   cap scalar drop bscoef
-*  mat list cumulative
-*  mat list b
   forvalues g = 0/1 {
-    local count = 0
+    local count = 0 // reset count for second subgroup 
     forvalues i = 1/`3' {
       scalar bscoef = cumulative[`i',`=`g'+1']
       if abs(bscoef) >= abs(b[1,`=`g'+1']) local count = `count'+1
     }
     scalar pval`g' = (1+`count') / (`3' + 1)
-    di "pval`g' = (1+`count') / (`3' + 1)"
+*    di "pval`g' = (1+`count') / (`3' + 1)"
     ereturn scalar pval`g' = pval`g'
   }
-
-  // confidence intervals
+  // Empirical confidence intervals
   svmat cumulative, names(_subgroup)
   forvalues g = 0/1 {
     qui centile _subgroup`=`g'+1', centile(2.5 97.5)
