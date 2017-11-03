@@ -264,8 +264,7 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
     matrix e_V = e(V)
     scalar se`g' = sqrt(e_V[`=`g'+1',`=`g'+1'])
     // t-stat 
-*    scalar t`g' = b`g'/se`g'
-    scalar t`g' = 0
+    scalar t`g' = b`g'/se`g'
     // P>|t|
 *    scalar P_t`g' = ttail(df, abs(t`g'))*2
     scalar pval`g' = e(pval`g')
@@ -308,7 +307,8 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
       as result ///
       "  " %9.0g b`g' ///
       "  " %9.0g se`g' ///
-      "       .  " ///
+*      "       .  " /// t`g'
+      "    " %5.2f t`g' ///
       "   " %5.3f pval`g' ///
       "    " %9.0g ci_lb`g' ///
       "   " %9.0g ci_ub`g'
