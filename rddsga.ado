@@ -170,7 +170,7 @@ if "`dibalance'" != "" {
 }
 
 *-------------------------------------------------------------------------------
-* Model
+* Estimation
 *-------------------------------------------------------------------------------
 
 * First stage
@@ -215,7 +215,7 @@ if "`ivregress'" != "" {
 *  ereturn matrix cumulative = cumulative
 }
 
-* Post and display balance results
+* Post balance results
 *-------------------------------------------------------------------------------
 // Post global balance stats
 foreach w in unw ipsw {
@@ -248,14 +248,15 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
   else {
 *   di as text "_nl_1 = _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment']" _continue
     qui nlcom _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment'], noheader
-    } 
+  } 
 
   * Compute and store subgroup estimates 
   *-------------------------------------------------------------------------------
   if "`ivregress'" == "" scalar df = e(df_r)
   else scalar df = e(df_m)
 
-  forvalues g=0/1 {
+// Estimates by subgroup
+  forvalues g = 0/1 {
     // Coefficient
     matrix e_b = e(b)
     scalar b`g' = e_b[1,`=`g'+1']
@@ -307,7 +308,7 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
       as result ///
       "  " %9.0g b`g' ///
       "  " %9.0g se`g' ///
-      "    " %5.2f t`g' ///
+      "       .  " ///
       "   " %5.3f pval`g' ///
       "    " %9.0g ci_lb`g' ///
       "   " %9.0g ci_ub`g'
