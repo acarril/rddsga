@@ -243,11 +243,11 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
 *  di _newline as result "Difference estimate"
   if "`ivregress'" == "" {
 *   di as text "_nl_1 = _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff]" _continue
-    qui nlcom _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff]
+    nlcom _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff]
   }
   else {
 *   di as text "_nl_1 = _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment']" _continue
-    qui nlcom _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment']
+    nlcom _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment']
   } 
 
   * Compute and store subgroup estimates 
@@ -287,9 +287,12 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
   scalar t = diff/diff_se
   // P>|t|
   scalar pval_diff = ttail(r(df_r), abs(t))*2
+  scalar norm_pval_diff = 2*(1-normal(abs(t)))
   // Confidence interval
-  scalar ci_ub = diff + invttail(r(df_r), 0.025)*diff_se
-  scalar ci_lb = diff + invttail(r(df_r), 0.975)*diff_se
+  scalar diff_ci_ub = diff + invttail(r(df_r), 0.025)*diff_se
+  scalar diff_ci_lb = diff + invttail(r(df_r), 0.975)*diff_se
+  scalar norm_diff_ci_ub = diff + invttail(r(df_r), 0.025)*diff_se
+  scalar norm_diff_ci_lb = diff + invttail(r(df_r), 0.975)*diff_se
 
   * Display estimation results
   *-------------------------------------------------------------------------------
@@ -301,7 +304,7 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
       _col(15) "{ralign 11:Coef.}" ///
       _col(26) "{ralign 12:Std. Err.}" ///
       _col(38) "{ralign 8:t }" /// notice extra space
-      _col(46) "{ralign 8:P}" ///
+      _col(46) "{ralign 8:P>|t|}" ///
       _col(54) "{ralign 25:[95% Conf. Interval]}" 
     di as text "{hline 13}{c +}{hline 64}"
     di as text "Subgroup" _col(14) "{c |}"
@@ -321,9 +324,9 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
       "  " %9.0g diff ///
       "  " %9.0g diff_se ///
       "    " %5.2f t ///
-      "   " %5.3f pval_diff ///
-      "    " %9.0g ci_lb ///
-      "   " %9.0g ci_ub
+      "   " %5.3f norm_pval_diff ///
+      "    " %9.0g norm_diff_ci_lb ///
+      "   " %9.0g norm_diff_ci_ub
     di as text "{hline 13}{c BT}{hline 64}"
   }
   // Empirical 
