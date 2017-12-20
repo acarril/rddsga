@@ -43,6 +43,8 @@
 {synopt :{opt norm:al}}compute and report normal approximation p-values and CIs; default is percentile{p_end}
 {synopt :{opt noboot:strap}}do not compute bootstrap standard errors for RD estimates{p_end}
 {synopt :{opt noipsw}}do not use inverse propensity score weighting{p_end}
+{synopt :{opt nofixed:bootstrap}} if RDD is fuzzy, bootstrap is computed in the both first stage and reduced form and then the estimate is the reduced form coefficient divide by the first stage coefficient; default is bootstrap computed only in the reduced form and keeping first stage fixed.   {p_end}
+
 
 {syntab :Reporting and Output}
 {synopt :{opt dibal:ance}}display original balance and propensity score-weighted balance tables and statistics{p_end}
