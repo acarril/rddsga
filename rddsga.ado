@@ -182,7 +182,9 @@ if "`firststage'" != "" {
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff `quad') ///
     `weight' if `touse' & `bwidth', vce(`vce')
    
-    mat nofixed=[1]   
+  ** Escalar used as a indicator to compute bootstrap. 
+    mat nofixed=[1] 
+
 if "`blockbootstrap'"!="" {
 ereturn local blockbootstrap `blockbootstrap'
 }
@@ -201,7 +203,8 @@ if "`reducedform'" != "" {
     qui reg `depvar' i.`sgroup'#1._cutoff i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff `quad') ///
     `weight' if `touse' & `bwidth', vce(`vce')
-   
+  
+  ** Escalar used as a indicator to compute bootstrap. 
     mat nofixed=[1]
    
 if "`blockbootstrap'"!="" {
@@ -219,12 +222,15 @@ ereturn local blockbootstrap `blockbootstrap'
 if "`ivregress'" != "" {
   // Regression
   mat IndIV=[1]
+
   
  qui reg `treatment' i.`sgroup'#1._cutoff i.`sgroup' ///
    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff `quad') ///
    `weight' if `touse' & `bwidth', vce(`vce')
  local coeffFSg0: di _b[0.`sgroup'#1._cutoff]
  local coeffFSg1: di _b[1.`sgroup'#1._cutoff]
+ 
+ ** If RDD is fuzzy and we use a fixed bootstrap, so we save the first stage coefficient 
    mat FS=[`coeffFSg0',`coeffFSg1']
 
    qui reg `depvar' i.`sgroup'#1._cutoff i.`sgroup' ///
@@ -239,18 +245,25 @@ local RFline `e(cmdline)'
     `weight' if `touse' & `bwidth', vce(`vce')
 
 local IVline `e(cmdline)'
- 
+
+** Escalar used as a indicator to compute bootstrap. 0 if bootstrap is computed using reduced form estimation
+** and keeping first stage fixed. 
 mat nofixed=[0]
 
 if "`blockbootstrap'" != "" {
 ereturn local blockbootstrap `blockbootstrap'
 }
 
+** If RDD is fuzzy and we use fixed bootstrap, so we use reduced form estimation to compute bootstrap in the IV
 ereturn local cmdline `RFline'  
 
 if "`nofixedbootstrap'" != "" {  
+
+** If RDD is fuzzy and we do not use fixed bootstrap, so we use IV estimation to compute bootrstrap
 ereturn local cmdline `IVline'  
-   mat nofixed=[1]
+
+** Escalar used as a indicator to compute bootstrap. 1 if bootstrap is computed using IV estimation
+ mat nofixed=[1]
     }
 
   // Compute bootstrapped variance-covariance matrix and post results
@@ -490,11 +503,14 @@ program define myboo, eclass
     qui `e(cmdline)' // use full regression specification left out by reg
 
     tempname this_run
-     
+    
+    ** If RDD is not fuzzy or we do bootstrap both first stage and reduced form 
     if IndIV[1,1]==0 | nofixed[1,1]==1  {
       mat `this_run' = (_b[0.`1'#1.`2'], _b[1.`1'#1.`2'])
     }
     
+        
+    ** If RDD is fuzzy and we do only bootstrap in the reduced form keeping the first stage fixed.
 if IndIV[1,1]==1 & nofixed[1,1]==0 {  
     local CoeffIVg0_`i'= _b[0.`1'#1._cutoff]/FS[1,1]
     local CoeffIVg1_`i'= _b[1.`1'#1._cutoff]/FS[1,2]
