@@ -1,4 +1,4 @@
-*! 1.0.0 Alvaro Carril 19oct2017
+*! 1.0.1 Andre Cazor 20Dec2017
 program define rddsga, eclass
 version 11.1
 syntax varlist(min=2 numeric fv) [if] [in] , ///
@@ -6,7 +6,7 @@ syntax varlist(min=2 numeric fv) [if] [in] , ///
   	IPSWeight(name) PSCore(name) COMsup(name) noCOMsupaux /// newvars
     BALance(varlist numeric) DIBALance probit /// balancepscore opts
     IVregress REDUCEDform FIRSTstage vce(string) QUADratic /// model opts
-    noBOOTstrap bsreps(real 50) NORMal noipsw  ] // bootstrap options
+    noBOOTstrap bsreps(real 50) NOFIXEDbootstrap BLOCKbootstrap(string) NORMal noipsw  ] // bootstrap options
 
 *-------------------------------------------------------------------------------
 * Check inputs
@@ -176,10 +176,17 @@ if "`dibalance'" != "" {
 * First stage
 *-------------------------------------------------------------------------------
 if "`firststage'" != "" {
+    mat IndIV=[0]
   // Regression
-  qui reg `treatment' i.`sgroup'#1._cutoff i.`sgroup' ///
+    qui reg `treatment' i.`sgroup'#1._cutoff i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff `quad') ///
     `weight' if `touse' & `bwidth', vce(`vce')
+   
+    mat nofixed=[1]   
+if "`blockbootstrap'"!="" {
+ereturn local blockbootstrap `blockbootstrap'
+}
+    
   // Compute bootstrapped variance-covariance matrix and post results
   if "`bootstrap'" != "nobootstrap" myboo `sgroup' _cutoff `bsreps'
   // If no bootstrap, trim b and V to show only RD estimates
@@ -190,9 +197,17 @@ if "`firststage'" != "" {
 *-------------------------------------------------------------------------------
 if "`reducedform'" != "" {
   // Regression
-  qui reg `depvar' i.`sgroup'#1._cutoff i.`sgroup' ///
+    mat IndIV=[0]
+    qui reg `depvar' i.`sgroup'#1._cutoff i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff `quad') ///
     `weight' if `touse' & `bwidth', vce(`vce')
+   
+    mat nofixed=[1]
+   
+if "`blockbootstrap'"!="" {
+ereturn local blockbootstrap `blockbootstrap'
+}
+
   // Compute bootstrapped variance-covariance matrix and post results
   if "`bootstrap'" != "nobootstrap" myboo `sgroup' _cutoff `bsreps'
   // If no bootstrap, trim b and V to show only RD estimates
@@ -203,12 +218,44 @@ if "`reducedform'" != "" {
 *-------------------------------------------------------------------------------
 if "`ivregress'" != "" {
   // Regression
-  qui ivregress 2sls `depvar' i.`sgroup' ///
+  mat IndIV=[1]
+  
+ qui reg `treatment' i.`sgroup'#1._cutoff i.`sgroup' ///
+   i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff `quad') ///
+   `weight' if `touse' & `bwidth', vce(`vce')
+ local coeffFSg0: di _b[0.`sgroup'#1._cutoff]
+ local coeffFSg1: di _b[1.`sgroup'#1._cutoff]
+   mat FS=[`coeffFSg0',`coeffFSg1']
+
+   qui reg `depvar' i.`sgroup'#1._cutoff i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff `quad') ///
+    `weight' if `touse' & `bwidth', vce(`vce')
+
+local RFline `e(cmdline)'
+  
+ qui ivregress 2sls `depvar' i.`sgroup' ///
+   i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff `quad') ///
     (i.`sgroup'#1.`treatment' = i.`sgroup'#1._cutoff) ///
     `weight' if `touse' & `bwidth', vce(`vce')
+
+local IVline `e(cmdline)'
+ 
+mat nofixed=[0]
+
+if "`blockbootstrap'" != "" {
+ereturn local blockbootstrap `blockbootstrap'
+}
+
+ereturn local cmdline `RFline'  
+
+if "`nofixedbootstrap'" != "" {  
+ereturn local cmdline `IVline'  
+   mat nofixed=[1]
+    }
+
   // Compute bootstrapped variance-covariance matrix and post results
-  if "`bootstrap'" != "nobootstrap" myboo `sgroup' `treatment' `bsreps' 
+  if "`bootstrap'" != "nobootstrap" myboo `sgroup' `treatment' `bsreps'  
+
   // If no bootstrap, trim b and V to show only RD estimates
   else epost `sgroup' `treatment'
 *  mat cumulative = e(cumulative)
@@ -243,11 +290,11 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
 *  di _newline as result "Difference estimate"
   if "`ivregress'" == "" {
 *   di as text "_nl_1 = _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff]" _continue
-    nlcom _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff]
+    qui nlcom _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff]
   }
   else {
 *   di as text "_nl_1 = _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment']" _continue
-    nlcom _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment']
+    qui nlcom _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment']
   } 
 
   * Compute and store subgroup estimates 
@@ -259,46 +306,43 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
   forvalues g = 0/1 {
     // Coefficient
     matrix e_b = e(b)
-    scalar b`g' = e_b[1,`=`g'+1']
+    scalar b_g`g' = e_b[1,`=`g'+1']
     // Standard error
     matrix e_V = e(V)
-    scalar se`g' = sqrt(e_V[`=`g'+1',`=`g'+1'])
+    scalar se_g`g' = sqrt(e_V[`=`g'+1',`=`g'+1'])
     // t-stat 
-    scalar t`g' = b`g'/se`g'
+    scalar t_g`g' = b_g`g'/se_g`g'
     // P-value
-    scalar norm_pval`g' = ttail(df, abs(t`g'))*2
-    scalar pval`g' = e(pval`g')
+    scalar p_g`g' = ttail(df, abs(t_g`g'))*2
+*    scalar p_g`g' = e(p_g`g')
     // Confidence interval
-    scalar norm_ci_ub`g' = b`g' + invttail(df, 0.025)*se`g'
-    scalar norm_ci_lb`g' = b`g' + invttail(df, 0.975)*se`g'
-    scalar ci_ub`g' = e(ub_g`g')
-    scalar ci_lb`g' = e(lb_g`g')
+    scalar ci_lb_g`g' = b_g`g' + invttail(df, 0.975)*se_g`g'
+    scalar ci_ub_g`g' = b_g`g' + invttail(df, 0.025)*se_g`g'
+*    scalar ci_ub_g`g'_norm = e(ci_ub_g`g')
+*    scalar ci_lb_g`g' = e(ci_lb_g`g')
   }
 
   * Compute and store difference estimates 
   *-------------------------------------------------------------------------------
   // Coefficient
-  matrix diff_b = r(b)
-  scalar diff = diff_b[1,1]
+  matrix e_b_diff = r(b)
+  scalar b_diff = e_b_diff[1,1]
   // Standard error
-  matrix diff_V = r(V)
-  scalar diff_se = sqrt(diff_V[1,1])
+  matrix e_V_diff = r(V)
+  scalar se_diff = sqrt(e_V_diff[1,1])
   // t-stat 
-  scalar t = diff/diff_se
+  scalar t_diff = b_diff/se_diff
   // P>|t|
-  scalar pval_diff = ttail(r(df_r), abs(t))*2
-  scalar norm_pval_diff = 2*(1-normal(abs(t)))
+  scalar p_diff = 2*(1-normal(abs(t_diff))) // norm and boot are the same 
   // Confidence interval
-  scalar diff_ci_ub = diff + invttail(r(df_r), 0.025)*diff_se
-  scalar diff_ci_lb = diff + invttail(r(df_r), 0.975)*diff_se
-  scalar norm_diff_ci_ub = diff + invttail(r(df_r), 0.025)*diff_se
-  scalar norm_diff_ci_lb = diff + invttail(r(df_r), 0.975)*diff_se
+  scalar ci_lb_diff = b_diff + invttail(`=r(N)-df', 0.975)*se_diff // fix: not exactly the same as nlcom
+  scalar ci_ub_diff = b_diff + invttail(`=r(N)-df', 0.025)*se_diff // fix: not exactly the same as nlcom
+
 
   * Display estimation results
   *-------------------------------------------------------------------------------
   // Normal based
   if "`normal'" != "" {
-    di "NORMAL"
     di as text "{hline 13}{c TT}{hline 64}"
     di as text %12s abbrev("`depvar'",12) " {c |}" ///
       _col(15) "{ralign 11:Coef.}" ///
@@ -311,57 +355,56 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
     forvalues g = 0/1 {
       display as text %12s abbrev("`g'",12) " {c |}" ///
         as result ///
-        "  " %9.0g b`g' ///
-        "  " %9.0g se`g' ///
-        "    " %5.2f t`g' ///
-        "   " %5.3f norm_pval`g' ///
-        "    " %9.0g norm_ci_lb`g' ///
-        "   " %9.0g norm_ci_ub`g'
+        "  " %9.0g b_g`g' ///
+        "  " %9.0g se_g`g' ///
+        "    " %5.2f t_g`g' ///
+        "   " %5.3f p_g`g' ///
+        "    " %9.0g ci_lb_g`g' ///
+        "   " %9.0g ci_ub_g`g'
     }
     di as text "{hline 13}{c +}{hline 64}"
     display as text "Difference   {c |}" ///
       as result ///
-      "  " %9.0g diff ///
-      "  " %9.0g diff_se ///
-      "    " %5.2f t ///
-      "   " %5.3f norm_pval_diff ///
-      "    " %9.0g norm_diff_ci_lb ///
-      "   " %9.0g norm_diff_ci_ub
+      "  " %9.0g b_diff ///
+      "  " %9.0g se_diff ///
+      "    " %5.2f t_diff ///
+      "   " %5.3f p_diff ///
+      "    " %9.0g ci_lb_diff ///
+      "   " %9.0g ci_ub_diff
     di as text "{hline 13}{c BT}{hline 64}"
   }
   // Empirical 
-*  else {
-    di "EMPIRICAL"
+  else {
     di as text "{hline 13}{c TT}{hline 64}"
     di as text %12s abbrev("`depvar'",12) " {c |}" ///
       _col(15) "{ralign 11:Coef.}" ///
       _col(26) "{ralign 12:Std. Err.}" ///
-      _col(38) "{ralign 8:t }" /// notice extra space
-      _col(46) "{ralign 8:P}" ///
-      _col(54) "{ralign 25:[95% Conf. Interval]}" 
+      _col(38) "{ralign 8:z }" /// notice extra space
+      _col(46) "{ralign 8:P>|z|}" ///
+      _col(58) "{ralign 25:[95% Conf. Interval] (P)}" 
     di as text "{hline 13}{c +}{hline 64}"
     di as text "Subgroup" _col(14) "{c |}"
     forvalues g = 0/1 {
       display as text %12s abbrev("`g'",12) " {c |}" ///
         as result ///
-        "  " %9.0g b`g' ///
-        "  " %9.0g se`g' ///
-        "    " %5.2f t`g' ///
-        "   " %5.3f pval`g' ///
-        "    " %9.0g ci_lb`g' ///
-        "   " %9.0g ci_ub`g'
+        "  " %9.0g b_g`g' ///
+        "  " %9.0g se_g`g' ///
+        "    " %5.2f t_g`g' ///
+        "   " %5.3f p_g`g' ///
+        "    " %9.0g ci_lb_g`g' ///
+        "   " %9.0g ci_ub_g`g'
     }
     di as text "{hline 13}{c +}{hline 64}"
     display as text "Difference   {c |}" ///
       as result ///
-      "  " %9.0g diff ///
-      "  " %9.0g diff_se ///
-      "    " %5.2f t ///
-      "   " %5.3f pval_diff ///
-      "    " %9.0g ci_lb ///
-      "   " %9.0g ci_ub
+      "  " %9.0g b_diff ///
+      "  " %9.0g se_diff ///
+      "    " %5.2f t_diff ///
+      "   " %5.3f p_diff ///
+      "    " %9.0g ci_lb_diff ///
+      "   " %9.0g ci_ub_diff
     di as text "{hline 13}{c BT}{hline 64}"
-*  }
+  }
 }
 
 * End
@@ -411,9 +454,12 @@ end
 *-------------------------------------------------------------------------------
 * myboo: compute bootstrapped variance-covariance matrix & adjust ereturn results
 *-------------------------------------------------------------------------------
-program myboo, eclass
+program define myboo, eclass
+
   // Store results: scalars
   local scalars: e(scalars)
+
+  
   foreach scalar of local scalars {
     local `scalar' = e(`scalar')
   }
@@ -422,29 +468,46 @@ program myboo, eclass
   foreach macro of local macros {
     local `macro' = e(`macro')
   }
+  
+
   // Store results: matrices (drop V_modelbased; b and V are computed below)
   local matrices: e(matrices)
   // Store results: functions
   tempvar esample
   gen `esample' = e(sample)
-  // Extract b submatrix with subgroup coefficients
+  * Extract b submatrix with subgroup coefficients
   matrix b = e(b)
   matrix b = b[1, "0.`1'#1.`2'".."1.`1'#1.`2'"]
   matrix colnames b = 0.`1'#1.`2' 1.`1'#1.`2'
+ 
   // Start bootstrap 
   di "" // empty line on purpose
   _dots 0, title(Bootstrap replications) reps(`3')
   cap mat drop cumulative // more elegant solution?
   forvalues i=1/`3' {
     preserve
-    bsample // sample w/ replacement; default sample size is _N
+    bsample, strata(`e(blockbootstrap)') // sample w/ replacement; default sample size is _N
     qui `e(cmdline)' // use full regression specification left out by reg
+
     tempname this_run
-    mat `this_run' = (_b[0.`1'#1.`2'], _b[1.`1'#1.`2'])
+     
+    if IndIV[1,1]==0 | nofixed[1,1]==1  {
+      mat `this_run' = (_b[0.`1'#1.`2'], _b[1.`1'#1.`2'])
+    }
+    
+if IndIV[1,1]==1 & nofixed[1,1]==0 {  
+    local CoeffIVg0_`i'= _b[0.`1'#1._cutoff]/FS[1,1]
+    local CoeffIVg1_`i'= _b[1.`1'#1._cutoff]/FS[1,2]
+    mat `this_run' = (`CoeffIVg0_`i'',`CoeffIVg1_`i'')
+    }  
+    
     mat cumulative = nullmat(cumulative) \ `this_run'
     restore
     _dots `i' 0
   }
+  
+ 
+  
   di _newline
   // Compute variance-covariance matrix 
   /* This procedure was achieved with the variance mata function, but could be 
@@ -666,6 +729,9 @@ end
 
 /* 
 CHANGE LOG
+1.0
+  - Compute block bootstrapped variance-covariance matrix
+  - Fix First Stage to compute bootstrap in IV
 0.9
   - Compute bootstrapped variance-covariance matrix
   - Make program (and subprograms) e-class
