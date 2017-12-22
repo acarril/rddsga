@@ -6,7 +6,7 @@ syntax varlist(min=2 numeric fv) [if] [in] , ///
   	IPSWeight(name) PSCore(name) COMsup(name) noCOMsupaux /// newvars
     BALance(varlist numeric) DIBALance probit /// balancepscore opts
     IVregress REDUCEDform FIRSTstage vce(string) QUADratic /// model opts
-    noBOOTstrap bsreps(real 50) NOFIXEDbootstrap BLOCKbootstrap(string) NORMal noipsw  ] // bootstrap options
+    noBOOTstrap bsreps(real 50) NOFIXEDbootstrap BLOCKbtrp(string) NORMal noipsw  ] // bootstrap options
 
 *-------------------------------------------------------------------------------
 * Check inputs
@@ -250,8 +250,8 @@ local IVline `e(cmdline)'
 ** and keeping first stage fixed. 
 mat nofixed=[0]
 
-if "`blockbootstrap'" != "" {
-ereturn local blockbootstrap `blockbootstrap'
+if "`blockbtrp'" != "" {
+ereturn local blockbtrp `blockbtrp'
 }
 
 ** If RDD is fuzzy and we use fixed bootstrap, so we use reduced form estimation to compute bootstrap in the IV
@@ -499,7 +499,7 @@ program define myboo, eclass
   cap mat drop cumulative // more elegant solution?
   forvalues i=1/`3' {
     preserve
-    bsample, strata(`e(blockbootstrap)') // sample w/ replacement; default sample size is _N
+    bsample, strata(`e(blockbtrp)') // sample w/ replacement; default sample size is _N
     qui `e(cmdline)' // use full regression specification left out by reg
 
     tempname this_run
