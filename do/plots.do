@@ -5,8 +5,10 @@ if "`c(os)'" == "Windows" cd "C:\ado\personal\rddsga"
 use rddsga_synth, clear
 
 // Color scheme
-*ssc install scheme-burd, replace
+ssc install scheme-burd, replace
 set scheme burd
+
+rename X Z
 
 gen bin=floor(Z/2)*2+1
 

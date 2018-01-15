@@ -43,8 +43,8 @@
 {synopt :{opt norm:al}}compute and report normal approximation p-values and CIs; default is percentile{p_end}
 {synopt :{opt noboot:strap}}do not compute bootstrap standard errors for RD estimates{p_end}
 {synopt :{opt noipsw}}do not use inverse propensity score weighting{p_end}
-{synopt :{opt nofixed:bootstrap}}if RDD is fuzzy, bootstrap is computed in both the first stage and the reduced form. Then, the estimate is the reduced form coefficient divide by the first stage coefficient; default is bootstrap computed only in the reduced form and keeping first stage fixed.   {p_end}
-{synopt :{opt block:btrp(varlist)}}specifies the variables identifying strata. If blockbootstrap() is specified, bootstrap samples are selected within each stratum. {p_end}
+{synopt :{opt fixed:bootstrap}} compute bootstrap with first stage fixed when instrumental variable regression is used. {p_end}
+{synopt :{opt block:btrp(varlist)}}specified bootstrap samples that are selected within each stratum. {p_end}
 
 {syntab :Reporting and Output}
 {synopt :{opt dibal:ance}}display original balance and propensity score-weighted balance tables and statistics{p_end}
@@ -166,6 +166,13 @@ If {opt normal} is specified, p-values are obtained using the normality assumpti
 
 {phang}
 {opt noipsw} prevents employing inverse propensity score weighting for the estimations.
+
+{phang}
+{opt fixedbootstrap} if RDD is fuzzy, bootstrap is computed only in the reduced form and keeping the first stage is fixed; default is bootstrap computed in both first stage and reduced form. 
+
+{phang}
+{opt blockbtrp(varlist)} specifies the variables identifying strata. If blockbootstrap() is specified, bootstrap samples are selected within each stratum.
+
 
 {marker options_reporting}{...}
 {dlgtab:Reporting}

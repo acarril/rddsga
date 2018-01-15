@@ -6,7 +6,7 @@ syntax varlist(min=2 numeric fv) [if] [in] , ///
   	IPSWeight(name) PSCore(name) COMsup(name) noCOMsupaux /// newvars
     BALance(varlist numeric) DIBALance probit /// balancepscore opts
     IVregress REDUCEDform FIRSTstage vce(string) QUADratic /// model opts
-    noBOOTstrap bsreps(real 50) NOFIXEDbootstrap BLOCKbtrp(string) NORMal noipsw  ] // bootstrap options
+    noBOOTstrap bsreps(real 50) FIXEDbootstrap BLOCKbootstrap(string) NORMal noipsw  ] // bootstrap options
 
 *-------------------------------------------------------------------------------
 * Check inputs
@@ -183,7 +183,7 @@ if "`firststage'" != "" {
     `weight' if `touse' & `bwidth', vce(`vce')
    
   ** Escalar used as a indicator to compute bootstrap. 
-    mat nofixed=[1] 
+    mat fixed=[0] 
 
 if "`blockbootstrap'"!="" {
 ereturn local blockbootstrap `blockbootstrap'
@@ -205,7 +205,7 @@ if "`reducedform'" != "" {
     `weight' if `touse' & `bwidth', vce(`vce')
   
   ** Escalar used as a indicator to compute bootstrap. 
-    mat nofixed=[1]
+    mat fixed=[0]
    
 if "`blockbootstrap'"!="" {
 ereturn local blockbootstrap `blockbootstrap'
@@ -244,26 +244,22 @@ local RFline `e(cmdline)'
     (i.`sgroup'#1.`treatment' = i.`sgroup'#1._cutoff) ///
     `weight' if `touse' & `bwidth', vce(`vce')
 
-local IVline `e(cmdline)'
+** Escalar used as a indicator to compute bootstrap. 0 if bootstrap is computed using IV estimation
+mat fixed=[0]
 
-** Escalar used as a indicator to compute bootstrap. 0 if bootstrap is computed using reduced form estimation
-** and keeping first stage fixed. 
-mat nofixed=[0]
-
-if "`blockbtrp'" != "" {
-ereturn local blockbtrp `blockbtrp'
+if "`blockbootstrap'" != "" {
+ereturn local blockbootstrap `blockbootstrap'
 }
+
+
+if "`fixedbootstrap'" != "" {  
 
 ** If RDD is fuzzy and we use fixed bootstrap, so we use reduced form estimation to compute bootstrap in the IV
 ereturn local cmdline `RFline'  
 
-if "`nofixedbootstrap'" != "" {  
-
-** If RDD is fuzzy and we do not use fixed bootstrap, so we use IV estimation to compute bootrstrap
-ereturn local cmdline `IVline'  
-
-** Escalar used as a indicator to compute bootstrap. 1 if bootstrap is computed using IV estimation
- mat nofixed=[1]
+** Escalar used as a indicator to compute bootstrap. 1 if bootstrap is computed using reduced form estimation
+** and keeping first stage fixed. 
+ mat fixed=[1]
     }
 
   // Compute bootstrapped variance-covariance matrix and post results
@@ -499,19 +495,17 @@ program define myboo, eclass
   cap mat drop cumulative // more elegant solution?
   forvalues i=1/`3' {
     preserve
-    bsample, strata(`e(blockbtrp)') // sample w/ replacement; default sample size is _N
+    bsample, strata(`e(blockbootstrap)') // sample w/ replacement; default sample size is _N
     qui `e(cmdline)' // use full regression specification left out by reg
-
     tempname this_run
-    
     ** If RDD is not fuzzy or we do bootstrap both first stage and reduced form 
-    if IndIV[1,1]==0 | nofixed[1,1]==1  {
+    if IndIV[1,1]==0 | fixed[1,1]==0  {
       mat `this_run' = (_b[0.`1'#1.`2'], _b[1.`1'#1.`2'])
     }
-    
-        
+    	 
+		
     ** If RDD is fuzzy and we do only bootstrap in the reduced form keeping the first stage fixed.
-if IndIV[1,1]==1 & nofixed[1,1]==0 {  
+if IndIV[1,1]==1 & fixed[1,1]==1 {  
     local CoeffIVg0_`i'= _b[0.`1'#1._cutoff]/FS[1,1]
     local CoeffIVg1_`i'= _b[1.`1'#1._cutoff]/FS[1,2]
     mat `this_run' = (`CoeffIVg0_`i'',`CoeffIVg1_`i'')
