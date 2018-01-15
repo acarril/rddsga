@@ -1,4 +1,4 @@
-*! 1.0.1 Andre Cazor 20Dec2017
+*! 1.0.2 Andre Cazor 15Jan2018
 program define rddsga, eclass
 version 11.1
 syntax varlist(min=2 numeric fv) [if] [in] , ///
@@ -6,7 +6,7 @@ syntax varlist(min=2 numeric fv) [if] [in] , ///
   	IPSWeight(name) PSCore(name) COMsup(name) noCOMsupaux /// newvars
     BALance(varlist numeric) DIBALance probit /// balancepscore opts
     IVregress REDUCEDform FIRSTstage vce(string) QUADratic /// model opts
-    noBOOTstrap bsreps(real 50) FIXEDbootstrap BLOCKbootstrap(string) NORMal noipsw  ] // bootstrap options
+    noBOOTstrap bsreps(real 50) FIXEDbootstrap BLOCKbootstrap(string) NORMal  noipsw  ] // bootstrap options
 
 *-------------------------------------------------------------------------------
 * Check inputs
@@ -27,6 +27,10 @@ if `fvops' {
   }
 }
 
+
+
+
+
 /*
 // Check that treatment() is specified if ivregress is specified
 if "`ivregress'" != "" & "`treatment'" == "" {
@@ -46,17 +50,24 @@ else tempvar comsup
 if "`pscore'" != "" confirm new variable `pscore'
 else tempvar pscore
 
-// Issue warning if no covariates and no vars in balance
+
+// Issue warning if no covariates and no vars in balance when propensity score weighting is used:
+if ("`ipsw'"!="noipsw")  {
 if `: list sizeof varlist'<=2 & `: list sizeof balance'==0 {
   di as error "either {it:indepvars} or {bf:balance()} must be specified"
   exit 198
 }
+}
+
 
 // Issue warning if options bsreps and normal are specified along with nobootstrap
 if "`bootstrap'" == "nobootstrap" & (`bsreps' != 50 | "`normal'" != "") {
   di as text "Warning: options " as result "bsreps" as text " and " as result "normal" ///
     as text " are irrelevant if " as result "nobootstrap" as text " is specified"
 }
+
+
+
 
 *-------------------------------------------------------------------------------
 * Process inputs
@@ -90,6 +101,7 @@ qui gen `sgroup0' = (`sgroup' == 0) if !mi(`sgroup')
 if "`balance'" == "" local balance `covariates'
 local n_balance `: word count `balance''
 
+
 // Define model to fit (logit is default)
 if "`probit'" != "" local binarymodel probit
 else local binarymodel logit
@@ -118,16 +130,23 @@ else local spline Linear
 if "`ipsw'" == "noipsw" local weight = ""
 else local weight "[pw=`ipsweight']"
 
+
+
 *-------------------------------------------------------------------------------
 * Compute balance table matrices
 *-------------------------------------------------------------------------------
 
 * Original balance
 *-------------------------------------------------------------------------------
+
+if "`ipsw'" == "noipsw" | `: list sizeof balance'>0 {
+
+
 // Compute balanace matrix 
 balancematrix, matname(unw)  ///
   touse(`touse') bwidth(`bwidth') balance(`balance') ///
   sgroup(`sgroup') sgroup0(`sgroup0') n_balance(`n_balance')
+  
 // Store balance matrix and computed balance stats
 matrix unw = e(unw)
 foreach s in unw_N_G0 unw_N_G1 unw_pvalue unw_Fstat unw_avgdiff {
@@ -145,9 +164,12 @@ if "`dibalance'" != "" {
   di "Global p-value: " unw_pval_global
 }
 
+
+
 * Propensity Score Weighting balance
 *-------------------------------------------------------------------------------
 // Compute balanace matrix 
+
 balancematrix, matname(ipsw)  ///
   psw ipsweight(`ipsweight') touse(`touse') bwidth(`bwidth') balance(`balance') ///
   pscore(`pscore') comsup(`comsup') comsupaux(`comsupaux') binarymodel(`binarymodel') ///
@@ -168,6 +190,8 @@ if "`dibalance'" != "" {
   di "F-statistic: " ipsw_Fstat
   di "Global p-value: " ipsw_pval_global
 }
+}
+
 
 *-------------------------------------------------------------------------------
 * Estimation
@@ -222,11 +246,11 @@ ereturn local blockbootstrap `blockbootstrap'
 if "`ivregress'" != "" {
   // Regression
   mat IndIV=[1]
-
-  
+ 
  qui reg `treatment' i.`sgroup'#1._cutoff i.`sgroup' ///
    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff `quad') ///
    `weight' if `touse' & `bwidth', vce(`vce')
+   
  local coeffFSg0: di _b[0.`sgroup'#1._cutoff]
  local coeffFSg1: di _b[1.`sgroup'#1._cutoff]
  
@@ -236,7 +260,7 @@ if "`ivregress'" != "" {
    qui reg `depvar' i.`sgroup'#1._cutoff i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff `quad') ///
     `weight' if `touse' & `bwidth', vce(`vce')
-
+	
 local RFline `e(cmdline)'
   
  qui ivregress 2sls `depvar' i.`sgroup' ///
@@ -271,17 +295,21 @@ ereturn local cmdline `RFline'
 *  ereturn matrix cumulative = cumulative
 }
 
+
 * Post balance results
 *-------------------------------------------------------------------------------
 // Post global balance stats
+if "`ipsw'" == "noipsw" | `: list sizeof balance'>0  {
 foreach w in unw ipsw {
   foreach s in N_G0 N_G1 pvalue Fstat avgdiff {
     ereturn scalar `w'_`s' = `w'_`s'
   }
 }
+
 // Post balance matrices
 ereturn matrix ipsw ipsw
 ereturn matrix unw unw
+}
 
 *-------------------------------------------------------------------------------
 * Results
