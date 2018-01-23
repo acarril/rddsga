@@ -22,7 +22,7 @@
 {synoptline}
 {syntab :Subgroup and RDD}
 {p2coldent:* {opth sg:roup(varname)}}subgroup indicator variable{p_end}
-{synopt :{opth t:reatment(varname)}}indicator for actual treatment status; if not specified, a sharp RDD is assumed{p_end}
+{synopt :{opth f:uzzy(varname)}}indicator for actual treatment status; if not specified, a sharp RDD is assumed{p_end}
 {synopt :{opt c:utoff(real)}}specifies the cutoff value in {it:assignvar}; default is 0{p_end}
 {p2coldent:* {opt bw:idth(real)}}specifies the bandwidth around the cutoff{p_end}
 
@@ -35,7 +35,7 @@
 {synopt :{opt first:stage}}estimate the discontinuity in the treatment probability using OLS{p_end}
 {synopt :{opt reduced:form}}estimate the reduced form effect using OLS{p_end}
 {synopt :{opt iv:regress}}estimate the treatment effect using instrumental variable regression; requires that a treatment variable is specified in {opt treatment(varname)}{p_end}
-{synopt :{opt quad:ratic}}use quadratic spline; default is linear{p_end}
+{synopt :{opt p:(int)}}specifies the order of the local polynomial; default is p(1) {p_end}
 {synopt :{opth vce(vcetype)}}{it:vcetype} may be {opt un:adjusted},
    {opt r:obust}, {opt cl:uster} {it:clustvar}, {opt boot:strap},
    {opt jack:knife}, or {opt hac} {help ivregress##kernel:{it:kernel}}; default is {opt bootstrap}{p_end}
@@ -44,7 +44,7 @@
 {synopt :{opt noboot:strap}}do not compute bootstrap standard errors for RD estimates{p_end}
 {synopt :{opt noipsw}}do not use inverse propensity score weighting{p_end}
 {synopt :{opt fixed:bootstrap}} compute bootstrap with first stage fixed when instrumental variable regression is used. {p_end}
-{synopt :{opt block:btrp(varlist)}}specified bootstrap samples that are selected within each stratum. {p_end}
+{synopt :{opt block:btrp(varlist)}}specifies bootstrap samples that are selected within each stratum. {p_end}
 
 {syntab :Reporting and Output}
 {synopt :{opt dibal:ance}}display original balance and propensity score-weighted balance tables and statistics{p_end}
@@ -95,8 +95,7 @@ This variable must be a {it:dummy} (values 0 or 1).
 This option must be specified.
 
 {phang}
-{opt treatment(varname)} specifies an indicator variable for actual treatment status.
-If not specified, a sharp RDD is assumed.
+{opt fuzzy(varname)} specifies the treatment status variable used to implement fuzzy RD estimation. Default is Sharp RD design and hence this option is not used.
 
 {phang}
 {opt cutoff(real)} specifies the cutoff value in {it:assignvar}; default is 0 (assuming normalized {it:assignvar}).
@@ -134,7 +133,7 @@ If specified, it requires that a treatment variable is also specified in {opt tr
 See {help ivregress} for additional information.
 
 {phang}
-{opt quadratic} indicates that a quadratic spline is to be used for full interaction with subgroup indicators. If not specified, a linear spline is used.
+{opt p(int)} specifies the order of the local polynomial used to construct the point estimator.  Default is p(1) (local linear regression).
 
 {phang}
 {opt vce(vcetype)} specifies the variance estimators options.

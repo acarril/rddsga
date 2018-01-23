@@ -2,10 +2,10 @@
 program define rddsga, eclass
 version 11.1
 syntax varlist(min=2 numeric fv) [if] [in] , ///
-  SGroup(name) BWidth(real) [ Treatment(name) Cutoff(real 0) /// important inputs
+  SGroup(name) BWidth(real) [ fuzzy(name) Cutoff(real 0) /// important inputs
   	IPSWeight(name) PSCore(name) COMsup(name) noCOMsupaux /// newvars
     BALance(varlist numeric) DIBALance probit /// balancepscore opts
-    IVregress REDUCEDform FIRSTstage vce(string) QUADratic /// model opts
+    IVregress REDUCEDform FIRSTstage vce(string) p(int 1) /// model opts
     noBOOTstrap bsreps(real 50) FIXEDbootstrap BLOCKbootstrap(string) NORMal  noipsw  ] // bootstrap options
 
 *-------------------------------------------------------------------------------
@@ -118,19 +118,18 @@ confirm new variable _cutoff
 gen _cutoff = (`assignvar'>`cutoff')
 
 // Compute spline options
-if "`quadratic'" != "" {
-  local spline Quadratic
-  tempvar assignXcutoff
-  gen `assignXcutoff' = `assignvar'*_cutoff
-  local quad c.`assignvar'#c.`assignvar' c.`assignXcutoff'#c.`assignXcutoff'
+forval i=1/`p' {
+tempvar assignvar_`i'
+qui gen `assignvar_`i''=`assignvar'^`i'
+tempvar gassignvar_`i'
+qui gen `gassignvar_`i''=`assignvar_`i''*_cutoff
+local polynm `polynm' i.`sgroup'#c.`assignvar_`i'' i.`sgroup'#c.`gassignvar_`i''
 }
-else local spline Linear
+
 
 // Create weight local for regression
 if "`ipsw'" == "noipsw" local weight = ""
 else local weight "[pw=`ipsweight']"
-
-
 
 *-------------------------------------------------------------------------------
 * Compute balance table matrices
@@ -203,7 +202,7 @@ if "`firststage'" != "" {
     mat IndIV=[0]
   // Regression
     qui reg `treatment' i.`sgroup'#1._cutoff i.`sgroup' ///
-    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff `quad') ///
+    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff)  `polynm' ///
     `weight' if `touse' & `bwidth', vce(`vce')
    
   ** Escalar used as a indicator to compute bootstrap. 
@@ -225,7 +224,7 @@ if "`reducedform'" != "" {
   // Regression
     mat IndIV=[0]
     qui reg `depvar' i.`sgroup'#1._cutoff i.`sgroup' ///
-    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff `quad') ///
+    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff) `polynm' ///
     `weight' if `touse' & `bwidth', vce(`vce')
   
   ** Escalar used as a indicator to compute bootstrap. 
@@ -248,7 +247,7 @@ if "`ivregress'" != "" {
   mat IndIV=[1]
  
  qui reg `treatment' i.`sgroup'#1._cutoff i.`sgroup' ///
-   i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff `quad') ///
+   i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff) `polynm' ///
    `weight' if `touse' & `bwidth', vce(`vce')
    
  local coeffFSg0: di _b[0.`sgroup'#1._cutoff]
@@ -258,13 +257,13 @@ if "`ivregress'" != "" {
    mat FS=[`coeffFSg0',`coeffFSg1']
 
    qui reg `depvar' i.`sgroup'#1._cutoff i.`sgroup' ///
-    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff `quad') ///
+    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff) `polynm' ///
     `weight' if `touse' & `bwidth', vce(`vce')
 	
 local RFline `e(cmdline)'
   
  qui ivregress 2sls `depvar' i.`sgroup' ///
-   i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff `quad') ///
+   i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff) `polynm' ///
     (i.`sgroup'#1.`treatment' = i.`sgroup'#1._cutoff) ///
     `weight' if `touse' & `bwidth', vce(`vce')
 
