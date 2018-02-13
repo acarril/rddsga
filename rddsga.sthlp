@@ -25,6 +25,7 @@
 {synopt :{opth f:uzzy(varname)}}indicator for actual treatment status; if not specified, a sharp RDD is assumed{p_end}
 {synopt :{opt c:utoff(real)}}specifies the cutoff value in {it:assignvar}; default is 0{p_end}
 {p2coldent:* {opt bw:idth(real)}}specifies the bandwidth around the cutoff{p_end}
+{synopt :{opt k:ernel(kernelfn)}}specifices the kernel function used to construct the local-polynomial estimator(s); default is {opt k:ernel(uniform)}
 
 {syntab :Balance}
 {p2coldent:+ {opth bal:ance(varlist)}}variables that enter the propensity score estimation; default is {indepvars}{p_end}
@@ -104,6 +105,12 @@ This option must be specified.
 {opt bwidth(real)} specifies a symmetrical the bandwidth around the cutoff.
 This option must be specified.
 
+{phang}
+{opt kernel(kernelfn)} specifies the kernel function used to construct the
+        local-polynomial estimator(s). Options are: triangular, epanechnikov, and
+        uniform.  Default is {opt kernel(uniform)}.
+
+
 {dlgtab:Balance}
 
 {phang}
@@ -170,7 +177,7 @@ If {opt normal} is specified, p-values are obtained using the normality assumpti
 {opt fixedbootstrap} if RDD is fuzzy, bootstrap is computed only in the reduced form and keeping the first stage is fixed; default is bootstrap computed in both first stage and reduced form. 
 
 {phang}
-{opt blockbtrp(varlist)} specifies the variables identifying strata. If blockbootstrap() is specified, bootstrap samples are selected within each stratum.
+{opt blockbtrp(varlist)} specifies the variables identifying strata. If blockbtrp() is specified, bootstrap samples are selected within each stratum.
 
 
 {marker options_reporting}{...}

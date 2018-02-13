@@ -2,7 +2,7 @@
 program define rddsga, eclass
 version 11.1
 syntax varlist(min=2 numeric fv) [if] [in] , ///
-  SGroup(name) BWidth(real) [ fuzzy(name) Cutoff(real 0) /// important inputs
+  SGroup(name) BWidth(real) [ fuzzy(name) Cutoff(real 0) Kernel(string) /// important inputs
   	IPSWeight(name) PSCore(name) COMsup(name) noCOMsupaux /// newvars
     BALance(varlist numeric) DIBALance probit /// balancepscore opts
     IVregress REDUCEDform FIRSTstage vce(string) p(int 1) /// model opts
@@ -28,7 +28,8 @@ if `fvops' {
 }
 
 
-
+*** Default Kernel
+ *loc kernel "k(uni)"
 
 
 /*
@@ -127,12 +128,34 @@ local polynm `polynm' i.`sgroup'#c.`assignvar_`i'' i.`sgroup'#c.`gassignvar_`i''
 }
 
 
-// Create weight local for regression
+tempvar kwt
+// create weights for kernel 
+
+* default 
+if "`kernel'"~="" {
+local kernel = "uni" 
+}
+
+  if ("`kernel'"=="epanechnikov" | "`kernel'"=="epa") {
+    local kernel_type = "Epanechnikov"
+    g double `kwt'=max(0,3/4*(`bwidthtab'^2-abs(`2')^2))
+  }
+  else if ("`kernel'"=="triangular" | "`kernel'"=="tri") {
+      local kernel_type = "Triangular"
+      g double `kwt'=max(0,`bwidth'-abs(`2'))
+  }
+  else {
+    local kernel_type = "Uniform"
+    g double `kwt'=(-`bwidthtab'<=(`2') & `2'<`bwidthtab')
+  }
+       
+
+// Create weight local for balance
 if "`ipsw'" == "noipsw" local weight = ""
 else local weight "[pw=`ipsweight']"
 
 *-------------------------------------------------------------------------------
-* Compute balance table matrices
+* Compute balance table matrices]
 *-------------------------------------------------------------------------------
 
 * Original balance
@@ -195,6 +218,13 @@ if "`dibalance'" != "" {
 *-------------------------------------------------------------------------------
 * Estimation
 *-------------------------------------------------------------------------------
+
+tempvar kernelipsw
+g double `kernelipsw'=`ipsweight'*`kwt'
+
+// Create weight local for regression
+if "`ipsw'" == "noipsw" local weight = "[pw=`kwt']"
+else local weight "[pw=`kernelipsw']"
 
 * First stage
 *-------------------------------------------------------------------------------
