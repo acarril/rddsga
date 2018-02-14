@@ -117,7 +117,7 @@ This option must be specified.
 {opt balance(varlist)} specifies the variables that enter the propensity score estimation.
 If not specified, variables in {it:indepvars} are used.
 This option is useful if one wants to balance a different set of covariates than the ones used as controls in the model.
-This option must be specified if {it:indepvars} is empty.
+This option must be specified if {it:indepvars} is empty and {it:ipsw} is used.
 
 {phang}
 {opt probit} indicates that the propensity score is computed after a fitting a  {manhelp probit R:probit} model; default is {manhelp logit R:logit}.

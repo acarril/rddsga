@@ -28,14 +28,13 @@ if `fvops' {
 }
 
 
-*** Default Kernel
- *loc kernel "k(uni)"
+
 
 
 /*
-// Check that treatment() is specified if ivregress is specified
-if "`ivregress'" != "" & "`treatment'" == "" {
-  di as error "treatment() must be specified with ivregress"
+// Check that fuzzy() is specified if ivregress is specified
+if "`ivregress'" != "" & "`fuzzy'" == "" {
+  di as error "fuzzy() must be specified with ivregress"
   exit 198
 }*/
 
@@ -114,7 +113,7 @@ local bwidth abs(`assignvar') < `bwidth'
 // Create indicator cutoff variable
 *tempvar cutoffvar
 *gen _cutoff = (`assignvar'>`cutoff')
-*lab var _cutoff "Treatment"
+*lab var _cutoff "fuzzy"
 confirm new variable _cutoff
 gen _cutoff = (`assignvar'>`cutoff')
 
@@ -132,21 +131,21 @@ tempvar kwt
 // create weights for kernel 
 
 * default 
-if "`kernel'"~="" {
+if "`kernel'"=="" {
 local kernel = "uni" 
 }
 
   if ("`kernel'"=="epanechnikov" | "`kernel'"=="epa") {
     local kernel_type = "Epanechnikov"
-    g double `kwt'=max(0,3/4*(`bwidthtab'^2-abs(`2')^2))
+    qui g double `kwt'=max(0,3/4*(`bwidthtab'^2-abs(`2')^2))
   }
   else if ("`kernel'"=="triangular" | "`kernel'"=="tri") {
       local kernel_type = "Triangular"
-      g double `kwt'=max(0,`bwidth'-abs(`2'))
+      qui g double `kwt'=max(0,`bwidthtab'-abs(`2'))
   }
   else {
     local kernel_type = "Uniform"
-    g double `kwt'=(-`bwidthtab'<=(`2') & `2'<`bwidthtab')
+    qui g double `kwt'=(-`bwidthtab'<=(`2') & `2'<`bwidthtab')
   }
        
 
@@ -161,7 +160,7 @@ else local weight "[pw=`ipsweight']"
 * Original balance
 *-------------------------------------------------------------------------------
 
-if "`ipsw'" == "noipsw" | `: list sizeof balance'>0 {
+if `: list sizeof balance'!=0 {
 
 
 // Compute balanace matrix 
@@ -220,18 +219,24 @@ if "`dibalance'" != "" {
 *-------------------------------------------------------------------------------
 
 tempvar kernelipsw
-g double `kernelipsw'=`ipsweight'*`kwt'
+
 
 // Create weight local for regression
-if "`ipsw'" == "noipsw" local weight = "[pw=`kwt']"
-else local weight "[pw=`kernelipsw']"
+if "`ipsw'" == "noipsw" { 
+local weight = "[pw=`kwt']"
+}
+else { 
+qui g double `kernelipsw'=`ipsweight'*`kwt'
+local weight "[pw=`kernelipsw']"
+}
+
 
 * First stage
 *-------------------------------------------------------------------------------
 if "`firststage'" != "" {
     mat IndIV=[0]
   // Regression
-    qui reg `treatment' i.`sgroup'#1._cutoff i.`sgroup' ///
+    qui reg `fuzzy' i.`sgroup'#1._cutoff i.`sgroup' ///
     i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff)  `polynm' ///
     `weight' if `touse' & `bwidth', vce(`vce')
    
@@ -276,9 +281,10 @@ if "`ivregress'" != "" {
   // Regression
   mat IndIV=[1]
  
- qui reg `treatment' i.`sgroup'#1._cutoff i.`sgroup' ///
+ qui reg `fuzzy' i.`sgroup'#1._cutoff i.`sgroup' ///
    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff) `polynm' ///
    `weight' if `touse' & `bwidth', vce(`vce')
+   
    
  local coeffFSg0: di _b[0.`sgroup'#1._cutoff]
  local coeffFSg1: di _b[1.`sgroup'#1._cutoff]
@@ -294,7 +300,7 @@ local RFline `e(cmdline)'
   
  qui ivregress 2sls `depvar' i.`sgroup' ///
    i.`sgroup'#(`fv_covariates' c.`assignvar' c.`assignvar'#_cutoff) `polynm' ///
-    (i.`sgroup'#1.`treatment' = i.`sgroup'#1._cutoff) ///
+    (i.`sgroup'#1.`fuzzy' = i.`sgroup'#1._cutoff) ///
     `weight' if `touse' & `bwidth', vce(`vce')
 
 ** Escalar used as a indicator to compute bootstrap. 0 if bootstrap is computed using IV estimation
@@ -316,19 +322,20 @@ ereturn local cmdline `RFline'
     }
 
   // Compute bootstrapped variance-covariance matrix and post results
-  if "`bootstrap'" != "nobootstrap" myboo `sgroup' `treatment' `bsreps'  
+  if "`bootstrap'" != "nobootstrap" myboo `sgroup' `fuzzy' `bsreps'  
 
   // If no bootstrap, trim b and V to show only RD estimates
-  else epost `sgroup' `treatment'
+  else epost `sgroup' `fuzzy'
 *  mat cumulative = e(cumulative)
 *  ereturn matrix cumulative = cumulative
+
 }
 
 
 * Post balance results
 *-------------------------------------------------------------------------------
 // Post global balance stats
-if "`ipsw'" == "noipsw" | `: list sizeof balance'>0  {
+if `: list sizeof balance'!=0  {
 foreach w in unw ipsw {
   foreach s in N_G0 N_G1 pvalue Fstat avgdiff {
     ereturn scalar `w'_`s' = `w'_`s'
@@ -359,8 +366,8 @@ if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
     qui nlcom _b[1.`sgroup'#1._cutoff] - _b[0.`sgroup'#1._cutoff]
   }
   else {
-*   di as text "_nl_1 = _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment']" _continue
-    qui nlcom _b[1.`sgroup'#1.`treatment'] - _b[0.`sgroup'#1.`treatment']
+*   di as text "_nl_1 = _b[1.`sgroup'#1.`fuzzy'] - _b[0.`sgroup'#1.`fuzzy']" _continue
+    qui nlcom _b[1.`sgroup'#1.`fuzzy'] - _b[0.`sgroup'#1.`fuzzy']
   } 
 
   * Compute and store subgroup estimates 
@@ -689,15 +696,17 @@ if "`psw'" != "" { // if psw
 
   // Compute common support area by default; if not, equal comsup to 1
   if "`comsupaux'" != "nocomsupaux" {
-    qui sum `pscore' if `sgroup' == 1 /* todo: check why this is like that */
+     qui sum `pscore' if `sgroup' == 1 /* todo: check why this is like that */
+    
     qui gen `comsup' = ///
-      (`pscore' >= `r(min)' & ///
-       `pscore' <= `r(max)')
+      (`pscore' >= r(min) & ///
+       `pscore' <= r(max))
+      
     label var `comsup' "Dummy for obs. in common support"
   }
   else qui gen `comsup' = 1 if `touse' & `bwidth' & !mi(`sgroup')
 
-  // Count observations in each treatment group
+  // Count observations in each fuzzy group
   qui count if `touse' & `bwidth' & `comsup' & `sgroup'==0
   local N_G0 = `r(N)'
   qui count if `touse' & `bwidth' & `comsup' & `sgroup'==1
@@ -711,7 +720,7 @@ if "`psw'" != "" { // if psw
     if `touse' & `bwidth' & `comsup' & !mi(`sgroup')
 } // end if psw
 
-* Count obs. in each treatment group if not PSW matrix
+* Count obs. in each fuzzy group if not PSW matrix
 *-------------------------------------------------------------------------------
 else { // if nopsw
   qui count if `touse' & `bwidth' & `sgroup'==0
