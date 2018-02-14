@@ -60,6 +60,7 @@ if `: list sizeof varlist'<=2 & `: list sizeof balance'==0 {
 }
 
 
+
 // Issue warning if options bsreps and normal are specified along with nobootstrap
 if "`bootstrap'" == "nobootstrap" & (`bsreps' != 50 | "`normal'" != "") {
   di as text "Warning: options " as result "bsreps" as text " and " as result "normal" ///
@@ -98,9 +99,11 @@ tempvar sgroup0
 qui gen `sgroup0' = (`sgroup' == 0) if !mi(`sgroup')
 
 // Extract balance variables
-if "`balance'" == "" local balance `covariates'
+if "`balance'" == "" & "`ipsw'" != "noipsw"  local balance `covariates'
 local n_balance `: word count `balance''
 
+if "`balance'" == "" & "`dibalance'" != "" & "`ipsw'" == "noipsw"  local balance `covariates'
+local n_balance `: word count `balance''
 
 // Define model to fit (logit is default)
 if "`probit'" != "" local binarymodel probit
@@ -163,10 +166,12 @@ else local weight "[pw=`ipsweight']"
 if `: list sizeof balance'!=0 {
 
 
+
 // Compute balanace matrix 
 balancematrix, matname(unw)  ///
   touse(`touse') bwidth(`bwidth') balance(`balance') ///
   sgroup(`sgroup') sgroup0(`sgroup0') n_balance(`n_balance')
+  
   
 // Store balance matrix and computed balance stats
 matrix unw = e(unw)
@@ -185,7 +190,7 @@ if "`dibalance'" != "" {
   di "Global p-value: " unw_pval_global
 }
 
-
+if "`ipsw'" != "noipsw" {
 
 * Propensity Score Weighting balance
 *-------------------------------------------------------------------------------
@@ -195,6 +200,8 @@ balancematrix, matname(ipsw)  ///
   psw ipsweight(`ipsweight') touse(`touse') bwidth(`bwidth') balance(`balance') ///
   pscore(`pscore') comsup(`comsup') comsupaux(`comsupaux') binarymodel(`binarymodel') ///
 	sgroup(`sgroup') sgroup0(`sgroup0') n_balance(`n_balance') 
+	
+	
 // Store balance matrix and computed balance stats
 matrix ipsw = e(ipsw)
 foreach s in ipsw_N_G0 ipswN_G1 ipsw_pvalue ipsw_Fstat ipsw_avgdiff {
@@ -212,11 +219,13 @@ if "`dibalance'" != "" {
   di "Global p-value: " ipsw_pval_global
 }
 }
+}
 
 
 *-------------------------------------------------------------------------------
 * Estimation
 *-------------------------------------------------------------------------------
+
 
 tempvar kernelipsw
 
@@ -229,6 +238,8 @@ else {
 qui g double `kernelipsw'=`ipsweight'*`kwt'
 local weight "[pw=`kernelipsw']"
 }
+
+
 
 
 * First stage
@@ -279,6 +290,7 @@ ereturn local blockbootstrap `blockbootstrap'
 *-------------------------------------------------------------------------------
 if "`ivregress'" != "" {
   // Regression
+
   mat IndIV=[1]
  
  qui reg `fuzzy' i.`sgroup'#1._cutoff i.`sgroup' ///
@@ -684,16 +696,18 @@ syntax, matname(string) /// important inputs, differ by call
   [psw ipsweight(name) pscore(name) comsup(name) comsupaux(string) binarymodel(string)] /// only needed for PSW balance
   sgroup(name) sgroup0(name) n_balance(int) // todo: eliminate these? can be computed by subroutine at low cost
 
+
 * Create variables specific to PSW matrix
 *-------------------------------------------------------------------------------
 if "`psw'" != "" { // if psw
   // Fit binary response model
-  qui `binarymodel' `sgroup' `balance' if `touse' & `bwidth'
+
+ qui `binarymodel' `sgroup' `balance' if `touse' & `bwidth'
 
   // Generate pscore variable and clear stored results
   qui predict double `pscore' if `touse' & `bwidth' & !mi(`sgroup')
   ereturn clear
-
+  
   // Compute common support area by default; if not, equal comsup to 1
   if "`comsupaux'" != "nocomsupaux" {
      qui sum `pscore' if `sgroup' == 1 /* todo: check why this is like that */
@@ -718,6 +732,7 @@ if "`psw'" != "" { // if psw
     `N_G1'/(`N_G1'+`N_G0')/`pscore'*(`sgroup'==1) + ///
     `N_G0'/(`N_G1'+`N_G0')/(1-`pscore')*(`sgroup'==0) ///
     if `touse' & `bwidth' & `comsup' & !mi(`sgroup')
+    
 } // end if psw
 
 * Count obs. in each fuzzy group if not PSW matrix
