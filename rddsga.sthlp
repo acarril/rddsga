@@ -30,7 +30,7 @@
 {syntab :Balance}
 {p2coldent:+ {opth bal:ance(varlist)}}variables that enter the propensity score estimation; default is {indepvars}{p_end}
 {synopt :{opt probit}}predict propensity score using a {manhelp probit R:probit} model; default is {manhelp logit R:logit}{p_end}
-{synopt :{opt nocom:sup}}do not restrict sample to area of common propensity score support{p_end}
+{synopt :{opt com:sup}} restrict sample to area of common propensity score support and a variable will be generated {p_end}
 
 {syntab :Model}
 {synopt :{opt first:stage}}estimate the discontinuity in the treatment probability using OLS{p_end}
@@ -50,7 +50,6 @@
 {syntab :Reporting and Output}
 {synopt :{opt dibal:ance}}display original balance and propensity score-weighted balance tables and statistics{p_end}
 {synopt :{opth ipsw:eight(newvar)}}name of new variable for the inverse propensity score weight for each observation; if not specified, no variable will be generated{p_end}
-{synopt :{opth com:sup(newvar)}}name of new binary variable indicating common support; if not specified, no variable will be generated{p_end}
 {synopt :{opth psc:ore(newvar)}}name of new variable for the estimated propensity score; if not specified, no variable will be generated{p_end}
 {synoptline}
 {p2colreset}{...}
@@ -123,7 +122,7 @@ This option must be specified if {it:indepvars} is empty and {it:ipsw} is used.
 {opt probit} indicates that the propensity score is computed after a fitting a  {manhelp probit R:probit} model; default is {manhelp logit R:logit}.
 
 {phang}
-{opt nocomsup} indicates that the sample is not to be restricted to the area of common support.
+{opt comsup} indicates that the sample is to be restricted to the area of common support and the respective variable will be generated.
 
 {marker options_model}{...}
 {dlgtab:Model}
@@ -179,7 +178,6 @@ If {opt normal} is specified, p-values are obtained using the normality assumpti
 {phang}
 {opt blockbtrp(varlist)} specifies the variables identifying strata. If blockbtrp() is specified, bootstrap samples are selected within each stratum.
 
-
 {marker options_reporting}{...}
 {dlgtab:Reporting}
 
@@ -189,9 +187,6 @@ This balance is computed for each covariate in {it:indepvars}, unless {opt balan
 
 {phang}
 {opt psweight(newvar)} specifies a name for a new variable with the propensity score weighting. If not specified, no variable will be generated.
-
-{phang}
-{opt comsup(newvar)} specifies a name for a new binary variable indicating common support. If not specified, no variable will be generated.
 
 {phang}
 {opt pscore(newvar)} specifies a name for a new variable with the propensity score. If not specified, no variable will be generated.
