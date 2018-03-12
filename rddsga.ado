@@ -1,4 +1,4 @@
-*! 1.0.3 Andre Cazor 15Feb2018
+*! 1.0.3 Andre Cazor 03012018
 program define rddsga, eclass
 version 11.1
 syntax varlist(min=2 numeric fv) [if] [in] , ///
@@ -57,6 +57,14 @@ else tempvar pscore
 // Issue warning if no covariates and no vars in balance when propensity score weighting is used:
 if ("`ipsw'"!="noipsw")  {
 if `: list sizeof varlist'<=2 & `: list sizeof balance'==0 {
+  di as error "either {it:indepvars} or {bf:balance()} must be specified"
+  exit 198
+}
+}
+
+//  When Propensity score weighting is not used, request covariates only if dibalance is specified:
+else {
+if "`dibalance'" != ""  & `: list sizeof varlist'<=2 & `: list sizeof balance'==0 {
   di as error "either {it:indepvars} or {bf:balance()} must be specified"
   exit 198
 }
@@ -159,8 +167,24 @@ local kernel = "uni"
 if "`ipsw'" == "noipsw" local weight = ""
 else local weight "[pw=`ipsweight']"
 
+
+*** Count number of observations when noipsw is specified and there are not variables to balance:
+
+if `: list sizeof balance'==0 {
+
+ qui count if `touse' & `bwidth' & `sgroup'==0
+ local N_G0 = `r(N)'
+ qui count if `touse' & `bwidth' & `sgroup'==1
+ local N_G1 = `r(N)'
+ 
+scalar unw_N_G1 = `N_G1'
+scalar unw_N_G0 = `N_G0' 
+
+
+}
+
 *-------------------------------------------------------------------------------
-* Compute balance table matrices]
+* Compute balance table matrices
 *-------------------------------------------------------------------------------
 
 * Original balance
@@ -168,14 +192,12 @@ else local weight "[pw=`ipsweight']"
 
 if `: list sizeof balance'!=0 {
 
-
-
 // Compute balanace matrix 
 balancematrix, matname(unw)  ///
   touse(`touse') bwidth(`bwidth') balance(`balance') ///
   sgroup(`sgroup') sgroup0(`sgroup0') n_balance(`n_balance')
   
-  
+
 // Store balance matrix and computed balance stats
 matrix unw = e(unw)
 foreach s in unw_N_G0 unw_N_G1 unw_pvalue unw_Fstat unw_avgdiff {
@@ -223,6 +245,9 @@ if "`dibalance'" != "" {
 }
 }
 }
+
+
+
 *-------------------------------------------------------------------------------
 * Estimation
 *-------------------------------------------------------------------------------
@@ -348,19 +373,20 @@ ereturn local cmdline `RFline'
 * Post balance results
 *-------------------------------------------------------------------------------
 // Post global balance stats
-if `: list sizeof balance'!=0 & "`ipsw'" != "noipsw" {   {
+if `: list sizeof balance'!=0 & "`ipsw'" != "noipsw"   {
 
 foreach w in unw ipsw {
   foreach s in N_G0 N_G1 pvalue Fstat avgdiff {
     ereturn scalar `w'_`s' = `w'_`s'
   }
-}
 
+}
 // Post balance matrices
 ereturn matrix ipsw ipsw
 ereturn matrix unw unw
+
 }
-else {
+if "`ipsw'" == "noipsw" & `: list sizeof balance'!=0 {
 
 local w unw
   foreach s in N_G0 N_G1 pvalue Fstat avgdiff {
@@ -369,10 +395,13 @@ local w unw
 
 // Post balance matrices
 ereturn matrix unw unw
+}
+if "`ipsw'" == "noipsw" & `: list sizeof balance'==0  {
+
+ereturn scalar unw_N_G1 = `N_G1'
+ereturn scalar unw_N_G0 = `N_G0'
 
 }
-
-
 
 *-------------------------------------------------------------------------------
 * Results
@@ -381,6 +410,7 @@ ereturn matrix unw unw
 * Post and display estimation results
 *-------------------------------------------------------------------------------
 if "`ivregress'" != "" | "`reducedform'" != "" | "`firststage'" != "" {
+
   // Post abridged b and V matrices
   ereturn repost b=b V=V, resize
   // Display estimates by subgroup
@@ -719,6 +749,7 @@ if "`psw'" != "" { // if psw
  qui cap drop comsup
  qui `binarymodel' `sgroup' `balance' if `touse' & `bwidth'
 
+
   // Generate pscore variable and clear stored results
   qui predict double `pscore' if `touse' & `bwidth' & !mi(`sgroup')
   ereturn clear
@@ -777,7 +808,7 @@ foreach var of varlist `balance' {
   else qui reg `var' `sgroup0' `sgroup' [iw=`ipsweight'] if `touse' & `bwidth' & `COMSUP', noconstant
   local coef`j'_G0 = _b[`sgroup0']
   local coef`j'_G1 = _b[`sgroup']
-
+  
   // Compute and store mean differences and their p-values
   if "`psw'" == "" qui reg `var' `sgroup0' if `touse' & `bwidth'
   else qui reg `var' `sgroup0' [iw=`ipsweight'] if `touse' & `bwidth' & `COMSUP'
@@ -790,6 +821,7 @@ foreach var of varlist `balance' {
   else qui summ `var' if `touse' & `bwidth' & `COMSUP' & !mi(`sgroup')
   local stddiff`j' = (diff`j')/r(sd)
 }
+
 
 * Compute global stats
 *-------------------------------------------------------------------------------
@@ -821,6 +853,8 @@ forvalues j = 1/`n_balance' {
   matrix `matname'[`j',3] = `stddiff`j''
   matrix `matname'[`j',4] = `pval`j''
 }
+
+
 
 // Return matrix and other scalars
 scalar `matname'_N_G0 = `N_G0'
