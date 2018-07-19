@@ -2,11 +2,17 @@
 Subgroup analysis for regression discontinuity designs using inverse propensity score weighting
 
 # Installation
-The package can be fetched directly from this repository by setting the location with `net`:
+
+The package can be installed directly from SSC:
+```stata
+ssc install rddsga
+```
+
+Alternatively, you can get the latest version hosted in this repository by first setting the location with `net`:
 ```stata
 net from https://raw.githubusercontent.com/acarril/rddsga/master/
 ```
-After setting the location for `net`, use the following commands to describe and install the package and its ancillary files:
+Then you can use the following commands to describe and install the package and its ancillary files:
 ```stata
 // Describe
 net describe rddsga
