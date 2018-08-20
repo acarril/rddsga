@@ -44,8 +44,10 @@
 {synopt :{opt norm:al}}compute and report normal approximation p-values and CIs; default is percentile{p_end}
 {synopt :{opt noboot:strap}}do not compute bootstrap standard errors for RD estimates{p_end}
 {synopt :{opt noipsw}}do not use inverse propensity score weighting{p_end}
-{synopt :{opt fixed:bootstrap}} compute bootstrap with first stage fixed when instrumental variable regression is used. {p_end}
+{synopt :{opt fixed:bootstrap}}compute bootstrap with first stage fixed when instrumental variable regression is used. {p_end}
 {synopt :{opt block:btrp(varlist)}}specifies bootstrap samples that are selected within each stratum. {p_end}
+{synopt :{opt weights(weightsvar)}}is the variable used for optional weighting of the estimation procedure. The unit-specific weights multiply the kernel function. {p_end}
+
 
 {syntab :Reporting and Output}
 {synopt :{opt dibal:ance}}display original balance and propensity score-weighted balance tables and statistics{p_end}

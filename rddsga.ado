@@ -6,7 +6,7 @@ syntax varlist(min=2 numeric fv) [if] [in] , ///
   	IPSWeight(name) PSCore(name) comsup /// newvars
     BALance(varlist numeric) DIBALance probit /// balancepscore opts
     IVregress REDUCEDform FIRSTstage vce(string) p(int 1) /// model opts
-    noBOOTstrap bsreps(real 50) FIXEDbootstrap BLOCKbootstrap(string) NORMal  noipsw  ] // bootstrap options
+    noBOOTstrap bsreps(real 50) FIXEDbootstrap BLOCKbootstrap(string) NORMal  noipsw weights(string) ] // bootstrap options
 
 *-------------------------------------------------------------------------------
 * Check inputs
@@ -28,7 +28,14 @@ if `fvops' {
 }
 
 
-
+if ("`weights'"~="") {
+tempvar oweights
+g `oweights'=`weights'
+}
+else {
+tempvar oweights
+g `oweights'=1
+}
 
 
 /*
@@ -151,15 +158,15 @@ local kernel = "uni"
 
   if ("`kernel'"=="epanechnikov" | "`kernel'"=="epa") {
     local kernel_type = "Epanechnikov"
-    qui g double `kwt'=max(0,3/4*(`bwidthtab'^2-abs(`2')^2))
+    qui g double `kwt'=max(0,3/4*(`bwidthtab'^2-abs(`2')^2))*`oweights'
   }
   else if ("`kernel'"=="triangular" | "`kernel'"=="tri") {
       local kernel_type = "Triangular"
-      qui g double `kwt'=max(0,`bwidthtab'-abs(`2'))
+      qui g double `kwt'=max(0,`bwidthtab'-abs(`2'))*`oweights'
   }
   else {
     local kernel_type = "Uniform"
-    qui g double `kwt'=(-`bwidthtab'<=(`2') & `2'<`bwidthtab')
+    qui g double `kwt'=(-`bwidthtab'<=(`2') & `2'<`bwidthtab')*`oweights'
   }
        
 
@@ -194,7 +201,7 @@ if `: list sizeof balance'!=0 {
 
 // Compute balanace matrix 
 balancematrix, matname(unw)  ///
-  touse(`touse') bwidth(`bwidth') balance(`balance') ///
+ weights(`oweights') touse(`touse') bwidth(`bwidth') balance(`balance') ///
   sgroup(`sgroup') sgroup0(`sgroup0') n_balance(`n_balance')
   
 
@@ -222,10 +229,9 @@ if "`ipsw'" != "noipsw" {
 // Compute balanace matrix 
 
 balancematrix, matname(ipsw)  ///
-  psw ipsweight(`ipsweight') touse(`touse') bwidth(`bwidth') balance(`balance') ///
+  psw ipsweight(`ipsweight') weights(`oweights') touse(`touse') bwidth(`bwidth') balance(`balance') ///
   pscore(`pscore') comsup nocomsup(`NOCOMSUP') binarymodel(`binarymodel') ///
 	sgroup(`sgroup') sgroup0(`sgroup0') n_balance(`n_balance') 
-	
 	
 // Store balance matrix and computed balance stats
 matrix ipsw = e(ipsw)
@@ -737,7 +743,7 @@ end
 *-------------------------------------------------------------------------------
 program define balancematrix, eclass
 syntax, matname(string) /// important inputs, differ by call
-  touse(name) bwidth(string) balance(varlist) /// unchanging inputs
+  touse(name) weights(string) bwidth(string) balance(varlist) /// unchanging inputs
   [psw ipsweight(name) pscore(name) comsup nocomsup(name) binarymodel(string)] /// only needed for PSW balance
   sgroup(name) sgroup0(name) n_balance(int) // todo: eliminate these? can be computed by subroutine at low cost
 
@@ -747,7 +753,7 @@ syntax, matname(string) /// important inputs, differ by call
 if "`psw'" != "" { // if psw
   // Fit binary response model
  qui cap drop comsup
- qui `binarymodel' `sgroup' `balance' if `touse' & `bwidth'
+ qui `binarymodel' `sgroup' `balance' [pw=`weights'] if `touse' & `bwidth'
 
 
   // Generate pscore variable and clear stored results
@@ -782,11 +788,15 @@ tempvar COMSUP
   // Compute propensity score weighting vector
   cap drop `ipsweight'
   qui gen `ipsweight' = ///
-    `N_G1'/(`N_G1'+`N_G0')/`pscore'*(`sgroup'==1) + ///
-    `N_G0'/(`N_G1'+`N_G0')/(1-`pscore')*(`sgroup'==0) ///
+   ( `N_G1'/(`N_G1'+`N_G0')/`pscore'*(`sgroup'==1) + ///
+    `N_G0'/(`N_G1'+`N_G0')/(1-`pscore')*(`sgroup'==0)) ///
     if `touse' & `bwidth' & `COMSUP' & !mi(`sgroup')
+
+	tempvar nweights
+	qui gen `nweights'=`ipsweight'*`weights'	
     
 } // end if psw
+
 
 * Count obs. in each fuzzy group if not PSW matrix
 *-------------------------------------------------------------------------------
@@ -804,14 +814,14 @@ foreach var of varlist `balance' {
   local ++j
 
   // Compute and store conditional expectations
-  if "`psw'" == "" qui reg `var' `sgroup0' `sgroup' if `touse' & `bwidth', noconstant /* */
-  else qui reg `var' `sgroup0' `sgroup' [iw=`ipsweight'] if `touse' & `bwidth' & `COMSUP', noconstant
+  if "`psw'" == "" qui reg `var' `sgroup0' `sgroup' [iw=`weights'] if `touse' & `bwidth', noconstant /* */
+  else qui reg `var' `sgroup0' `sgroup' [iw=`nweights'] if `touse' & `bwidth' & `COMSUP', noconstant
   local coef`j'_G0 = _b[`sgroup0']
   local coef`j'_G1 = _b[`sgroup']
   
   // Compute and store mean differences and their p-values
-  if "`psw'" == "" qui reg `var' `sgroup0' if `touse' & `bwidth'
-  else qui reg `var' `sgroup0' [iw=`ipsweight'] if `touse' & `bwidth' & `COMSUP'
+  if "`psw'" == "" qui reg `var' `sgroup0' [iw=`weights'] if `touse' & `bwidth'
+  else qui reg `var' `sgroup0' [iw=`nweights'] if `touse' & `bwidth' & `COMSUP'
   matrix m = r(table)
   scalar diff`j'=m[1,1] // mean difference
   local pval`j' = m[4,1] // p-value 
@@ -834,8 +844,8 @@ forvalues j = 1/`n_balance' {
 local avgdiff = `avgdiff'/`n_balance' // compute mean 
 
 // F-statistic and global p-value
-if "`psw'" == "" qui reg `sgroup' `balance' if `touse' & `bwidth'
-else qui reg `sgroup' `balance' [iw=`ipsweight'] if `touse' & `bwidth' & `COMSUP' 
+if "`psw'" == "" qui reg `sgroup' `balance' [iw=`weights']  if `touse' & `bwidth'
+else qui reg `sgroup' `balance' [iw=`nweights'] if `touse' & `bwidth' & `COMSUP' 
 local Fstat = e(F)
 local pval_global = 1-F(e(df_m),e(df_r),e(F))
 
