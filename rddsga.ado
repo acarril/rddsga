@@ -129,7 +129,7 @@ else local binarymodel logit
 
 // Create bandwidth condition 
 local bwidthtab `bwidth'
-local bwidth abs(`assignvar') < `bwidth'
+local bwidth abs(`assignvar'-`cutoff') < `bwidth'
 
 // Create indicator cutoff variable
 *tempvar cutoffvar
